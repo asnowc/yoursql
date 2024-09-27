@@ -185,7 +185,7 @@ export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelec
 
 // @public
 export class SqlRaw<T = any> {
-    [SQL_RAW]: (item: T) => never;
+    [SQL_RAW]: T;
     constructor(value: string);
     // (undocumented)
     toString(): string;
@@ -193,7 +193,7 @@ export class SqlRaw<T = any> {
 
 // @public (undocumented)
 export abstract class SqlSelectable<T extends TableType> {
-    [SQL_SELECTABLE]: (item: T) => never;
+    [SQL_SELECTABLE]: T;
     // (undocumented)
     abstract readonly columns: Iterable<string>;
     abstract toSelect(): string;

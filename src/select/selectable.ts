@@ -9,7 +9,7 @@ export abstract class SqlSelectable<T extends TableType> {
   abstract toSelect(): string;
   abstract toString(): string;
   /** 保留以推断类型 */
-  declare [SQL_SELECTABLE]: (item: T) => never;
+  declare [SQL_SELECTABLE]: T;
 }
 /** @public */
 export class DbTable<T extends TableType> extends SqlSelectable<T> {

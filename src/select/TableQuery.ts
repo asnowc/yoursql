@@ -56,7 +56,11 @@ export class DbTableQuery<
     option?: InsertOption<T>
   ): SqlQueryStatement<SelectColumns<T, R>> {
     let sql = this.insert(values, option);
-    return genRetuningSql(sql, returns, values instanceof SqlQueryStatement ? values.columns : this.columns);
+    return genRetuningSql(
+      sql,
+      returns,
+      values instanceof SqlQueryStatement ? values.columns : this.columns
+    ) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 
   update(values: UpdateRowValue<T>, option: UpdateOption = {}): string {
@@ -80,7 +84,11 @@ export class DbTableQuery<
     option?: UpdateOption
   ): SqlQueryStatement<SelectColumns<T, R>> {
     let sql = this.update(values, option);
-    return genRetuningSql(sql, returns, values instanceof SqlQueryStatement ? values.columns : this.columns);
+    return genRetuningSql(
+      sql,
+      returns,
+      values instanceof SqlQueryStatement ? values.columns : this.columns
+    ) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 
   delete(option: DeleteOption = {}): string {
@@ -93,7 +101,7 @@ export class DbTableQuery<
     option?: DeleteOption
   ): SqlQueryStatement<SelectColumns<T, R>> {
     let sql = this.delete(option);
-    return genRetuningSql(sql, returns, this.columns);
+    return genRetuningSql(sql, returns, this.columns) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 }
 /** @public */
