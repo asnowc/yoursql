@@ -1,0 +1,50 @@
+{
+  "name": "@asla/yoursql",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "types": "./dist/mod.d.ts",
+  "scripts": {
+    "ci:test": "vitest run",
+    "ci:build": "pnpm rollup -c build/rollup.config.js",
+    "build": "pnpm rollup -c  build/rollup.config.js && pnpm run api:check -l",
+    "test": "vitest",
+    "type:check": "tsc",
+    "api:check": "api-extractor run -c api-extractor.jsonc -v"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.47.9",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "rollup": "^4.22.4",
+    "tslib": "^2.7.0",
+    "typescritp": "^1.0.0",
+    "vitest": "^2.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asnowc/yoursql"
+  },
+  "exports": {
+    ".": "./dist/mod.js"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*d.ts"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org",
+    "provenance": true
+  },
+  "keywords": [
+    "sql"
+  ],
+  "author": {
+    "name": "Eavid",
+    "url": "https://github.com/eavidy"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

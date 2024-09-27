@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@asnc/yoursql": ["./src/mod.ts"]
+    }
+  },
+
+  "exclude": ["node_modules", "./benchmark", "./scripts"]
+}

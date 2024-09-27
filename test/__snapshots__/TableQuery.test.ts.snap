@@ -1,0 +1,75 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TableQuery > delete > delete 1`] = `
+"DELTE FROM user
+WHERE id IS NULL"
+`;
+
+exports[`TableQuery > delete > deleteWithResult 1`] = `
+"DELTE FROM user
+RETURNING *"
+`;
+
+exports[`TableQuery > delete > deleteWithResult 2`] = `
+"DELTE FROM user
+RETURNING level AS rename, name"
+`;
+
+exports[`TableQuery > insert > insert 1`] = `
+"INSERT INTO user (name,level)
+VALUES 
+('张三',8),
+('王五',9)"
+`;
+
+exports[`TableQuery > insert > insert 2`] = `
+"INSERT INTO user (name)
+VALUES 
+('张三')
+ON CONFLICT (id,level)
+DO UPDATE SET
+level = 89"
+`;
+
+exports[`TableQuery > insert > insertWithResult 1`] = `
+"INSERT INTO user (name)
+VALUES 
+('hh')
+RETURNING level AS rename, name"
+`;
+
+exports[`TableQuery > select > select-columns 1`] = `
+"SELECT name, id, level
+FROM user"
+`;
+
+exports[`TableQuery > select > select-columns 2`] = `
+"SELECT name, level AS rename_level, id
+FROM user"
+`;
+
+exports[`TableQuery > select > select-option 1`] = `
+"SELECT name, id, level
+FROM user
+WHERE limit IS NULL
+ORDER BY id ASCNULLS FIRST
+LIMIT 100
+OFFSET 23"
+`;
+
+exports[`TableQuery > update > update-base 1`] = `
+"UPDATE user
+SET id = 78"
+`;
+
+exports[`TableQuery > update > update-base 2`] = `
+"UPDATE user
+SET id = 78
+WHERE id IS NULL"
+`;
+
+exports[`TableQuery > update > updateWithResult 1`] = `
+"UPDATE user
+SET id = 78
+RETURNING level AS rename, name"
+`;
