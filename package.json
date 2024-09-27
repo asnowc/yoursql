@@ -7,10 +7,10 @@
   "scripts": {
     "ci:test": "vitest run",
     "ci:build": "pnpm rollup -c build/rollup.config.js",
-    "build": "pnpm rollup -c  build/rollup.config.js && pnpm run api:check -l",
+    "build": "pnpm rollup -c  build/rollup.config.js && pnpm run ci:check-api -l",
     "test": "vitest",
     "type:check": "tsc",
-    "api:check": "api-extractor run -c api-extractor.jsonc -v"
+    "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.47.9",
