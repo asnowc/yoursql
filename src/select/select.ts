@@ -69,18 +69,16 @@ export const createSelect: AddTableFn<{}> = function createSelect(
   let select = createSelectMap(tb, columns, option).selects;
   return new SelectImpl(select) as any;
 };
+function* mergeColumns(
+  a: IterableIterator<TableSelected>,
+  b: IterableIterator<string>
+): Generator<string, void, undefined> {
+  for (const { columns } of a) yield* columns.keys();
+  yield* b;
+}
 class SelectImpl<T extends TableType> extends SqlSelectable<T> implements Select<T> {
-  get columns(): Iterable<string> {
-    return this.getColumns();
-  }
-  private *getColumns() {
-    for (const { columns } of this.tableList.values()) {
-      yield* columns.keys();
-    }
-    yield* this.addedColumns.keys();
-  }
-  constructor(private tableList: Map<string, TableSelected>, private addedColumns: Map<string, string> = new Map()) {
-    super();
+  constructor(private tableList: Map<string, TableSelected>, private readonly addedColumns?: Map<string, string>) {
+    super(addedColumns ? mergeColumns(tableList.values(), addedColumns.keys()) : tableList.keys());
   }
   toSelect(): string {
     return "(" + this.toString() + ")";
@@ -111,9 +109,11 @@ class SelectImpl<T extends TableType> extends SqlSelectable<T> implements Select
         }
       }
     }
-    for (const [asName, columnStr] of this.addedColumns) {
-      if (asName === columnStr) selectColumns.push(asName);
-      else selectColumns.push(columnStr + " AS " + asName);
+    if (this.addedColumns) {
+      for (const [asName, columnStr] of this.addedColumns) {
+        if (asName === columnStr) selectColumns.push(asName);
+        else selectColumns.push(columnStr + " AS " + asName);
+      }
     }
     if (selectColumns.length === 0) throw new Error("Columns 为空");
     let sql = `SELECT ${selectColumns.join(", ")}\nFROM ${tables.join(", ")}` + join;
@@ -195,11 +195,12 @@ class SelectImpl<T extends TableType> extends SqlSelectable<T> implements Select
     return obj as any;
   }
   addColumns(add: { [key: string]: string }): Select<any> {
+    let addedColumns: typeof this.addedColumns = this.addedColumns ? new Map(this.addedColumns) : new Map();
     for (const [asNewName, columnStr] of Object.entries(add)) {
-      if (this.addedColumns.has(asNewName)) throw new Error();
-      this.addedColumns.set(asNewName, columnStr);
+      if (addedColumns.has(asNewName)) throw new Error(`The column ${asNewName} already exists`);
+      addedColumns.set(asNewName, columnStr);
     }
-    return this as any;
+    return new SelectImpl(this.tableList, addedColumns);
   }
 
   toQuery(option: SelectFilterOption<T> = {}): SqlQueryStatement<T> {
