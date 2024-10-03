@@ -17,11 +17,9 @@ export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
 // @public (undocumented)
 export const createSelect: AddTableFn<{}>;
 
-// @public (undocumented)
+// @public
 export class DbTable<T extends TableType> extends SqlSelectable<T> {
     constructor(name: string, columns: readonly (keyof T)[]);
-    // (undocumented)
-    readonly columns: readonly string[];
     // (undocumented)
     readonly name: string;
     // (undocumented)
@@ -176,8 +174,6 @@ export interface SelectTableOption {
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
     constructor(sql: string, columns: readonly string[]);
     // (undocumented)
-    readonly columns: readonly string[];
-    // (undocumented)
     toSelect(): string;
     // (undocumented)
     toString(): string;
@@ -191,13 +187,12 @@ export class SqlRaw<T = any> {
     toString(): string;
 }
 
-// @public (undocumented)
+// @public
 export abstract class SqlSelectable<T extends TableType> {
     [SQL_SELECTABLE]: T;
-    // (undocumented)
-    abstract readonly columns: Iterable<string>;
+    constructor(columns: ArrayLike<string> | Iterable<string>);
+    readonly columns: readonly string[];
     abstract toSelect(): string;
-    // (undocumented)
     abstract toString(): string;
 }
 
@@ -206,8 +201,12 @@ export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     number(value: number | bigint): string;
-    objectListToValuesList<T extends object>(objectList: T[], keys?: (keyof T)[]): string;
-    objectToValues(object: object, keys: readonly string[]): string;
+    objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
+        [key in keyof T]?: string | undefined;
+    }): string;
+    objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
+        [key in keyof T]?: string | undefined;
+    }): string;
     static string(value: string): string;
     // (undocumented)
     string(value: string): string;
