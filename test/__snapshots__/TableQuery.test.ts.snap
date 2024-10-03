@@ -17,14 +17,14 @@ RETURNING level AS rename, name"
 
 exports[`TableQuery > insert > insert 1`] = `
 "INSERT INTO user (name,level)
-VALUES 
+VALUES
 ('张三',8),
 ('王五',9)"
 `;
 
 exports[`TableQuery > insert > insert 2`] = `
 "INSERT INTO user (name)
-VALUES 
+VALUES
 ('张三')
 ON CONFLICT (id,level)
 DO UPDATE SET
@@ -33,7 +33,7 @@ level = 89"
 
 exports[`TableQuery > insert > insertWithResult 1`] = `
 "INSERT INTO user (name)
-VALUES 
+VALUES
 ('hh')
 RETURNING level AS rename, name"
 `;
