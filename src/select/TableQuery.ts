@@ -30,7 +30,7 @@ export class DbTableQuery<
       valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol as (keyof C)[])}`;
     } else if (values instanceof SqlQueryStatement) {
       // todo 验证 values.columns 和 this.columns 是否匹配
-      valuesStr = values.toSelect();
+      valuesStr = values.toString();
       insertCol = values.columns;
     } else throw new Error("values 应该是 Array 或 TableQuery 类型");
     if (insertCol.length === 0) throw new Error("插入列不能为空");
