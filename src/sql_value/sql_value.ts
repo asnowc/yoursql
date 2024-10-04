@@ -17,7 +17,7 @@ export class SqlRaw<T = any> {
 /** @public */
 export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
 
-/** 
+/**
  * @public
  */
 export interface SqlValuesCreator {
@@ -90,7 +90,7 @@ export class SqlValuesCreator {
     }
   }
 
-  protected defaultObject(value: object) {
+  protected defaultObject(value: object): string {
     return this.string(JSON.stringify(value));
   }
 
