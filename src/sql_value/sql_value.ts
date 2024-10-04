@@ -12,8 +12,9 @@ export class SqlRaw<T = any> {
     return this.#value;
   }
   /** 保留以推断类型 */
-  declare [SQL_RAW]: T;
+  private declare [SQL_RAW]: T;
 }
+
 /** @public */
 export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
 

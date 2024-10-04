@@ -50,7 +50,7 @@ export abstract class SqlSelectable<T extends TableType> {
   /** 获取 SQL 语句 */
   abstract toString(): string;
   /** 保留以推断类型 */
-  declare [SQL_SELECTABLE]: T;
+  private declare [SQL_SELECTABLE]: T;
 }
 /**
  * 数据库表
