@@ -1,7 +1,23 @@
 import { SqlValuesCreator } from "@asnc/yoursql";
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 
 let v = new SqlValuesCreator();
+describe("转换值", function () {
+  test("string", function () {
+    expect(v("abc'\"\n ")).toBe("'abc''\"\n '");
+  });
+  test("null-undefined", function () {
+    expect(v(null)).toBe("NULL");
+    expect(v(undefined)).toBe("NULL");
+  });
+  test("function-symbol", function () {
+    expect(() => v(() => {})).toThrowError();
+    expect(() => v(Symbol())).toThrowError();
+  });
+  test("default", function () {
+    expect(v({ a: 8 }), "默认使用JSON序列化").toBe(v.string(JSON.stringify({ a: 8 })));
+  });
+});
 
 test("objectToValues-auto-columns", function () {
   const s = v.objectToValues({ ab: 1, cd: 3, ef: undefined });

@@ -108,14 +108,14 @@ export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
 }
 
 // @public (undocumented)
-export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: object) => string>;
+export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
 
 // @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
 
 // @public
 export class PgSqlValue extends SqlValuesCreator {
-    constructor();
+    constructor(custom?: JsObjectMapSql);
     // (undocumented)
     array(value: any[]): string;
     // (undocumented)
@@ -196,9 +196,16 @@ export abstract class SqlSelectable<T extends TableType> {
     abstract toString(): string;
 }
 
+// @public (undocumented)
+export interface SqlValuesCreator {
+    (value: any): string;
+}
+
 // @public
 export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
+    // (undocumented)
+    protected defaultObject(value: object): string;
     // (undocumented)
     number(value: number | bigint): string;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
@@ -207,6 +214,7 @@ export class SqlValuesCreator {
     objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
     }): string;
+    setTransformer<T>(type: new (...args: any[]) => T, transformer?: (value: T) => string): void;
     static string(value: string): string;
     // (undocumented)
     string(value: string): string;

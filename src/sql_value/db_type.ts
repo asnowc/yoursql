@@ -1,12 +1,12 @@
-import { SqlValuesCreator } from "./sql_value.ts";
+import { SqlValuesCreator, JsObjectMapSql } from "./sql_value.ts";
 
 /**
  * @public
  * PgSql的值转换
  */
 export class PgSqlValue extends SqlValuesCreator {
-  constructor() {
-    const map = new Map();
+  constructor(custom?: JsObjectMapSql) {
+    const map = new Map(custom);
     map.set(Array, PgSqlValue.prototype.array);
     map.set(Date, PgSqlValue.prototype.timestamp);
     super(map);

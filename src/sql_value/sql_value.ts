@@ -15,7 +15,16 @@ export class SqlRaw<T = any> {
   declare [SQL_RAW]: T;
 }
 /** @public */
-export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: object) => string>;
+export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
+
+/** 
+ * @public
+ */
+export interface SqlValuesCreator {
+  /** 将 JS 对象转为 SQL 的字符值的形式 */
+  (value: any): string;
+}
+
 /**
  * SQL value 生成器
  * @public
@@ -33,6 +42,14 @@ export class SqlValuesCreator {
    */
   constructor(map: JsObjectMapSql = new Map()) {
     this.map = map;
+    const fn = (value: any) => this.toSqlStr(value);
+    Reflect.setPrototypeOf(fn, this);
+    return fn as SqlValuesCreator;
+  }
+  /** 设置转换器 */
+  setTransformer<T>(type: new (...args: any[]) => T, transformer?: (value: T) => string) {
+    if (!transformer) this.map.delete(type);
+    else this.map.set(type, transformer);
   }
   private readonly map: JsObjectMapSql;
   string(value: string): string {
@@ -42,7 +59,9 @@ export class SqlValuesCreator {
     return value.toString();
   }
 
-  /** 将 JS 对象转为 SQL 的字符值的形式 */
+  /**
+   * 将 JS 对象转为 SQL 的字符值的形式
+   */
   toSqlStr(value: any): string {
     switch (typeof value) {
       case "bigint":
@@ -61,13 +80,20 @@ export class SqlValuesCreator {
         for (const Class of this.map.keys()) {
           if (value instanceof Class) return this.map.get(Class)!.call(this, value);
         }
-        return this.string(JSON.stringify(value));
+        return this.defaultObject(value);
+      case "undefined":
+        return "NULL";
       default:
+        //function、symbol
         let type = typeof value;
-        if (type === "object") type = value.constructor?.name ?? "object";
         throw new Error("不支持转换 " + type + " 类型");
     }
   }
+
+  protected defaultObject(value: object) {
+    return this.string(JSON.stringify(value));
+  }
+
   /**
    * 将对象列表转为 SQL 的 VALUES
    * @example 返回示例： " (...),(...) "
