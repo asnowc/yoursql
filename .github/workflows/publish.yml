@@ -27,6 +27,12 @@ jobs:
         run: pnpm run ci:build
       - name: Check Api
         run: pnpm run ci:check-api
+      
+      - name: jsr-dry-run
+        run: npx jsr publish --dry-run
+      - name: npm-dry-run
+        run: npm publish --dry-run
+
       - name: Read packageJson
         run: |
           {
