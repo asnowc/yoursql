@@ -62,6 +62,9 @@ export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
     toQuery(option?: SelectFilterOption<T>): SqlQueryStatement<T>;
 }
 
+// @public (undocumented)
+export function getObjectListKeys(objectList: any[], keepNull?: boolean): string[];
+
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
 
@@ -108,12 +111,15 @@ export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
 }
 
 // @public (undocumented)
-export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
+export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
 
 // @public
+export const pgSqlTransformer: JsObjectMapSql;
+
+// @public @deprecated (undocumented)
 export class PgSqlValue extends SqlValuesCreator {
     constructor(custom?: JsObjectMapSql);
     // (undocumented)
@@ -181,7 +187,6 @@ export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelec
 
 // @public
 export class SqlRaw<T = any> {
-    [SQL_RAW]: T;
     constructor(value: string);
     // (undocumented)
     toString(): string;
@@ -189,12 +194,14 @@ export class SqlRaw<T = any> {
 
 // @public
 export abstract class SqlSelectable<T extends TableType> {
-    [SQL_SELECTABLE]: T;
     constructor(columns: ArrayLike<string> | Iterable<string>);
     readonly columns: readonly string[];
     abstract toSelect(): string;
     abstract toString(): string;
 }
+
+// @public (undocumented)
+export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
 
 // @public (undocumented)
 export interface SqlValuesCreator {
@@ -206,7 +213,7 @@ export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     protected defaultObject(value: object): string;
-    // (undocumented)
+    // @deprecated (undocumented)
     number(value: number | bigint): string;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
@@ -214,11 +221,13 @@ export class SqlValuesCreator {
     objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
     }): string;
-    setTransformer<T>(type: new (...args: any[]) => T, transformer?: (value: T) => string): void;
+    setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder): void;
     static string(value: string): string;
-    // (undocumented)
+    // @deprecated (undocumented)
     string(value: string): string;
-    toSqlStr(value: any): string;
+    // (undocumented)
+    protected toObjectStr(value: object): string;
+    toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
     toValues(values: readonly any[]): string;
 }
 

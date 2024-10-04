@@ -16,7 +16,9 @@ export class SqlRaw<T = any> {
 }
 
 /** @public */
-export type JsObjectMapSql = Map<new (...args: any[]) => any, (value: any) => string>;
+export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
+/** @public */
+export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
 
 /**
  * @public
@@ -48,40 +50,45 @@ export class SqlValuesCreator {
     return fn as SqlValuesCreator;
   }
   /** 设置转换器 */
-  setTransformer<T>(type: new (...args: any[]) => T, transformer?: (value: T) => string) {
+  setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder) {
     if (!transformer) this.map.delete(type);
     else this.map.set(type, transformer);
   }
   private readonly map: JsObjectMapSql;
+  /** @deprecated 已废弃，改用 toSqlStr(value, "string") */
   string(value: string): string {
     return SqlValuesCreator.string(value);
   }
+  /** @deprecated 已废弃，改用 toSqlStr(value, "number") */
   number(value: number | bigint): string {
     return value.toString();
   }
-
   /**
    * 将 JS 对象转为 SQL 的字符值的形式
    */
-  toSqlStr(value: any): string {
-    switch (typeof value) {
+  toSqlStr(
+    value: any,
+    expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)
+  ): string {
+    let basicType;
+    if (expectType) {
+      if (typeof expectType === "function") {
+        return this.map.get(expectType)!.call(this, value, this.map);
+      } else {
+        basicType = expectType;
+      }
+    } else basicType = typeof value;
+    switch (basicType) {
       case "bigint":
-        return this.number(value);
+        return value.toString();
       case "number":
-        return this.number(value);
+        return value.toString();
       case "string":
-        return this.string(value);
+        return SqlValuesCreator.string(value);
       case "boolean":
         return value.toString();
       case "object":
-        if (value === null) return "NULL";
-        if (value instanceof SqlRaw) {
-          return value.toString();
-        }
-        for (const Class of this.map.keys()) {
-          if (value instanceof Class) return this.map.get(Class)!.call(this, value);
-        }
-        return this.defaultObject(value);
+        return this.toObjectStr(value);
       case "undefined":
         return "NULL";
       default:
@@ -90,9 +97,16 @@ export class SqlValuesCreator {
         throw new Error("不支持转换 " + type + " 类型");
     }
   }
-
+  protected toObjectStr(value: object): string {
+    if (value === null) return "NULL";
+    if (value instanceof SqlRaw) return value.toString();
+    for (const Class of this.map.keys()) {
+      if (value instanceof Class) return this.map.get(Class)!.call(this, value, this.map);
+    }
+    return this.defaultObject(value);
+  }
   protected defaultObject(value: object): string {
-    return this.string(JSON.stringify(value));
+    return SqlValuesCreator.string(JSON.stringify(value));
   }
 
   /**
@@ -111,7 +125,7 @@ export class SqlValuesCreator {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
     if (!keys_types) {
-      keys = getKeys(objectList);
+      keys = getObjectListKeys(objectList, true);
     } else if (keys_types instanceof Array) {
       keys = keys_types as string[];
     } else {
@@ -178,7 +192,7 @@ export class SqlValuesCreator {
    * @example 返回示例： " 'abc', '6', 'now()' "
    */
   toValues(values: readonly any[]): string {
-    return values.map(this.toSqlStr.bind(this)).join(",");
+    return values.map((v) => this.toSqlStr(v)).join(",");
   }
 }
 function toKeyType(object: Record<string, any>, keys_types?: readonly string[] | Record<string, string | undefined>) {
@@ -196,7 +210,10 @@ function toKeyType(object: Record<string, any>, keys_types?: readonly string[] |
   }
   return { type, keys };
 }
-function getKeys(objectList: any[]): string[] {
+/**
+ * @public
+ */
+export function getObjectListKeys(objectList: any[], keepNull?: boolean): string[] {
   let keys = new Set<string>();
   for (let i = 0; i < objectList.length; i++) {
     let obj = objectList[i];
@@ -204,7 +221,9 @@ function getKeys(objectList: any[]): string[] {
     let k: string;
     for (let j = 0; j < hasKeys.length; j++) {
       k = hasKeys[j];
-      if (obj[k] !== undefined && typeof k === "string") keys.add(k);
+      if (keepNull && obj[k] === null) continue;
+      if (obj[k] === undefined || typeof k !== "string") continue;
+      keys.add(k);
     }
   }
   return Array.from(keys);
