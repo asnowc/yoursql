@@ -92,7 +92,7 @@ export class DbTableQuery<
   }
 
   delete(option: DeleteOption = {}): string {
-    let sql = "DELTE FROM " + this.name;
+    let sql = "DELETE FROM " + this.name;
     if (option.where) sql += genWhere(option.where);
     return sql;
   }
