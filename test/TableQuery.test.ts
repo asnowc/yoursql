@@ -1,4 +1,4 @@
-import { DbTableQuery, PgSqlValue } from "@asnc/yoursql";
+import { DbTableQuery, pgSqlTransformer, SqlValuesCreator } from "@asnc/yoursql";
 import { test, expect, describe } from "vitest";
 
 describe("TableQuery", function () {
@@ -12,7 +12,7 @@ describe("TableQuery", function () {
     level?: number;
   }
   const tableColumns: (keyof Table)[] = ["name", "id", "level"];
-  const table = new DbTableQuery<Table, CreateTable>("user", tableColumns, new PgSqlValue());
+  const table = new DbTableQuery<Table, CreateTable>("user", tableColumns, new SqlValuesCreator(pgSqlTransformer));
   describe("select", function () {
     test("select-columns", function () {
       expect(table.select("*").toString()).toMatchSnapshot();

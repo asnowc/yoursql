@@ -71,7 +71,7 @@ export class DbTableQuery<
     let setList: string[] = [];
     for (const [k, v] of updateKey) {
       if (v === undefined) continue;
-      setList.push(k + " = " + this.statement.toSqlStr(v));
+      setList.push(k + " = " + this.statement(v));
     }
 
     let sql = `UPDATE ${this.name}\nSET ${setList.join(",\n")}`;

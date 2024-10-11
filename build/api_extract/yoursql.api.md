@@ -63,7 +63,7 @@ export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
 }
 
 // @public (undocumented)
-export function getObjectListKeys(objectList: any[], keepNull?: boolean): string[];
+export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): string[];
 
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
@@ -114,19 +114,13 @@ export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
+export type ManualType = "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any);
+
+// @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
 
 // @public
 export const pgSqlTransformer: JsObjectMapSql;
-
-// @public @deprecated (undocumented)
-export class PgSqlValue extends SqlValuesCreator {
-    constructor(custom?: JsObjectMapSql);
-    // (undocumented)
-    array(value: any[]): string;
-    // (undocumented)
-    timestamp(value: Date): string;
-}
 
 // @public (undocumented)
 export type PickColumn<T extends {
@@ -205,7 +199,7 @@ export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: J
 
 // @public (undocumented)
 export interface SqlValuesCreator {
-    (value: any): string;
+    (value: any, expectType?: ManualType): string;
 }
 
 // @public
@@ -213,21 +207,17 @@ export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     protected defaultObject(value: object): string;
-    // @deprecated (undocumented)
-    number(value: number | bigint): string;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
-    }): string;
+    }, keepUndefinedKey?: boolean): string;
     objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
     }): string;
     setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder): void;
     static string(value: string): string;
-    // @deprecated (undocumented)
-    string(value: string): string;
     // (undocumented)
     protected toObjectStr(value: object): string;
-    toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
+    protected toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
     toValues(values: readonly any[]): string;
 }
 

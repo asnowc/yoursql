@@ -19,13 +19,14 @@ export class SqlRaw<T = any> {
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 /** @public */
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
-
+/** @public */
+export type ManualType = "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any);
 /**
  * @public
  */
 export interface SqlValuesCreator {
-  /** 将 JS 对象转为 SQL 的字符值的形式 */
-  (value: any): string;
+  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
+  (value: any, expectType?: ManualType): string;
 }
 
 /**
@@ -45,7 +46,8 @@ export class SqlValuesCreator {
    */
   constructor(map: JsObjectMapSql = new Map()) {
     this.map = map;
-    const fn = (value: any) => this.toSqlStr(value);
+    const fn = this.toSqlStr.bind(this);
+    this.toSqlStr = fn;
     Reflect.setPrototypeOf(fn, this);
     return fn as SqlValuesCreator;
   }
@@ -55,18 +57,9 @@ export class SqlValuesCreator {
     else this.map.set(type, transformer);
   }
   private readonly map: JsObjectMapSql;
-  /** @deprecated 已废弃，改用 toSqlStr(value, "string") */
-  string(value: string): string {
-    return SqlValuesCreator.string(value);
-  }
-  /** @deprecated 已废弃，改用 toSqlStr(value, "number") */
-  number(value: number | bigint): string {
-    return value.toString();
-  }
-  /**
-   * 将 JS 对象转为 SQL 的字符值的形式
-   */
-  toSqlStr(
+
+  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
+  protected toSqlStr(
     value: any,
     expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)
   ): string {
@@ -90,13 +83,14 @@ export class SqlValuesCreator {
       case "object":
         return this.toObjectStr(value);
       case "undefined":
-        return "NULL";
+        return "DEFAULT";
       default:
         //function、symbol
         let type = typeof value;
         throw new Error("不支持转换 " + type + " 类型");
     }
   }
+
   protected toObjectStr(value: object): string {
     if (value === null) return "NULL";
     if (value instanceof SqlRaw) return value.toString();
@@ -116,16 +110,18 @@ export class SqlValuesCreator {
    */
   objectListToValuesList<T extends object>(
     objectList: T[],
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined }
+    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined },
+    keepUndefinedKey?: boolean
   ): string;
   objectListToValuesList(
     objectList: Record<string | number | symbol, any>[],
-    keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined>
+    keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined>,
+    keepUndefinedKey?: boolean
   ): string {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
     if (!keys_types) {
-      keys = getObjectListKeys(objectList, true);
+      keys = getObjectListKeys(objectList, keepUndefinedKey);
     } else if (keys_types instanceof Array) {
       keys = keys_types as string[];
     } else {
@@ -177,7 +173,7 @@ export class SqlValuesCreator {
     try {
       for (; i < keys.length; i++) {
         key = keys[i];
-        value = object[key] ?? null;
+        value = object[key];
         if (type[key]) values[i] = this.toSqlStr(value) + "::" + type[key];
         else values[i] = this.toSqlStr(value);
       }
@@ -206,14 +202,15 @@ function toKeyType(object: Record<string, any>, keys_types?: readonly string[] |
     keys = Object.keys(keys_types);
     type = keys_types;
   } else {
-    keys = Object.keys(object).filter((key) => typeof key === "string" && object[key] !== undefined);
+    keys = Object.keys(object);
   }
   return { type, keys };
 }
 /**
  * @public
+ * @param keepUndefinedKey - 是否保留值为 undefined 的 key
  */
-export function getObjectListKeys(objectList: any[], keepNull?: boolean): string[] {
+export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): string[] {
   let keys = new Set<string>();
   for (let i = 0; i < objectList.length; i++) {
     let obj = objectList[i];
@@ -221,8 +218,7 @@ export function getObjectListKeys(objectList: any[], keepNull?: boolean): string
     let k: string;
     for (let j = 0; j < hasKeys.length; j++) {
       k = hasKeys[j];
-      if (keepNull && obj[k] === null) continue;
-      if (obj[k] === undefined || typeof k !== "string") continue;
+      if ((!keepUndefinedKey && obj[k] === undefined) || typeof k !== "string") continue;
       keys.add(k);
     }
   }
