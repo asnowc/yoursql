@@ -31,3 +31,5 @@ exports[`objectListToValuesList > select-keys 1`] = `
 `;
 
 exports[`objectToValues-auto-columns 1`] = `"1,3,DEFAULT"`;
+
+exports[`转换值 > custom 1`] = `"ARRAY[2]"`;

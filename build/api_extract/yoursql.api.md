@@ -197,14 +197,13 @@ export abstract class SqlSelectable<T extends TableType> {
 // @public (undocumented)
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
 
-// @public (undocumented)
-export interface SqlValuesCreator {
-    (value: any, expectType?: ManualType): string;
-}
-
 // @public
 export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
+    // (undocumented)
+    static create(map?: JsObjectMapSql): SqlValuesCreator & {
+        (value: any, expectType?: ManualType): string;
+    };
     // (undocumented)
     protected defaultObject(value: object): string;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
@@ -217,7 +216,7 @@ export class SqlValuesCreator {
     static string(value: string): string;
     // (undocumented)
     protected toObjectStr(value: object): string;
-    protected toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
+    toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
     toValues(values: readonly any[]): string;
 }
 

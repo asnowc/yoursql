@@ -1,7 +1,7 @@
 import { SqlValuesCreator } from "@asnc/yoursql";
 import { describe, expect, test } from "vitest";
 
-let v = new SqlValuesCreator();
+let v = SqlValuesCreator.create();
 describe("转换值", function () {
   test("string", function () {
     expect(v("abc'\"\n ")).toBe("'abc''\"\n '");
@@ -16,6 +16,19 @@ describe("转换值", function () {
   });
   test("object", function () {
     expect(v({ a: 8 }), "默认使用JSON序列化").toBe(SqlValuesCreator.string(JSON.stringify({ a: 8 })));
+  });
+  const a = SqlValuesCreator.create(
+    new Map([
+      [
+        Array,
+        function (value: any[]) {
+          return "ARRAY[" + value.map((v) => this.toSqlStr(v)).join(", ") + "]";
+        },
+      ],
+    ])
+  );
+  test("custom", function () {
+    expect(a([2])).toMatchSnapshot();
   });
 });
 

@@ -23,19 +23,21 @@ export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
 /** @public */
 export type ManualType = "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any);
-/**
- * @public
- */
-export interface SqlValuesCreator {
-  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-  (value: any, expectType?: ManualType): string;
-}
 
 /**
  * SQL value 生成器
  * @public
  */
 export class SqlValuesCreator {
+  static create(map?: JsObjectMapSql): SqlValuesCreator & {
+    /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
+    (value: any, expectType?: ManualType): string;
+  } {
+    const obj = new this(map);
+    const fn = obj.toSqlStr.bind(obj);
+    Reflect.setPrototypeOf(fn, obj);
+    return fn as any;
+  }
   /**
    * 将字符串转为 SQL 的字符串值的形式(单引号会被转义)。
    * @example 输入 a'b'c , 返回 a''b''c.
@@ -48,10 +50,6 @@ export class SqlValuesCreator {
    */
   constructor(map: JsObjectMapSql = new Map()) {
     this.map = map;
-    const fn = this.toSqlStr.bind(this);
-    this.toSqlStr = fn;
-    Reflect.setPrototypeOf(fn, this);
-    return fn as SqlValuesCreator;
   }
   /** 设置转换器 */
   setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder) {
@@ -61,7 +59,7 @@ export class SqlValuesCreator {
   private readonly map: JsObjectMapSql;
 
   /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-  protected toSqlStr(
+  toSqlStr(
     value: any,
     expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)
   ): string {
