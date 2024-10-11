@@ -3,6 +3,7 @@ import { SqlValuesCreator, SqlRaw } from "../sql_value/sql_value.ts";
 import { ColumnsSelected, ColumnsSelectAs, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
 import { createSelect, Select, SelectTableOption } from "./select.ts";
 import { DbTable, SqlQueryStatement } from "./selectable.ts";
+import { getObjectListKeys } from "../util.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -26,8 +27,8 @@ export class DbTableQuery<
     let valuesStr: string;
     if (values instanceof Array) {
       if (values.length === 0) throw new Error("值不能为空");
-      insertCol = Object.keys(values[0]);
-      valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol as (keyof C)[])}`;
+      insertCol = getObjectListKeys(values);
+      valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol)}`;
     } else if (values instanceof SqlQueryStatement) {
       // todo 验证 values.columns 和 this.columns 是否匹配
       valuesStr = values.toString();
