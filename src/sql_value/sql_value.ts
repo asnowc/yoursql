@@ -128,7 +128,6 @@ export class SqlValuesCreator {
       keys = Object.keys(keys_types);
     }
     let str = "(" + this.objectToValues(objectList[0], keys_types ?? keys) + ")";
-
     let i = 1;
     let j: number;
     let value: any;
@@ -139,7 +138,7 @@ export class SqlValuesCreator {
         rows = [];
         j = 0;
         for (; j < keys.length; j++) {
-          value = object[keys[j]] ?? null;
+          value = object[keys[j]];
           rows[j] = this.toSqlStr(value);
         }
         str += ",\n(" + rows.join(",") + ")";
@@ -218,7 +217,8 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
     let k: string;
     for (let j = 0; j < hasKeys.length; j++) {
       k = hasKeys[j];
-      if ((!keepUndefinedKey && obj[k] === undefined) || typeof k !== "string") continue;
+      if (typeof k !== "string") continue;
+      if (!keepUndefinedKey && obj[k] === undefined) continue;
       keys.add(k);
     }
   }
