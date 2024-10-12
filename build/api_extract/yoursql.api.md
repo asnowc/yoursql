@@ -114,7 +114,7 @@ export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
-export type ManualType = "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any);
+export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
@@ -195,17 +195,21 @@ export abstract class SqlSelectable<T extends TableType> {
 }
 
 // @public (undocumented)
-export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
+export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
+
+// @public (undocumented)
+export interface SqlValueFn {
+    (value: any, expectType?: ManualType): string;
+}
 
 // @public
 export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
-    static create(map?: JsObjectMapSql): SqlValuesCreator & {
-        (value: any, expectType?: ManualType): string;
-    };
+    static create(map?: JsObjectMapSql): SqlValuesCreator & SqlValueFn;
     // (undocumented)
     protected defaultObject(value: object): string;
+    getObjectType(value: object): SqlValueEncoder;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
     }, keepUndefinedKey?: boolean): string;
@@ -214,9 +218,7 @@ export class SqlValuesCreator {
     }): string;
     setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder): void;
     static string(value: string): string;
-    // (undocumented)
-    protected toObjectStr(value: object): string;
-    toSqlStr(value: any, expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)): string;
+    toSqlStr(value: any, expectType?: ManualType): string;
     toValues(values: readonly any[]): string;
 }
 

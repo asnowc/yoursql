@@ -20,19 +20,22 @@ export class SqlRaw<T = any> {
 /** @public */
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 /** @public */
-export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T, map: JsObjectMapSql) => string;
+export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
 /** @public */
-export type ManualType = "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any);
+export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+
+/** @public */
+export interface SqlValueFn {
+  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
+  (value: any, expectType?: ManualType): string;
+}
 
 /**
  * SQL value 生成器
  * @public
  */
 export class SqlValuesCreator {
-  static create(map?: JsObjectMapSql): SqlValuesCreator & {
-    /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-    (value: any, expectType?: ManualType): string;
-  } {
+  static create(map?: JsObjectMapSql): SqlValuesCreator & SqlValueFn {
     const obj = new this(map);
     const fn = obj.toSqlStr.bind(obj);
     Reflect.setPrototypeOf(fn, obj);
@@ -59,14 +62,13 @@ export class SqlValuesCreator {
   private readonly map: JsObjectMapSql;
 
   /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-  toSqlStr(
-    value: any,
-    expectType?: "bigint" | "number" | "string" | "boolean" | (new (...args: any[]) => any)
-  ): string {
+  toSqlStr(value: any, expectType?: ManualType): string {
     let basicType;
     if (expectType) {
       if (typeof expectType === "function") {
-        return this.map.get(expectType)!.call(this, value, this.map);
+        let type = this.map.get(expectType);
+        if (!type) throw new Error("类型不存在");
+        return type.call(this, value);
       } else {
         basicType = expectType;
       }
@@ -80,8 +82,11 @@ export class SqlValuesCreator {
         return SqlValuesCreator.string(value);
       case "boolean":
         return value.toString();
-      case "object":
-        return this.toObjectStr(value);
+      case "object": {
+        if (value === null) return "NULL";
+        if (value instanceof SqlRaw) return value.toString();
+        return this.getObjectType(value).call(this, value);
+      }
       case "undefined":
         return "DEFAULT";
       default:
@@ -90,14 +95,12 @@ export class SqlValuesCreator {
         throw new Error("不支持转换 " + type + " 类型");
     }
   }
-
-  protected toObjectStr(value: object): string {
-    if (value === null) return "NULL";
-    if (value instanceof SqlRaw) return value.toString();
+  /** 获取值对应的 SqlValueEncoder */
+  getObjectType(value: object): SqlValueEncoder {
     for (const Class of this.map.keys()) {
-      if (value instanceof Class) return this.map.get(Class)!.call(this, value, this.map);
+      if (value instanceof Class) return this.map.get(Class)!;
     }
-    return this.defaultObject(value);
+    return this.defaultObject;
   }
   protected defaultObject(value: object): string {
     return SqlValuesCreator.string(JSON.stringify(value));

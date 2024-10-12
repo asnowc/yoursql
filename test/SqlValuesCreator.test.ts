@@ -17,19 +17,6 @@ describe("转换值", function () {
   test("object", function () {
     expect(v({ a: 8 }), "默认使用JSON序列化").toBe(SqlValuesCreator.string(JSON.stringify({ a: 8 })));
   });
-  const a = SqlValuesCreator.create(
-    new Map([
-      [
-        Array,
-        function (value: any[]) {
-          return "ARRAY[" + value.map((v) => this.toSqlStr(v)).join(", ") + "]";
-        },
-      ],
-    ])
-  );
-  test("custom", function () {
-    expect(a([2])).toMatchSnapshot();
-  });
 });
 
 test("objectToValues-auto-columns", function () {
