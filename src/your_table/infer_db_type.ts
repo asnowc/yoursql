@@ -15,7 +15,7 @@ export class ColumnMeta<T> {
     readonly sqlDefault?: string
   ) {}
   /** 校验 value 的类型 */
-  checkValue(value: any) {
+  checkValue(value: any): boolean {
     if (typeof this.type === "function") return value instanceof this.type;
     return this.type.is(value);
   }
@@ -55,7 +55,7 @@ export class YourTypeMap<M extends TypeMapDefined> {
 }
 type Constructor<T = any> = new (...args: any[]) => T;
 
-function baseType<T>(this: CustomDbType<T>, v: any) {
+function baseType<T>(this: CustomDbType<T>, v: any): boolean {
   return typeof v === this.name;
 }
 
@@ -64,10 +64,10 @@ function baseType<T>(this: CustomDbType<T>, v: any) {
  * @public
  */
 export class CustomDbType<T> {
-  static readonly bigint = new CustomDbType<bigint>(baseType, "bigint");
-  static readonly number = new CustomDbType<number>(baseType, "number");
-  static readonly string = new CustomDbType<string>(baseType, "string");
-  static readonly boolean = new CustomDbType<boolean>(baseType, "boolean");
+  static readonly bigint: CustomDbType<bigint> = new CustomDbType<bigint>(baseType, "bigint");
+  static readonly number: CustomDbType<number> = new CustomDbType<number>(baseType, "number");
+  static readonly string: CustomDbType<string> = new CustomDbType<string>(baseType, "string");
+  static readonly boolean: CustomDbType<boolean> = new CustomDbType<boolean>(baseType, "boolean");
   constructor(readonly is: (this: CustomDbType<T>, value: any) => boolean, readonly name: string) {}
 }
 type TypeMapDefined = {

@@ -10,7 +10,7 @@ export class DbTableQuery<
   T extends TableType = Record<string, any>,
   C extends TableType = Partial<T>
 > extends DbTable<T> {
-  constructor(readonly name: string, columns: readonly string[], private statement: SqlValuesCreator) {
+  constructor(name: string, columns: readonly string[], private statement: SqlValuesCreator) {
     super(name, columns);
   }
   /** 选择全部列 */

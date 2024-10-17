@@ -72,8 +72,6 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string;
     // (undocumented)
     insertWithResult<R extends ColumnsSelected<T>>(values: C[] | SqlQueryStatement<C>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
-    // (undocumented)
-    readonly name: string;
     select(columns?: undefined, option?: SelectTableOption): Select<{}>;
     select(columns: "*", option?: SelectTableOption): Select<T>;
     select<R extends ColumnsSelectAs<T>>(columns: R, option?: SelectTableOption): Select<SelectColumns<T, R>>;
