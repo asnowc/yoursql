@@ -4,6 +4,4 @@ exports[`array > 基本转换 1`] = `"ARRAY[2,3,DEFAULT,NULL,NULL]"`;
 
 exports[`array > 空数组 1`] = `"NULL"`;
 
-exports[`array 1`] = `"ARRAY[2, ARRAY[]]"`;
-
 exports[`date 1`] = `"'2022-01-13T00:00:00.000Z'"`;

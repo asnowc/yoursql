@@ -68,3 +68,12 @@ describe("objectListToValuesList", function () {
     expect(s).toMatchSnapshot();
   });
 });
+
+test("createValues", function () {
+  let sql = v.createValues(
+    "customName",
+    [{ age: 8, name: "hhh" }, { age: 9, name: "row2" }, { age: 9, name: "row2" }, {}],
+    { age: { sqlType: "INT", sqlDefault: "MAXIMUM(1,2)" }, name: "TEXT" }
+  );
+  expect(sql.toString()).toMatchSnapshot("str");
+});

@@ -1,5 +1,14 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`createValues > str 1`] = `
+"(VALUES
+(8::INT,'hhh'::TEXT),
+(9,'row2'),
+(9,'row2'),
+(MAXIMUM(1,2),NULL))
+AS customName(age,name)"
+`;
+
 exports[`objectListToValuesList > auto-columns 1`] = `
 "(1,3,DEFAULT),
 (2,4,99)"
@@ -31,5 +40,3 @@ exports[`objectListToValuesList > select-keys 1`] = `
 `;
 
 exports[`objectToValues-auto-columns 1`] = `"1,3,DEFAULT"`;
-
-exports[`转换值 > custom 1`] = `"ARRAY[2]"`;

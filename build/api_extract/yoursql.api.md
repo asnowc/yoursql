@@ -10,11 +10,11 @@ export class ColumnMeta<T> {
     sqlType: string,
     notNull?: boolean,
     isArray?: boolean,
-    defaultSqlValue?: string | undefined);
+    sqlDefault?: string | undefined);
     checkValue(value: any): boolean;
-    readonly defaultSqlValue?: string | undefined;
     readonly isArray: boolean;
     readonly notNull: boolean;
+    readonly sqlDefault?: string | undefined;
     readonly sqlType: string;
     // (undocumented)
     readonly type: CustomDbType<T> | (new (...args: any[]) => T);
@@ -247,6 +247,10 @@ export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     static create(map?: JsObjectMapSql): SqlValuesCreator & SqlValueFn;
+    createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | {
+        sqlType: string;
+        sqlDefault?: string;
+    }>): SqlSelectable<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
     getObjectType(value: object): SqlValueEncoder;

@@ -12,7 +12,7 @@ export class ColumnMeta<T> {
     /** 是否是数组类型 */
     readonly isArray: boolean = false,
     /** 数据库原始默认值 */
-    readonly defaultSqlValue?: string
+    readonly sqlDefault?: string
   ) {}
   /** 校验 value 的类型 */
   checkValue(value: any) {

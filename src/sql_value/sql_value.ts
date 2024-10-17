@@ -1,4 +1,6 @@
 import { getObjectListKeys } from "../util.ts";
+import type { TableType } from "../select/type.ts";
+import { SqlSelectable } from "../select/selectable.ts";
 
 declare const SQL_RAW: unique symbol;
 /**
@@ -191,6 +193,86 @@ export class SqlValuesCreator {
    */
   toValues(values: readonly any[]): string {
     return values.map((v) => this.toSqlStr(v)).join(",");
+  }
+
+  /**
+   * @public 创建 VALUES AS  语句
+   * @example
+   * ```ts
+   *  sqlValue.createValues(
+   *    "customName",
+   *    [{age:8, name:"hhh"}, {age:9, name:"row2"}],
+   *    {age:"INT", name:"TEXT"}
+   *  )
+   * // (VALUES (8:INT,'hhh':TEXT),(9,'row2')) AS customName(age, name)
+   * ```
+   */
+  createValues<T extends {}>(
+    asName: string,
+    values: T[],
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string }>
+  ): SqlSelectable<T>;
+  createValues(
+    asName: string,
+    values: Record<string, any>[],
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string }>
+  ): SqlSelectable<any> {
+    if (values.length === 0) throw new Error("values 不能为空");
+    const insertKeys: string[] = Object.keys(valuesTypes);
+    const defaultValues: string[] = [];
+
+    const valuesStr: string[] = new Array(values.length);
+    {
+      const column0: string[] = new Array(insertKeys.length);
+      let columnName: string;
+      let item: string | { sqlType: string; sqlDefault?: string };
+      let type: string;
+      let value: any;
+      for (let i = 0; i < insertKeys.length; i++) {
+        columnName = insertKeys[i];
+        item = valuesTypes[columnName];
+        if (typeof item === "string") {
+          type = item;
+          defaultValues[i] = "NULL";
+        } else {
+          type = item.sqlType;
+          defaultValues[i] = item.sqlDefault ?? "NULL";
+        }
+        value = values[0][columnName];
+        if (value === undefined) column0[i] = defaultValues[i] + "::" + type;
+        else column0[i] = this.toSqlStr(value) + "::" + type;
+      }
+      valuesStr[0] = "(" + column0.join(",") + ")";
+    }
+
+    let items: string[] = new Array(insertKeys.length);
+    let value: any;
+    for (let i = 1; i < values.length; i++) {
+      for (let j = 0; j < insertKeys.length; j++) {
+        value = values[i][insertKeys[j]];
+        if (value === undefined) items[j] = defaultValues[j];
+        else items[j] = this.toSqlStr(value);
+      }
+      valuesStr[i] = "(" + items.join(",") + ")";
+    }
+    return new YourValuesAs(insertKeys, asName, valuesStr.join(",\n"));
+  }
+}
+class YourValuesAs<T extends TableType> extends SqlSelectable<T> {
+  constructor(columns: readonly string[], asName: string, valuesStr: string) {
+    super(columns);
+    this.#asName = asName;
+    this.#valuesStr = valuesStr;
+    this.#sql = `(VALUES\n${this.#valuesStr})\nAS ${this.#asName}(${this.columns.join(",")})`;
+  }
+  #asName: string;
+  #valuesStr: string;
+  #sql: string;
+  toSelect(): string {
+    return this.#sql;
+  }
+  toString(): string {
+    return this.#sql;
   }
 }
 function toKeyType(object: Record<string, any>, keys_types?: readonly string[] | Record<string, string | undefined>) {

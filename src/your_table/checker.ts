@@ -14,7 +14,7 @@ export class TypeChecker<T> {
         if (expect.notNull) throw new Error(`${k} 不能为空`);
         continue;
       } else if (v === undefined) {
-        if (expect.defaultSqlValue === undefined && expect.notNull) throw new Error(`${k} 不能为 undefined`);
+        if (expect.sqlDefault === undefined && expect.notNull) throw new Error(`${k} 不能为 undefined`);
         continue;
       } else if (expect.isArray) {
         if (v instanceof Array) err = this.checkArray(v, expect.type);
