@@ -1,6 +1,6 @@
 import { SqlSelectable, DbTable, InferQueryResult, SqlQueryStatement } from "./selectable.ts";
 import { genNewColumns, genOderBy } from "./_statement.ts";
-import type { ColumnsSelected, RowsOrder, SelectColumns, TableType } from "./type.ts";
+import type { ColumnsSelected, OrderValue, RowsOrder, SelectColumns, TableType } from "./type.ts";
 
 interface AddTableFn<T extends TableType> {
   <Q extends SqlSelectable<any>, A extends InferQueryResult<Q>>(
@@ -40,8 +40,9 @@ export interface SelectFilterOption<T extends object> {
 
 /** @public */
 export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
-  toQuery(option?: SelectFilterOption<T>): SqlQueryStatement<T>;
+  toQuery(option?: SelectFilterOption<T & { [key: string]: OrderValue }>): SqlQueryStatement<T>;
 }
+
 /** @public */
 export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
   addColumns<A extends TableType>(add: { [key in keyof A]: string }): FinalSelect<T & A>;
