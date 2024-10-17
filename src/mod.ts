@@ -6,3 +6,4 @@ export * from "./select/select.ts";
 export * from "./select/selectable.ts";
 export * from "./select/TableQuery.ts";
 export * from "./util.ts";
+export * from "./your_table/mod.ts";

@@ -5,6 +5,22 @@
 ```ts
 
 // @public
+export class ColumnMeta<T> {
+    constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
+    sqlType: string,
+    notNull?: boolean,
+    isArray?: boolean,
+    defaultSqlValue?: string | undefined);
+    checkValue(value: any): boolean;
+    readonly defaultSqlValue?: string | undefined;
+    readonly isArray: boolean;
+    readonly notNull: boolean;
+    readonly sqlType: string;
+    // (undocumented)
+    readonly type: CustomDbType<T> | (new (...args: any[]) => T);
+}
+
+// @public
 export type ColumnsSelectAs<T extends TableType> = {
     [key in keyof T]?: boolean | string;
 };
@@ -16,6 +32,23 @@ export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
 //
 // @public (undocumented)
 export const createSelect: AddTableFn<{}>;
+
+// @public
+export class CustomDbType<T> {
+    constructor(is: (this: CustomDbType<T>, value: any) => boolean, name: string);
+    // (undocumented)
+    static readonly bigint: CustomDbType<bigint>;
+    // (undocumented)
+    static readonly boolean: CustomDbType<boolean>;
+    // (undocumented)
+    readonly is: (this: CustomDbType<T>, value: any) => boolean;
+    // (undocumented)
+    readonly name: string;
+    // (undocumented)
+    static readonly number: CustomDbType<number>;
+    // (undocumented)
+    static readonly string: CustomDbType<string>;
+}
 
 // @public
 export class DbTable<T extends TableType> extends SqlSelectable<T> {
@@ -59,7 +92,9 @@ export interface DeleteOption {
 // @public (undocumented)
 export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
     // (undocumented)
-    toQuery(option?: SelectFilterOption<T>): SqlQueryStatement<T>;
+    toQuery(option?: SelectFilterOption<T & {
+        [key: string]: OrderValue;
+    }>): SqlQueryStatement<T>;
 }
 
 // @public (undocumented)
@@ -67,6 +102,11 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
 
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
+
+// @public (undocumented)
+export type InferTableDefined<T extends TableDefined> = {
+    [key in keyof T]: T[key] extends ColumnMeta<infer P> ? P : unknown;
+};
 
 // @public (undocumented)
 export interface InsertOption<T extends object> {
@@ -223,9 +263,25 @@ export class SqlValuesCreator {
 }
 
 // @public (undocumented)
+export type TableDefined = {
+    [key: string]: ColumnMeta<any>;
+};
+
+// @public (undocumented)
 export type TableType = {
     [key: string]: any;
 };
+
+// @public (undocumented)
+export class TypeChecker<T> {
+    constructor(map: Map<string, ColumnMeta<any>>);
+    // (undocumented)
+    check(value: {
+        [key: string]: any;
+    }): T;
+    // (undocumented)
+    checkList(value: any[]): T[];
+}
 
 // @public (undocumented)
 export interface UpdateOption {
@@ -237,6 +293,44 @@ export interface UpdateOption {
 export type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | SqlRaw;
 };
+
+// @public
+export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
+    constructor(name: string, define: TableDefined, sqlValue: SqlValuesCreator);
+    // (undocumented)
+    createTypeChecker<T>(keys: readonly string[]): TypeChecker<T>;
+    // (undocumented)
+    getColumnMeta(name: keyof T): ColumnMeta<unknown>;
+}
+
+// Warning: (ae-forgotten-export) The symbol "TypeMapDefined" needs to be exported by the entry point index.d.ts
+//
+// @public
+export class YourTypeMap<M extends TypeMapDefined> {
+    constructor(typeMap?: M);
+    // Warning: (ae-forgotten-export) The symbol "InferTypeMapDefined" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    static create<T extends TypeMapDefined>(rawTypeMap?: T): YourTypeMap<{
+        [key in keyof T]: InferTypeMapDefined<T[key]>;
+    }>;
+    // (undocumented)
+    genArrColumn<T extends keyof M>(type: T, noNull: true, defaultValue?: string): ColumnMeta<M[T][]>;
+    // (undocumented)
+    genArrColumn<T extends keyof M>(type: T, noNull?: boolean, defaultValue?: string): ColumnMeta<M[T][] | null>;
+    // (undocumented)
+    genArrColumn<T>(type: keyof M, notNull: true, defaultValue?: string): ColumnMeta<T[]>;
+    // (undocumented)
+    genArrColumn<T>(type: keyof M, notNull?: boolean, defaultValue?: string): ColumnMeta<T[] | null>;
+    // (undocumented)
+    genColumn<T extends keyof M>(type: T, noNull: true, defaultValue?: string): ColumnMeta<M[T]>;
+    // (undocumented)
+    genColumn<T extends keyof M>(type: T, noNull?: boolean, defaultValue?: string): ColumnMeta<M[T] | null>;
+    // (undocumented)
+    genColumn<T>(type: keyof M, noNull: true, defaultValue?: string): ColumnMeta<T>;
+    // (undocumented)
+    genColumn<T>(type: keyof M, noNull?: boolean, defaultValue?: string): ColumnMeta<T | null>;
+}
 
 // (No @packageDocumentation comment for this package)
 
