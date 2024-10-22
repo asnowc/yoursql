@@ -39,20 +39,20 @@ RETURNING level AS rename, name"
 `;
 
 exports[`TableQuery > select > select-columns 1`] = `
-"SELECT name, id, level
+"SELECT *
 FROM user"
 `;
 
 exports[`TableQuery > select > select-columns 2`] = `
-"SELECT name, level AS rename_level, id
+"SELECT name,level AS rename_level,id AS id
 FROM user"
 `;
 
 exports[`TableQuery > select > select-option 1`] = `
-"SELECT name, id, level
+"SELECT *
 FROM user
 WHERE limit IS NULL
-ORDER BY id ASCNULLS FIRST
+ORDER BY id ASC NULLS FIRST
 LIMIT 100
 OFFSET 23"
 `;

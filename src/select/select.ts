@@ -1,5 +1,5 @@
 import { SqlSelectable, SqlQueryStatement } from "./selectable.ts";
-import { genOderBy, OrderByParam, genWhere, WhereParam } from "./_statement.ts";
+import { genOderBy, OrderByParam, genWhere, WhereParam, genSelect } from "../util.ts";
 import type { TableType } from "./type.ts";
 /** @public */
 export interface SelectFilterOption<T extends object> {
@@ -7,13 +7,14 @@ export interface SelectFilterOption<T extends object> {
   offset?: number;
   limit?: number;
 }
+/** @public */
 export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
   filter(option: SelectFilterOption<T>): SqlQueryStatement<T>;
 }
 
 class FinalSelectImpl<T extends TableType> extends SqlQueryStatement<T> implements FinalSelect<T> {
   constructor(statement: SqlQueryStatement) {
-    super(statement.toString(), statement.columns);
+    super(statement);
   }
   filter(option: SelectFilterOption<T>): SqlQueryStatement<T> {
     let { orderBy } = option;
@@ -28,15 +29,20 @@ class FinalSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
 
 /** @public */
 export type LastSelect = {
-  select<T extends TableType>(columns: string[] | Record<string, string | boolean>): FinalSelect<T>;
+  select<T extends TableType = TableType>(
+    columns: "*" | string[] | { [key in keyof T]: string | boolean }
+  ): FinalSelect<T>;
 };
 
+/** @public */
 export type AfterGroup = LastSelect & {
   having(param: WhereParam | (() => WhereParam)): LastSelect;
 };
+/** @public */
 export type AfterWhere = AfterGroup & {
   groupBy(columns: string | string[]): AfterGroup;
 };
+/** @public */
 export type AfterJoin = AfterWhere & {
   where(param: WhereParam | (() => WhereParam)): AfterWhere;
 };
@@ -58,7 +64,7 @@ export function createSelect(selectable: SqlSelectable<any> | string, as?: strin
 }
 function fromAs(selectable: SqlSelectable<any> | string, as?: string) {
   let sql = typeof selectable === "string" ? selectable : selectable.toSelect();
-  if (as) sql += " " + as;
+  if (as) sql += " AS " + as;
   return sql;
 }
 class SelectImpl implements JoinSelect {
@@ -68,7 +74,7 @@ class SelectImpl implements JoinSelect {
     return this.str;
   }
   #join(type: string, selectable: string | SqlSelectable<any>, as?: string, on?: string): JoinSelect {
-    let sql = this.str + " " + type + " " + fromAs(selectable, as);
+    let sql = this.str + "\n" + type + " " + fromAs(selectable, as);
     if (on) sql += " ON " + on;
     return new SelectImpl(sql);
   }
@@ -96,23 +102,20 @@ class SelectImpl implements JoinSelect {
     return new SelectImpl(this.str + "," + fromAs(selectable, as));
   }
 
-  select<T extends TableType>(columns: string[] | Record<string, string>): FinalSelect<T>;
-  select<T extends TableType>(columnsIn: string[] | Record<string, string>): FinalSelect<T> {
+  select<T extends TableType>(columns: string[] | { [key in keyof T]: string | boolean }): FinalSelect<T>;
+  select<T extends TableType>(columnsIn: string[] | Record<string, string | boolean>): FinalSelect<T> {
     let sql = "SELECT ";
+    let columns: string[] = [];
     if (typeof columnsIn === "string") sql += columnsIn;
-    else if (columnsIn instanceof Array) {
-      if (columnsIn.length) sql += columnsIn[0];
-      for (let i = 1; i < columnsIn.length; i++) sql += "," + columnsIn[i];
-    } else {
-      const keys = Object.keys(columnsIn);
-      if (keys.length) sql += keys[0] + " AS " + columnsIn[keys[0]];
-      let k: string;
-      for (let i = 1; i < keys.length; i++) {
-        k = keys[i];
-        sql += "," + k + " AS " + columnsIn[k];
-      }
+    else {
+      sql += genSelect(columnsIn);
+      if (columnsIn instanceof Array) {
+        //TODO 想办法获取 columns
+      } else columns = Object.keys(columnsIn);
     }
-    return new FinalSelectImpl(new SqlQueryStatement(sql, []));
+    sql += "\n" + this.str;
+
+    return new FinalSelectImpl(new SqlQueryStatement(sql, columns));
   }
 
   groupBy(columns: string | string[]): AfterGroup {

@@ -15,18 +15,18 @@ describe("TableQuery", function () {
   const table = new DbTableQuery<Table, CreateTable>("user", tableColumns, new SqlValuesCreator(pgSqlTransformer));
   describe("select", function () {
     test("select-columns", function () {
-      expect(table.select("*").toString()).toMatchSnapshot();
-      expect(table.select({ name: true, level: "rename_level", id: "id" }).toString()).toMatchSnapshot();
+      expect(table.fromAs().select("*").toString()).toMatchSnapshot();
+      expect(table.fromAs().select({ name: true, rename_level: "level", id: "id" }).toString()).toMatchSnapshot();
     });
     test("select-option", function () {
       const sql = table
+        .fromAs()
+        .where("limit IS NULL")
         .select("*")
-        .toQuery({
+        .filter({
           limit: 100,
           offset: 23,
-          orderBy: { id: "ASC" },
-          orderNullRule: "FIRST",
-          where: "limit IS NULL",
+          orderBy: ["id ASC NULLS FIRST"],
         })
         .toString();
       expect(sql).toMatchSnapshot();
