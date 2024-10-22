@@ -1,31 +1,39 @@
-import { ColumnsSelectAs, ColumnsSelected, OrderValue, RowsOrder } from "./type.ts";
+import { ColumnsSelectAs, OrderValue } from "./type.ts";
 
-export function genOderBy(orderBy: RowsOrder<any>, orderNullRule?: "FIRST" | "LAST") {
-  let select: string[] = [];
-  let v: OrderValue | undefined;
-  for (const key of Object.keys(orderBy)) {
-    v = orderBy[key];
-    switch (v) {
-      case "ASC":
-        break;
-      case "DESC":
-        break;
-      default:
-        throw new Error("orderBy 只能是 ASE 或 DESC. 当前值：" + String(v));
+/** @public */
+export type OrderByParam<T extends {} = {}> =
+  | string
+  | string[]
+  | ({ [key in keyof T]: OrderValue } & Record<string, OrderValue>);
+
+/** @public */
+export function genOderBy<T extends {} = {}>(orderBy: OrderByParam<T> | (() => OrderByParam<T>)) {
+  if (typeof orderBy === "function") orderBy = orderBy();
+
+  let sql = "";
+  if (typeof orderBy === "string") sql += "\nORDER BY " + orderBy;
+  else if (orderBy instanceof Array) {
+    if (orderBy.length) sql += "\nORDER BY " + orderBy.join(",");
+  } else {
+    let keys = Object.keys(orderBy);
+    if (keys.length) sql += "\nORDER BY " + keys[0][0] + " " + keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      sql += "," + orderBy[keys[i]] + " " + orderBy[keys[i]];
     }
-    select.push(key + " " + v);
   }
-  let sql = "\nORDER BY " + select.join(", ");
-  if (orderNullRule) {
-    switch (orderNullRule) {
-      case "FIRST":
-        break;
-      case "LAST":
-        break;
-      default:
-        throw new Error("orderNullRule 只能是 FIRST 或 LAST. 当前值：" + String(orderNullRule));
-    }
-    sql += "NULLS " + orderNullRule;
+  return sql;
+}
+/** @public */
+export type WhereParam = string | string[];
+/** @public */
+export function genWhere(where: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND") {
+  if (typeof where === "function") where = where();
+  type = " " + type + " ";
+  let sql = "";
+  if (typeof where === "string") sql += "\nWHERE " + where;
+  else {
+    if (where.length) sql += "\nWHERE " + where[0];
+    for (let i = 1; i < where.length; i++) sql += type + where[i];
   }
   return sql;
 }
@@ -54,50 +62,6 @@ export function selectColumnsOrTable(columns: ColumnsSelectAs<any> | string[]) {
   if (select.length === 0) throw new Error("选择列为空");
 
   return { columns: select, sqlColumns: sqlSelect.join(", ") };
-}
-
-/**
- * @param select  选择的行
- * @param tableColumns 全部行
- * @param push 要讲选择的行加入到集合中。
- */
-export function genNewColumns(
-  select: ColumnsSelected<any>,
-  tableColumns: Iterable<string | number | symbol>,
-  /** newName -> oldName */
-  push: Map<string, string | null> = new Map()
-): Map<string, string | null> {
-  if (select === "*") {
-    for (const key of tableColumns) {
-      if (push.has(key as string)) throw new ColumnRepeatError(key as string);
-      push.set(key as string, null);
-    }
-  } else {
-    genSelectAsColumns(select, push);
-  }
-  return push;
-}
-function genSelectAsColumns(
-  select: ColumnsSelectAs<any> | readonly (string | number | symbol)[],
-  /** newName -> oldName */
-  push: Map<string, string | null> = new Map()
-): Map<string, string | null> {
-  if (select instanceof Array) {
-    for (const key of select) {
-      if (push.has(key as string)) throw new ColumnRepeatError(key as string);
-      push.set(key as string, null);
-    }
-  } else {
-    let finalName: string;
-    for (const oldName of Object.keys(select)) {
-      if (typeof select[oldName] === "string") finalName = select[oldName];
-      else if (select[oldName]) finalName = oldName;
-      else continue;
-      if (push.has(finalName)) throw new ColumnRepeatError(finalName);
-      push.set(finalName, oldName);
-    }
-  }
-  return push;
 }
 
 class ColumnRepeatError extends Error {
