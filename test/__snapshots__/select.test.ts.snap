@@ -1,67 +1,75 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`join > crossJoin > crossJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 CROSS JOIN (SELECT * FROM bbb) AS t1"
 `;
 
 exports[`join > fullJoin > fullJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 FULL JOIN (SELECT * FROM bbb) AS t1 ON t1.c1=t2.c1"
 `;
 
 exports[`join > innerJoin > innerJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 INNER JOIN (SELECT * FROM bbb) AS t1 ON t1.c1=t2.c1"
 `;
 
 exports[`join > leftJoin > leftJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 LEFT JOIN (SELECT * FROM bbb) AS t1 ON t1.c1=t2.c1"
 `;
 
 exports[`join > naturalJoin > naturalJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 NATURAL JOIN (SELECT * FROM bbb) AS t1"
 `;
 
 exports[`join > rightJoin > rightJoin 1`] = `
-"SELECT t1.c11, t1.c22, t1.c3
+"SELECT *
 FROM (SELECT * FROM ccc) AS t0
 RIGHT JOIN (SELECT * FROM bbb) AS t1 ON t1.c1=t2.c1"
 `;
 
 exports[`单表选择 > t0 all 1`] = `
-"SELECT c1, c2, c3
+"SELECT *
 FROM aaa"
 `;
 
 exports[`单表选择 > t0 rename 1`] = `
-"SELECT c1, c2 AS rename
+"SELECT c1,c2 AS rename
 FROM aaa"
 `;
 
 exports[`单表选择 > t1 all 1`] = `
-"SELECT t0.c1, t0.c2, t0.c3
-FROM (SELECT * FROM ccc) AS t0"
+"SELECT *
+FROM (SELECT * FROM ccc)"
 `;
 
 exports[`单表选择 > t1 rename 1`] = `
-"SELECT t0.c1, t0.c2 AS rename
-FROM (SELECT * FROM ccc) AS t0"
+"SELECT c1,c2 AS rename
+FROM (SELECT * FROM ccc)"
 `;
 
 exports[`多表 1`] = `
-"SELECT aaa.c1, aaa.c2, table.c3 AS c33, table.c11, t2.c3 AS c23
-FROM aaa, (SELECT * FROM ccc) AS table, (SELECT * FROM bbb) AS t2"
+"SELECT aaa.c1,aaa.c2,table.c3 AS c33,table.c11,t2.c3 AS c23
+FROM aaa,(SELECT * FROM ccc) AS table,(SELECT * FROM bbb)"
 `;
 
 exports[`构造列 1`] = `
-"SELECT t0.c1, count(*) AS count
+"SELECT t0.c1,count(*) AS count
 FROM (SELECT * FROM ccc) AS t0"
+`;
+
+exports[`组合 1`] = `
+"SELECT DISINCT t1.age,t2.num_count as num,(t1.age + num) AS sum
+FROM aaa AS t1
+INNER JOIN (SELECT id
+FROM bbb
+WHERE id != '1' GROUP BY id) AS t2 ON t1.id=t2.id"
 `;

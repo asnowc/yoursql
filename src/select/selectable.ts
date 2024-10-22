@@ -50,8 +50,9 @@ export abstract class SqlSelectable<T extends TableType> {
   /** 获取 SQL 语句 */
   abstract toString(): string;
   /** 保留以推断类型 */
-  private declare [SQL_SELECTABLE]: T;
+  protected declare [SQL_SELECTABLE]: T;
 }
+
 /**
  * 数据库表
  * @public
@@ -75,11 +76,19 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
  * @public
  */
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
-  constructor(private sql: string, columns: readonly string[]) {
-    super(columns);
+  constructor(sql: string, columns: readonly string[]);
+  constructor(sql: SqlQueryStatement);
+  constructor(sql: string | SqlQueryStatement, columns?: readonly string[]) {
+    if (sql instanceof SqlQueryStatement) {
+      columns = sql.columns;
+      sql = sql.#sql;
+    }
+    super(columns!);
+    this.#sql = sql;
   }
+  #sql: string;
   toString(): string {
-    return this.sql;
+    return this.#sql;
   }
   toSelect(): string {
     return "(" + this.toString() + ")";

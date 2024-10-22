@@ -1,9 +1,9 @@
 import { selectColumnsOrTable } from "./_statement.ts";
 import { SqlValuesCreator, SqlRaw } from "../sql_value/sql_value.ts";
-import { ColumnsSelected, ColumnsSelectAs, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
-import { createSelect, Select, SelectTableOption } from "./select.ts";
+import { ColumnsSelected, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
+import { createSelect, JoinSelect } from "./select.ts";
 import { DbTable, SqlQueryStatement } from "./selectable.ts";
-import { getObjectListKeys } from "../util.ts";
+import { genWhere, getObjectListKeys, WhereParam } from "../util.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -13,14 +13,8 @@ export class DbTableQuery<
   constructor(name: string, columns: readonly string[], private statement: SqlValuesCreator) {
     super(name, columns);
   }
-  /** 选择全部列 */
-  select(columns?: undefined, option?: SelectTableOption): Select<{}>;
-  /** 选择全部列 */
-  select(columns: "*", option?: SelectTableOption): Select<T>;
-  /** 选择表中的列并重命名 */
-  select<R extends ColumnsSelectAs<T>>(columns: R, option?: SelectTableOption): Select<SelectColumns<T, R>>;
-  select(columns: ColumnsSelected<any> | undefined, option?: SelectTableOption): Select<any> {
-    return createSelect(this, columns as ColumnsSelected<any>, option);
+  fromAs(as?: string): JoinSelect {
+    return createSelect(this, as);
   }
   insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string {
     let insertCol: readonly string[];
@@ -109,16 +103,17 @@ export class DbTableQuery<
 export interface InsertOption<T extends object> {
   conflict?: (keyof T)[];
   updateValues?: { [key in keyof T]?: undefined | SqlRaw | T[key] };
-  where?: string;
+  where?: WhereParam;
 }
 /** @public */
 export interface UpdateOption {
-  where?: string;
+  where?: WhereParam;
 }
 /** @public */
 export interface DeleteOption {
-  where?: string;
+  where?: WhereParam;
 }
+
 function genRetuningSql(
   sql: string,
   returns: ColumnsSelected<any>,
@@ -136,8 +131,4 @@ function genRetuningSql(
   }
   sql += "\nRETURNING " + columnsStr;
   return new SqlQueryStatement(sql, columns);
-}
-
-function genWhere(where: string) {
-  return "\nWHERE " + where;
 }

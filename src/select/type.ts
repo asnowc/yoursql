@@ -17,13 +17,7 @@ export type PickColumn<
 } & {
   [key in Pa]?: T[key];
 };
-/**
- * 定义行的排序
- * @public
- */
-export type RowsOrder<T extends object> = {
-  [key in keyof T]?: OrderValue;
-};
+
 /** @public */
 export type UpdateRowValue<T extends object> = {
   [key in keyof T]?: T[key] | SqlRaw;

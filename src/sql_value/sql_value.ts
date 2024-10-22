@@ -16,7 +16,7 @@ export class SqlRaw<T = any> {
     return this.#value;
   }
   /** 保留以推断类型 */
-  private declare [SQL_RAW]: T;
+  protected declare [SQL_RAW]: T;
 }
 
 /** @public */
