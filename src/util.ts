@@ -23,11 +23,11 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
 /** @public */
 export type WhereParam = string | string[];
 /** @public */
-export function genWhere(where: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND") {
+export function genWhere(where: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND"): string {
   return genWhereHaving(where, "WHERE", type);
 }
 /** @public */
-export function genHaving(having: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND") {
+export function genHaving(having: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND"): string {
   return genWhereHaving(having, "HAVING", type);
 }
 
@@ -70,7 +70,7 @@ export type OrderByParam<T extends {} = {}> =
   | ({ [key in keyof T]: OrderValue } & Record<string, OrderValue>);
 
 /** @public */
-export function genOderBy<T extends {} = {}>(orderBy: OrderByParam<T> | (() => OrderByParam<T>)) {
+export function genOderBy<T extends {} = {}>(orderBy: OrderByParam<T> | (() => OrderByParam<T>)): string {
   if (typeof orderBy === "function") orderBy = orderBy();
 
   let sql = "";

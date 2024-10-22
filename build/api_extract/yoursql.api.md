@@ -4,6 +4,21 @@
 
 ```ts
 
+// @public (undocumented)
+export type AfterGroup = LastSelect & {
+    having(param: WhereParam | (() => WhereParam)): LastSelect;
+};
+
+// @public (undocumented)
+export type AfterJoin = AfterWhere & {
+    where(param: WhereParam | (() => WhereParam)): AfterWhere;
+};
+
+// @public (undocumented)
+export type AfterWhere = AfterGroup & {
+    groupBy(columns: string | string[]): AfterGroup;
+};
+
 // @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -28,10 +43,8 @@ export type ColumnsSelectAs<T extends TableType> = {
 // @public
 export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
 
-// Warning: (ae-forgotten-export) The symbol "AddTableFn" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-export const createSelect: AddTableFn<{}>;
+export function createSelect(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
 
 // @public
 export class CustomDbType<T> {
@@ -69,12 +82,11 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     // (undocumented)
     deleteWithResult<R extends ColumnsSelected<T>>(returns?: ColumnsSelected<T> | "*", option?: DeleteOption): SqlQueryStatement<SelectColumns<T, R>>;
     // (undocumented)
+    fromAs(as?: string): JoinSelect;
+    // (undocumented)
     insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string;
     // (undocumented)
     insertWithResult<R extends ColumnsSelected<T>>(values: C[] | SqlQueryStatement<C>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
-    select(columns?: undefined, option?: SelectTableOption): Select<{}>;
-    select(columns: "*", option?: SelectTableOption): Select<T>;
-    select<R extends ColumnsSelectAs<T>>(columns: R, option?: SelectTableOption): Select<SelectColumns<T, R>>;
     // (undocumented)
     update(values: UpdateRowValue<T>, option?: UpdateOption): string;
     // (undocumented)
@@ -84,16 +96,26 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
 // @public (undocumented)
 export interface DeleteOption {
     // (undocumented)
-    where?: string;
+    where?: WhereParam;
 }
 
 // @public (undocumented)
 export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
     // (undocumented)
-    toQuery(option?: SelectFilterOption<T & {
-        [key: string]: OrderValue;
-    }>): SqlQueryStatement<T>;
+    filter(option: SelectFilterOption<T>): SqlQueryStatement<T>;
 }
+
+// @public (undocumented)
+export function genHaving(having: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
+
+// @public (undocumented)
+export function genOderBy<T extends {} = {}>(orderBy: OrderByParam<T> | (() => OrderByParam<T>)): string;
+
+// @public
+export function genSelect(columns: string[] | Record<string, string | boolean>): string;
+
+// @public (undocumented)
+export function genWhere(where: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
 
 // @public (undocumented)
 export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): string[];
@@ -115,44 +137,44 @@ export interface InsertOption<T extends object> {
         [key in keyof T]?: undefined | SqlRaw | T[key];
     };
     // (undocumented)
-    where?: string;
+    where?: WhereParam;
 }
 
 // @public (undocumented)
-export interface JoinSelect<T extends TableType> extends FinalSelect<T> {
+export interface JoinSelect extends AfterJoin {
     // (undocumented)
-    addColumns<A extends TableType>(add: {
-        [key in keyof A]: string;
-    }): FinalSelect<T & A>;
-    // Warning: (ae-forgotten-export) The symbol "JoinTableFn" needs to be exported by the entry point index.d.ts
-    //
+    crossJoin(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
     // (undocumented)
-    crossJoin: JoinTableFn<T>;
+    from(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
     // (undocumented)
-    fullJoin: JoinTableFn<T, {
-        on: string;
-    }>;
+    fullJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
     // (undocumented)
-    innerJoin: JoinTableFn<T, {
-        on: string;
-    }>;
+    innerJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
     // (undocumented)
-    leftJoin: JoinTableFn<T, {
-        on: string;
-    }>;
+    leftJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
     // (undocumented)
-    naturalJoin: JoinTableFn<T>;
+    naturalJoin(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
     // (undocumented)
-    rightJoin: JoinTableFn<T, {
-        on: string;
-    }>;
+    rightJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
 }
 
 // @public (undocumented)
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
+export type LastSelect = {
+    select<T extends TableType = TableType>(columns: "*" | string[] | {
+        [key in keyof T]: string | boolean;
+    }): FinalSelect<T>;
+};
+
+// @public (undocumented)
 export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+
+// @public (undocumented)
+export type OrderByParam<T extends {} = {}> = string | string[] | ({
+    [key in keyof T]: OrderValue;
+} & Record<string, OrderValue>);
 
 // @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
@@ -171,16 +193,6 @@ export type PickColumn<T extends {
     [key in Pa]?: T[key];
 };
 
-// @public
-export type RowsOrder<T extends object> = {
-    [key in keyof T]?: OrderValue;
-};
-
-// @public (undocumented)
-export interface Select<T extends TableType> extends JoinSelect<T> {
-    select: AddTableFn<T>;
-}
-
 // Warning: (ae-forgotten-export) The symbol "StringOnly" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -195,22 +207,13 @@ export interface SelectFilterOption<T extends object> {
     // (undocumented)
     offset?: number;
     // (undocumented)
-    orderBy?: RowsOrder<T>;
-    // (undocumented)
-    orderNullRule?: "FIRST" | "LAST";
-    // (undocumented)
-    where?: string;
-}
-
-// @public (undocumented)
-export interface SelectTableOption {
-    // (undocumented)
-    tableAs?: string;
+    orderBy?: string | OrderByParam<T> | (() => string | OrderByParam<T>);
 }
 
 // @public
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
     constructor(sql: string, columns: readonly string[]);
+    constructor(sql: SqlQueryStatement);
     // (undocumented)
     toSelect(): string;
     // (undocumented)
@@ -219,6 +222,7 @@ export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelec
 
 // @public
 export class SqlRaw<T = any> {
+    protected [SQL_RAW]: T;
     constructor(value: string);
     // (undocumented)
     toString(): string;
@@ -226,6 +230,7 @@ export class SqlRaw<T = any> {
 
 // @public
 export abstract class SqlSelectable<T extends TableType> {
+    protected [SQL_SELECTABLE]: T;
     constructor(columns: ArrayLike<string> | Iterable<string>);
     readonly columns: readonly string[];
     abstract toSelect(): string;
@@ -288,13 +293,16 @@ export class TypeChecker<T> {
 // @public (undocumented)
 export interface UpdateOption {
     // (undocumented)
-    where?: string;
+    where?: WhereParam;
 }
 
 // @public (undocumented)
 export type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | SqlRaw;
 };
+
+// @public (undocumented)
+export type WhereParam = string | string[];
 
 // @public
 export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
