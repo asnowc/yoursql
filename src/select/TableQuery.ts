@@ -1,9 +1,9 @@
 import { selectColumnsOrTable } from "./_statement.ts";
 import { SqlValuesCreator, SqlRaw } from "../sql_value/sql_value.ts";
 import { ColumnsSelected, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
-import { createSelect, JoinSelect } from "./select.ts";
+import { Selection } from "./select.ts";
 import { DbTable, SqlQueryStatement } from "./selectable.ts";
-import { genWhere, getObjectListKeys, WhereParam } from "../util.ts";
+import { where, getObjectListKeys, WhereParam } from "../util.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -13,15 +13,15 @@ export class DbTableQuery<
   constructor(name: string, columns: readonly string[], private statement: SqlValuesCreator) {
     super(name, columns);
   }
-  fromAs(as?: string): JoinSelect {
-    return createSelect(this, as);
+  fromAs(as?: string): Selection {
+    return new Selection(this, as);
   }
   insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string {
     let insertCol: readonly string[];
     let valuesStr: string;
     if (values instanceof Array) {
       if (values.length === 0) throw new Error("值不能为空");
-      insertCol = getObjectListKeys(values);
+      insertCol = Array.from(getObjectListKeys(values));
       valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol)}`;
     } else if (values instanceof SqlQueryStatement) {
       // todo 验证 values.columns 和 this.columns 是否匹配
@@ -59,7 +59,6 @@ export class DbTableQuery<
   }
 
   update(values: UpdateRowValue<T>, option: UpdateOption = {}): string {
-    const { where } = option;
     const updateKey = Object.entries(values);
     if (updateKey.length === 0) throw new Error("值不能为空");
 
@@ -70,7 +69,7 @@ export class DbTableQuery<
     }
 
     let sql = `UPDATE ${this.name}\nSET ${setList.join(",\n")}`;
-    if (where) sql += genWhere(where);
+    if (option.where) sql += where(option.where);
     return sql;
   }
   updateWithResult<R extends ColumnsSelected<T>>(
@@ -88,7 +87,7 @@ export class DbTableQuery<
 
   delete(option: DeleteOption = {}): string {
     let sql = "DELETE FROM " + this.name;
-    if (option.where) sql += genWhere(option.where);
+    if (option.where) sql += where(option.where);
     return sql;
   }
   deleteWithResult<R extends ColumnsSelected<T>>(

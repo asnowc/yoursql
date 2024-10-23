@@ -4,21 +4,6 @@
 
 ```ts
 
-// @public (undocumented)
-export type AfterGroup = LastSelect & {
-    having(param: WhereParam | (() => WhereParam)): LastSelect;
-};
-
-// @public (undocumented)
-export type AfterJoin = AfterWhere & {
-    where(param: WhereParam | (() => WhereParam)): AfterWhere;
-};
-
-// @public (undocumented)
-export type AfterWhere = AfterGroup & {
-    groupBy(columns: string | string[]): AfterGroup;
-};
-
 // @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -44,7 +29,34 @@ export type ColumnsSelectAs<T extends TableType> = {
 export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
 
 // @public (undocumented)
-export function createSelect(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
+export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
+    // (undocumented)
+    groupBy(columns: string | string[]): CurrentHaving<T>;
+}
+
+// @public (undocumented)
+export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
+    // (undocumented)
+    having(param: WhereParam | (() => WhereParam)): CurrentLimit<T>;
+}
+
+// @public (undocumented)
+export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> {
+    // (undocumented)
+    limit(limit?: number, offset?: number): SqlQueryStatement<T>;
+}
+
+// @public (undocumented)
+export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
+    // (undocumented)
+    orderBy(param: OrderByParam): CurrentLimit<T>;
+}
+
+// @public (undocumented)
+export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
+    // (undocumented)
+    where(param: WhereParam | (() => WhereParam)): CurrentGroupBy<T>;
+}
 
 // @public
 export class CustomDbType<T> {
@@ -82,7 +94,7 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     // (undocumented)
     deleteWithResult<R extends ColumnsSelected<T>>(returns?: ColumnsSelected<T> | "*", option?: DeleteOption): SqlQueryStatement<SelectColumns<T, R>>;
     // (undocumented)
-    fromAs(as?: string): JoinSelect;
+    fromAs(as?: string): Selection_2;
     // (undocumented)
     insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string;
     // (undocumented)
@@ -99,26 +111,11 @@ export interface DeleteOption {
     where?: WhereParam;
 }
 
-// @public (undocumented)
-export interface FinalSelect<T extends TableType> extends SqlSelectable<T> {
-    // (undocumented)
-    filter(option: SelectFilterOption<T>): SqlQueryStatement<T>;
-}
-
-// @public (undocumented)
-export function genHaving(having: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
-
-// @public (undocumented)
-export function genOderBy<T extends {} = {}>(orderBy: OrderByParam<T> | (() => OrderByParam<T>)): string;
+// @public
+export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
 
 // @public
-export function genSelect(columns: string[] | Record<string, string | boolean>): string;
-
-// @public (undocumented)
-export function genWhere(where: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
-
-// @public (undocumented)
-export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): string[];
+export function having(condition?: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
 
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
@@ -141,40 +138,23 @@ export interface InsertOption<T extends object> {
 }
 
 // @public (undocumented)
-export interface JoinSelect extends AfterJoin {
-    // (undocumented)
-    crossJoin(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
-    // (undocumented)
-    from(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
-    // (undocumented)
-    fullJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
-    // (undocumented)
-    innerJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
-    // (undocumented)
-    leftJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
-    // (undocumented)
-    naturalJoin(selectable: SqlSelectable<any> | string, as?: string): JoinSelect;
-    // (undocumented)
-    rightJoin(selectable: SqlSelectable<any> | string, as: string | undefined, on: string): JoinSelect;
-}
-
-// @public (undocumented)
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
-
-// @public (undocumented)
-export type LastSelect = {
-    select<T extends TableType = TableType>(columns: "*" | string[] | {
-        [key in keyof T]: string | boolean;
-    }): FinalSelect<T>;
-};
 
 // @public (undocumented)
 export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
-export type OrderByParam<T extends {} = {}> = string | string[] | ({
-    [key in keyof T]: OrderValue;
-} & Record<string, OrderValue>);
+export type OrderBehavior = {
+    key: string;
+    asc: boolean;
+    nullLast?: boolean;
+};
+
+// @public
+export function orderBy(by: OrderByParam | (() => OrderByParam)): string;
+
+// @public (undocumented)
+export type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
 
 // @public (undocumented)
 export type OrderValue = "ASC" | "DESC";
@@ -200,15 +180,40 @@ export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R
     [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
 } : never;
 
+// @public
+export function selectColumns(columns: string[] | Record<string, string | boolean>): string;
+
 // @public (undocumented)
-export interface SelectFilterOption<T extends object> {
+class Selection_2 {
+    constructor(selectable: SqlSelectable<any> | string, as?: string);
     // (undocumented)
-    limit?: number;
+    crossJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection_2;
     // (undocumented)
-    offset?: number;
+    static from(selectable: SqlSelectable<any> | string, as?: string): Selection_2;
     // (undocumented)
-    orderBy?: string | OrderByParam<T> | (() => string | OrderByParam<T>);
+    from(selectable: SqlSelectable<any> | string, as?: string): Selection_2;
+    // (undocumented)
+    fullJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    // (undocumented)
+    innerJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    // (undocumented)
+    leftJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    // (undocumented)
+    naturalJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection_2;
+    // (undocumented)
+    rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    // (undocumented)
+    select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
+    // (undocumented)
+    select<T extends TableType = TableType>(columns: {
+        [key in keyof T]: string | boolean;
+    }): CurrentWhere<T>;
+    // (undocumented)
+    select<T extends TableType = TableType>(columns: "*" | string[] | TableType): CurrentWhere<T>;
+    // (undocumented)
+    toString(): string;
 }
+export { Selection_2 as Selection }
 
 // @public
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
@@ -300,6 +305,9 @@ export interface UpdateOption {
 export type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | SqlRaw;
 };
+
+// @public
+export function where(condition?: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
 
 // @public (undocumented)
 export type WhereParam = string | string[];

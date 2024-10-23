@@ -36,34 +36,34 @@ FROM (SELECT * FROM ccc) AS t0
 RIGHT JOIN (SELECT * FROM bbb) AS t1 ON t1.c1=t2.c1"
 `;
 
-exports[`单表选择 > t0 all 1`] = `
+exports[`单表 select > t0 all 1`] = `
 "SELECT *
 FROM aaa"
 `;
 
-exports[`单表选择 > t0 rename 1`] = `
+exports[`单表 select > t0 rename 1`] = `
 "SELECT c1,c2 AS rename
 FROM aaa"
 `;
 
-exports[`单表选择 > t1 all 1`] = `
-"SELECT *
-FROM (SELECT * FROM ccc)"
-`;
-
-exports[`单表选择 > t1 rename 1`] = `
+exports[`单表 select > t0 rename 2`] = `
 "SELECT c1,c2 AS rename
 FROM (SELECT * FROM ccc)"
 `;
 
-exports[`多表 1`] = `
+exports[`单表 select > t0 rename 3`] = `
+"SELECT c1,c2 AS rename
+FROM (SELECT * FROM ccc)"
+`;
+
+exports[`单表 select > t1 all 1`] = `
+"SELECT *
+FROM (SELECT * FROM ccc)"
+`;
+
+exports[`多表 select 1`] = `
 "SELECT aaa.c1,aaa.c2,table.c3 AS c33,table.c11,t2.c3 AS c23
 FROM aaa,(SELECT * FROM ccc) AS table,(SELECT * FROM bbb)"
-`;
-
-exports[`构造列 1`] = `
-"SELECT t0.c1,count(*) AS count
-FROM (SELECT * FROM ccc) AS t0"
 `;
 
 exports[`组合 1`] = `

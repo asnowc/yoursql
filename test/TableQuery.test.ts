@@ -21,13 +21,10 @@ describe("TableQuery", function () {
     test("select-option", function () {
       const sql = table
         .fromAs()
-        .where("limit IS NULL")
         .select("*")
-        .filter({
-          limit: 100,
-          offset: 23,
-          orderBy: ["id ASC NULLS FIRST"],
-        })
+        .where("limit IS NULL")
+        .orderBy(["id ASC NULLS FIRST"])
+        .limit(100, 23)
         .toString();
       expect(sql).toMatchSnapshot();
     });

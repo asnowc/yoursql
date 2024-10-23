@@ -126,7 +126,7 @@ export class SqlValuesCreator {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
     if (!keys_types) {
-      keys = getObjectListKeys(objectList, keepUndefinedKey);
+      keys = Array.from(getObjectListKeys(objectList, keepUndefinedKey));
     } else if (keys_types instanceof Array) {
       keys = keys_types as string[];
     } else {
