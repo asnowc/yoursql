@@ -209,8 +209,6 @@ class Selection_2 {
         [key in keyof T]: string | boolean;
     }): CurrentWhere<T>;
     // (undocumented)
-    select<T extends TableType = TableType>(columns: "*" | string[] | TableType): CurrentWhere<T>;
-    // (undocumented)
     toString(): string;
 }
 export { Selection_2 as Selection }

@@ -100,7 +100,6 @@ export class Selection {
   }
   select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
   select<T extends TableType = TableType>(columns: { [key in keyof T]: string | boolean }): CurrentWhere<T>;
-  select<T extends TableType = TableType>(columns: "*" | string[] | TableType): CurrentWhere<T>;
   select(columnsIn: "*" | string[] | TableType): CurrentWhere<any> {
     let sql = "SELECT ";
     let columns: string[] = [];
