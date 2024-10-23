@@ -217,7 +217,7 @@ class Selection_2 {
     // (undocumented)
     rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
     select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
-    select<T extends TableType = TableType>(columns: string): CurrentWhere<T>;
+    select<T extends TableType = TableType>(columns: string | (() => string)): CurrentWhere<T>;
     select<T extends TableType>(columns: {
         [key in keyof T]: string | boolean;
     } | (() => {

@@ -131,7 +131,7 @@ export class Selection {
    * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType = TableType>(columns: string): CurrentWhere<T>;
+  select<T extends TableType = TableType>(columns: string | (() => string)): CurrentWhere<T>;
   /**
    * 通过 object 选择 列
    * @example
