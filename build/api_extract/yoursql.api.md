@@ -49,7 +49,7 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 // @public (undocumented)
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
     // (undocumented)
-    orderBy(param: OrderByParam): CurrentLimit<T>;
+    orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T>;
 }
 
 // @public (undocumented)

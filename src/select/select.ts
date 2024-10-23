@@ -8,7 +8,7 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 }
 /** @public */
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
-  orderBy(param: OrderByParam): CurrentLimit<T>;
+  orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T>;
 }
 /** @public */
 export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
@@ -39,7 +39,7 @@ class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
   having(param: WhereParam | (() => WhereParam)): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + having(param), this.columns);
   }
-  orderBy(param: OrderByParam): CurrentLimit<T> {
+  orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + orderBy(param), this.columns);
   }
 
