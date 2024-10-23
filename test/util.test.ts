@@ -13,6 +13,7 @@ test("orderBy", function () {
     ])
   ).toBe(sql);
   expect(orderBy({ age: "DESC NULLS FIRST", num: true })).toBe(sql);
+  expect(orderBy({ num: true })).toBe("\nORDER BY num ASC");
 
   expect(orderBy()).toBe("");
   expect(orderBy(() => {})).toBe("");

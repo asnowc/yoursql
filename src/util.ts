@@ -141,12 +141,14 @@ export function orderBy(by?: OrderByParam | void | (() => OrderByParam | void)):
     let keys = Object.keys(by);
     if (keys.length) {
       let key = keys[0];
-      sql += "\nORDER BY " + key + " " + by[key];
+      let value = by[key];
+      sql += "\nORDER BY " + key + " " + (typeof value === "string" ? value : value ? "ASC" : "DESC");
       for (let i = 1; i < keys.length; i++) {
         key = keys[i];
+        value = by[key];
         sql += "," + key + " ";
-        if (typeof by[key] === "string") sql += by[key];
-        else sql += by[key] ? "ASC" : "DESC";
+        if (typeof value === "string") sql += value;
+        else sql += value ? "ASC" : "DESC";
       }
     }
   }
