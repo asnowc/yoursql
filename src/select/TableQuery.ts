@@ -23,7 +23,7 @@ export class DbTableQuery<
    * @param columns - 对象选择
    */
   select<R extends { [key in keyof T]?: string | boolean } | Record<string, string>>(
-    columns: R,
+    columns: R | (() => R),
     as?: string
   ): CurrentWhere<{
     [key in keyof R]: R[key] extends boolean
@@ -36,10 +36,13 @@ export class DbTableQuery<
   }>;
   /** 选择单表- 所有类型 */
   select<R extends {}>(
-    columns: "*" | string[] | { [key in keyof R]?: key extends keyof T ? string | boolean : string },
+    columns:
+      | string
+      | { [key in keyof R]?: key extends keyof T ? string | boolean : string }
+      | (() => string | { [key in keyof R]?: key extends keyof T ? string | boolean : string }),
     as?: string
   ): CurrentWhere<R>;
-  select(columns: "*" | string[] | Record<string, any>, as?: string): CurrentWhere<TableType> {
+  select(columns: "*" | Record<string, any>, as?: string): CurrentWhere<TableType> {
     return this.fromAs(as).select(columns);
   }
   insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string {

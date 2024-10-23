@@ -105,12 +105,14 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     select(columns: "*", as?: string): CurrentWhere<T>;
     select<R extends {
         [key in keyof T]?: string | boolean;
-    } | Record<string, string>>(columns: R, as?: string): CurrentWhere<{
+    } | Record<string, string>>(columns: R | (() => R), as?: string): CurrentWhere<{
         [key in keyof R]: R[key] extends boolean ? key extends keyof T ? T[key] : unknown : R[key] extends keyof T ? T[R[key]] : unknown;
     }>;
-    select<R extends {}>(columns: "*" | string[] | {
+    select<R extends {}>(columns: string | {
         [key in keyof R]?: key extends keyof T ? string | boolean : string;
-    }, as?: string): CurrentWhere<R>;
+    } | (() => string | {
+        [key in keyof R]?: key extends keyof T ? string | boolean : string;
+    }), as?: string): CurrentWhere<R>;
     // (undocumented)
     update(values: UpdateRowValue<T>, option?: UpdateOption): string;
     // (undocumented)
@@ -192,8 +194,8 @@ export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R
     [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
 } : never;
 
-// @public
-export function selectColumns(columns: string[] | Record<string, string | boolean>): string;
+// @public (undocumented)
+export function selectColumns(columns: SelectParam | (() => SelectParam)): string;
 
 // @public (undocumented)
 class Selection_2 {
@@ -205,27 +207,31 @@ class Selection_2 {
     // (undocumented)
     from(selectable: SqlSelectable<any> | string, as?: string): Selection_2;
     // (undocumented)
-    fullJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    fullJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
     // (undocumented)
-    innerJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    innerJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
     // (undocumented)
-    leftJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
+    leftJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
     // (undocumented)
     naturalJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection_2;
     // (undocumented)
-    rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection_2;
-    // (undocumented)
-    select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
-    // (undocumented)
+    rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
+    select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
+    select<T extends TableType = TableType>(columns: string): CurrentWhere<T>;
     select<T extends TableType>(columns: {
         [key in keyof T]: string | boolean;
-    }): CurrentWhere<T>;
+    } | (() => {
+        [key in keyof T]: string | boolean;
+    })): CurrentWhere<T>;
     // (undocumented)
-    select(columns: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType>;
+    select(columns: SelectParam | (() => SelectParam)): CurrentWhere<TableType>;
     // (undocumented)
     toString(): string;
 }
 export { Selection_2 as Selection }
+
+// @public (undocumented)
+export type SelectParam = string | Record<string, string | boolean>;
 
 // @public
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {

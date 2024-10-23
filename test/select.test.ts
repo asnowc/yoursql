@@ -24,9 +24,6 @@ test("单表 select", function () {
   s0 = Selection.from(t1).select({ c1: true, rename: "c2" }).toString();
   expect(s0).toMatchSnapshot("t0 rename");
 
-  s0 = Selection.from(t1).select(["c1,c2 AS rename"]).toString();
-  expect(s0).toMatchSnapshot("t0 rename");
-
   expect(() => Selection.from(t1).select([]), "没有选择任何列").toThrowError();
 });
 
@@ -71,7 +68,7 @@ ORDER BY id
 test("组合", function () {
   const sql = Selection.from("aaa", "t1")
     .innerJoin(Selection.from("bbb").select({ id: true }).where("id != '1'").groupBy("id"), "t2", "t1.id=t2.id")
-    .select(["DISINCT t1.age", "t2.num_count as num", "(t1.age + num) AS sum"])
+    .select("DISINCT t1.age,t2.num_count as num,(t1.age + num) AS sum")
     .toString();
   expect(sql).toMatchSnapshot();
 });

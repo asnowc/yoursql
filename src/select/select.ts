@@ -1,6 +1,7 @@
 import { SqlSelectable, SqlQueryStatement } from "./selectable.ts";
-import { orderBy, OrderByParam, where, ConditionParam, selectColumns, having } from "../util.ts";
+import { orderBy, OrderByParam, where, ConditionParam, selectColumns, having, SelectParam } from "../util.ts";
 import type { TableType } from "./type.ts";
+import { condition } from "./_statement.ts";
 
 /** @public */
 export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> {
@@ -70,22 +71,45 @@ export class Selection {
   toString(): string {
     return "FROM " + this.#sql;
   }
-  #join(type: string, selectable: string | SqlSelectable<any>, as?: string, on?: string): Selection {
+  #join(
+    type: string,
+    selectable: string | SqlSelectable<any>,
+    as?: string,
+    on?: ConditionParam | (() => ConditionParam)
+  ): Selection {
     let sql = this.#sql + "\n" + type + " " + fromAs(selectable, as);
-    if (on) sql += " ON " + on;
+    if (on) {
+      sql += " ON " + condition(on);
+    }
     return new Selection(sql);
   }
 
-  fullJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection {
+  fullJoin(
+    selectable: SqlSelectable<any>,
+    as: string | undefined,
+    on: ConditionParam | (() => ConditionParam)
+  ): Selection {
     return this.#join("FULL JOIN", selectable, as, on);
   }
-  innerJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection {
+  innerJoin(
+    selectable: SqlSelectable<any>,
+    as: string | undefined,
+    on: ConditionParam | (() => ConditionParam)
+  ): Selection {
     return this.#join("INNER JOIN", selectable, as, on);
   }
-  leftJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection {
+  leftJoin(
+    selectable: SqlSelectable<any>,
+    as: string | undefined,
+    on: ConditionParam | (() => ConditionParam)
+  ): Selection {
     return this.#join("LEFT JOIN", selectable, as, on);
   }
-  rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: string): Selection {
+  rightJoin(
+    selectable: SqlSelectable<any>,
+    as: string | undefined,
+    on: ConditionParam | (() => ConditionParam)
+  ): Selection {
     return this.#join("RIGHT JOIN", selectable, as, on);
   }
 
@@ -98,24 +122,39 @@ export class Selection {
   from(selectable: SqlSelectable<any> | string, as?: string): Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
-  select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
-  select<T extends TableType>(columns: { [key in keyof T]: string | boolean }): CurrentWhere<T>;
-  select(columns: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType>;
-  select(columnsIn: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType> {
-    let sql = "SELECT ";
+  /** 选择全部列 */
+  select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
+  /**
+   * 自定义SQL选择语句
+   * @example
+   * ```ts
+   * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
+   * ```
+   */
+  select<T extends TableType = TableType>(columns: string): CurrentWhere<T>;
+  /**
+   * 通过 object 选择 列
+   * @example
+   * ```ts
+   * selection.select({"age":true, c:"count(*)"}) // SELECT age,count(*) AS c FROM ...
+   * ```
+   */
+  select<T extends TableType>(
+    columns: { [key in keyof T]: string | boolean } | (() => { [key in keyof T]: string | boolean })
+  ): CurrentWhere<T>;
+  select(columns: SelectParam | (() => SelectParam)): CurrentWhere<TableType>;
+  select(columnsIn: SelectParam | (() => SelectParam)): CurrentWhere<TableType> {
     let columns: string[] = [];
-    if (typeof columnsIn === "string") sql += columnsIn;
-    else {
-      sql += selectColumns(columnsIn);
-      if (columnsIn instanceof Array) {
-        //TODO 想办法获取 columns
-      } else columns = Object.keys(columnsIn);
-    }
+    if (typeof columnsIn === "function") columnsIn = columnsIn();
+    if (typeof columnsIn === "object") columns = Object.keys(columnsIn);
+
+    let sql = "SELECT " + selectColumns(columnsIn);
     sql += "\n" + this.toString();
 
     return new AfterSelectImpl(sql, columns);
   }
 }
+
 class TableRepeatError extends Error {
   constructor(tableName: string | number) {
     super("Table name '" + tableName + "' repeated");

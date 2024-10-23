@@ -39,9 +39,8 @@ test("having", function () {
 test("selectColumns", function () {
   const sql = "c1,count(*) AS c2,column AS c3";
   expect(selectColumns({ c1: true, c2: "count(*)", c3: "column" })).toBe(sql);
-  expect(selectColumns(["c1", "count(*) AS c2", "column AS c3"])).toBe(sql);
+  expect(selectColumns(sql)).toBe(sql);
 
-  expect(() => selectColumns([])).toThrowError("");
   expect(() => selectColumns({})).toThrowError("");
 });
 test("getObjectListKeys", function () {

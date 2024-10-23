@@ -51,11 +51,6 @@ exports[`单表 select > t0 rename 2`] = `
 FROM (SELECT * FROM ccc)"
 `;
 
-exports[`单表 select > t0 rename 3`] = `
-"SELECT c1,c2 AS rename
-FROM (SELECT * FROM ccc)"
-`;
-
 exports[`单表 select > t1 all 1`] = `
 "SELECT *
 FROM (SELECT * FROM ccc)"

@@ -31,3 +31,27 @@ class ColumnRepeatError extends Error {
     super("Column name '" + columnName + "' repeated");
   }
 }
+
+type ConditionParam = string | string[];
+/**
+ * 生成条件语句
+ */
+export function condition(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
+export function condition(
+  conditions?: ConditionParam | void | (() => ConditionParam | void),
+  type: "AND" | "OR" = "AND"
+): string | undefined {
+  if (typeof conditions === "function") conditions = conditions();
+  if (!conditions) return;
+  if (typeof conditions === "string") return conditions;
+  else {
+    if (conditions.length) {
+      let sql = "";
+      type = " " + type + " ";
+      sql += conditions[0];
+      for (let i = 1; i < conditions.length; i++) sql += type + conditions[i];
+      return sql;
+    }
+    return;
+  }
+}

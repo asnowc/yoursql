@@ -1,3 +1,4 @@
+import { condition } from "./select/_statement.ts";
 import { OrderValue } from "./select/type.ts";
 
 /**
@@ -26,6 +27,7 @@ export type ConditionParam = string | string[];
 /**
  * 生成 WHERE 语句
  * @public
+ * @example
  * ```ts
  *
  * ```
@@ -46,60 +48,44 @@ export function having(conditions?: ConditionParam | (() => ConditionParam | voi
   return "";
 }
 
-/**
- * 生成条件语句
- */
-function condition(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
-function condition(
-  conditions?: ConditionParam | void | (() => ConditionParam | void),
-  type: "AND" | "OR" = "AND"
-): string | undefined {
-  if (typeof conditions === "function") conditions = conditions();
-  if (!conditions) return;
-  if (typeof conditions === "string") return conditions;
-  else {
-    if (conditions.length) {
-      let sql = "";
-      type = " " + type + " ";
-      sql += conditions[0];
-      for (let i = 1; i < conditions.length; i++) sql += type + conditions[i];
-      return sql;
-    }
-    return;
-  }
-}
-
+/** @public */
+export type SelectParam = string | Record<string, string | boolean>;
 /**
  * @public
+ * @example
  * ```ts
  * selectColumns({c1: true, c2: "count(*)", c3: "column"})  //  "c1,count(*) AS c2,column as c3"
- * selectColumns(["c1", "count(*) AS c2", "column as c3"])  //  "c1,count(*) AS c2,column as c3"
+ * selectColumns("c1,count(*) AS c2,column as c3")  //  "c1,count(*) AS c2,column as c3"
  * ```
  */
-export function selectColumns(columns: string[] | Record<string, string | boolean>): string {
-  let sql = "";
-  if (columns instanceof Array) {
-    if (columns.length) sql += columns[0];
-    else throw new Error("没有选择任何列");
-    for (let i = 1; i < columns.length; i++) sql += "," + columns[i];
-  } else {
-    const keys = Object.keys(columns);
-    if (keys.length === 0) throw new Error("没有选择任何列");
-    let k: string = keys[0];
-    let v = columns[k];
+export function selectColumns(columns: SelectParam | (() => SelectParam)): string {
+  if (typeof columns === "function") columns = columns();
+  switch (typeof columns) {
+    case "string":
+      return columns;
+    case "object": {
+      let sql = "";
+      const keys = Object.keys(columns);
+      if (keys.length === 0) throw new Error("没有选择任何列");
+      let k: string = keys[0];
+      let v = columns[k];
 
-    if (typeof v === "string") sql += v + " AS " + k;
-    else sql += k;
-
-    for (let i = 1; i < keys.length; i++) {
-      k = keys[i];
-      v = columns[k];
-      sql += ",";
       if (typeof v === "string") sql += v + " AS " + k;
       else sql += k;
+
+      for (let i = 1; i < keys.length; i++) {
+        k = keys[i];
+        v = columns[k];
+        sql += ",";
+        if (typeof v === "string") sql += v + " AS " + k;
+        else sql += k;
+      }
+      return sql;
     }
+
+    default:
+      throw new TypeError("columns 应为 string 或 object 类型");
   }
-  return sql;
 }
 /** @public */
 export type OrderBehavior = { key: string; asc: boolean; nullLast?: boolean };
@@ -112,6 +98,7 @@ export type OrderByParam =
 /**
  * 生成 ORDER BY 语句, d
  * @public
+ * @example
  * ```ts
  * // 以下生成 "\nORDER BY age DESC NULLS FIRST,num ASC"
  * orderBy("age DESC NULLS FIRST,num ASC");
