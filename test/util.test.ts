@@ -1,5 +1,5 @@
 import { where, having, orderBy, selectColumns, getObjectListKeys } from "@asnc/yoursql";
-import { describe, expect, test } from "vitest";
+import { expect, test } from "vitest";
 
 test("orderBy", function () {
   const sql = "\nORDER BY age DESC NULLS FIRST,num ASC";
@@ -14,6 +14,8 @@ test("orderBy", function () {
   ).toBe(sql);
   expect(orderBy({ age: "DESC NULLS FIRST", num: true })).toBe(sql);
 
+  expect(orderBy()).toBe("");
+  expect(orderBy(() => {})).toBe("");
   expect(orderBy([])).toBe("");
   expect(orderBy({})).toBe("");
 });

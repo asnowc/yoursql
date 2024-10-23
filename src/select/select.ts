@@ -1,5 +1,5 @@
 import { SqlSelectable, SqlQueryStatement } from "./selectable.ts";
-import { orderBy, OrderByParam, where, WhereParam, selectColumns, having } from "../util.ts";
+import { orderBy, OrderByParam, where, ConditionParam, selectColumns, having } from "../util.ts";
 import type { TableType } from "./type.ts";
 
 /** @public */
@@ -8,11 +8,11 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 }
 /** @public */
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
-  orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T>;
+  orderBy(param: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T>;
 }
 /** @public */
 export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
-  having(param: WhereParam | (() => WhereParam)): CurrentLimit<T>;
+  having(param: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T>;
 }
 /** @public */
 export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
@@ -20,14 +20,14 @@ export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
 }
 /** @public */
 export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
-  where(param: WhereParam | (() => WhereParam)): CurrentGroupBy<T>;
+  where(param: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T>;
 }
 
 class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implements CurrentWhere<T> {
   constructor(sql: string, columns: readonly string[]) {
     super(sql, columns);
   }
-  where(param: WhereParam | (() => WhereParam)): CurrentGroupBy<T> {
+  where(param?: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T> {
     return new AfterSelectImpl(this.toString() + where(param), this.columns);
   }
   groupBy(columns: string | string[]): CurrentHaving<T> {
@@ -36,10 +36,10 @@ class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
     else sql += " GROUP BY " + columns.join(",");
     return new AfterSelectImpl(sql, this.columns);
   }
-  having(param: WhereParam | (() => WhereParam)): CurrentLimit<T> {
+  having(param?: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + having(param), this.columns);
   }
-  orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T> {
+  orderBy(param?: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + orderBy(param), this.columns);
   }
 
@@ -99,8 +99,9 @@ export class Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
   select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
-  select<T extends TableType = TableType>(columns: { [key in keyof T]: string | boolean }): CurrentWhere<T>;
-  select(columnsIn: "*" | string[] | TableType): CurrentWhere<any> {
+  select<T extends TableType>(columns: { [key in keyof T]: string | boolean }): CurrentWhere<T>;
+  select(columns: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType>;
+  select(columnsIn: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType> {
     let sql = "SELECT ";
     let columns: string[] = [];
     if (typeof columnsIn === "string") sql += columnsIn;
@@ -115,7 +116,6 @@ export class Selection {
     return new AfterSelectImpl(sql, columns);
   }
 }
-
 class TableRepeatError extends Error {
   constructor(tableName: string | number) {
     super("Table name '" + tableName + "' repeated");

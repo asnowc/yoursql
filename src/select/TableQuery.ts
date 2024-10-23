@@ -1,9 +1,9 @@
 import { selectColumnsOrTable } from "./_statement.ts";
 import { SqlValuesCreator, SqlRaw } from "../sql_value/sql_value.ts";
 import { ColumnsSelected, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
-import { Selection } from "./select.ts";
+import { CurrentWhere, Selection } from "./select.ts";
 import { DbTable, SqlQueryStatement } from "./selectable.ts";
-import { where, getObjectListKeys, WhereParam } from "../util.ts";
+import { where, getObjectListKeys, ConditionParam } from "../util.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -15,6 +15,32 @@ export class DbTableQuery<
   }
   fromAs(as?: string): Selection {
     return new Selection(this, as);
+  }
+  /** 选择单表全部列 */
+  select(columns: "*", as?: string): CurrentWhere<T>;
+  /**
+   * 选择单表
+   * @param columns - 对象选择
+   */
+  select<R extends { [key in keyof T]?: string | boolean } | Record<string, string>>(
+    columns: R,
+    as?: string
+  ): CurrentWhere<{
+    [key in keyof R]: R[key] extends boolean
+      ? key extends keyof T
+        ? T[key]
+        : unknown
+      : R[key] extends keyof T
+      ? T[R[key]]
+      : unknown;
+  }>;
+  /** 选择单表- 所有类型 */
+  select<R extends {}>(
+    columns: "*" | string[] | { [key in keyof R]?: key extends keyof T ? string | boolean : string },
+    as?: string
+  ): CurrentWhere<R>;
+  select(columns: "*" | string[] | Record<string, any>, as?: string): CurrentWhere<TableType> {
+    return this.fromAs(as).select(columns);
   }
   insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string {
     let insertCol: readonly string[];
@@ -98,19 +124,20 @@ export class DbTableQuery<
     return genRetuningSql(sql, returns, this.columns) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 }
+
 /** @public */
 export interface InsertOption<T extends object> {
   conflict?: (keyof T)[];
   updateValues?: { [key in keyof T]?: undefined | SqlRaw | T[key] };
-  where?: WhereParam;
+  where?: ConditionParam;
 }
 /** @public */
 export interface UpdateOption {
-  where?: WhereParam;
+  where?: ConditionParam;
 }
 /** @public */
 export interface DeleteOption {
-  where?: WhereParam;
+  where?: ConditionParam;
 }
 
 function genRetuningSql(

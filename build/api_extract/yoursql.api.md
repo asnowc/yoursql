@@ -29,6 +29,9 @@ export type ColumnsSelectAs<T extends TableType> = {
 export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
 
 // @public (undocumented)
+export type ConditionParam = string | string[];
+
+// @public (undocumented)
 export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
     // (undocumented)
     groupBy(columns: string | string[]): CurrentHaving<T>;
@@ -37,7 +40,7 @@ export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
 // @public (undocumented)
 export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
     // (undocumented)
-    having(param: WhereParam | (() => WhereParam)): CurrentLimit<T>;
+    having(param: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T>;
 }
 
 // @public (undocumented)
@@ -49,13 +52,13 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 // @public (undocumented)
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
     // (undocumented)
-    orderBy(param: OrderByParam | (() => OrderByParam)): CurrentLimit<T>;
+    orderBy(param: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T>;
 }
 
 // @public (undocumented)
 export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
     // (undocumented)
-    where(param: WhereParam | (() => WhereParam)): CurrentGroupBy<T>;
+    where(param: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T>;
 }
 
 // @public
@@ -99,6 +102,15 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string;
     // (undocumented)
     insertWithResult<R extends ColumnsSelected<T>>(values: C[] | SqlQueryStatement<C>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
+    select(columns: "*", as?: string): CurrentWhere<T>;
+    select<R extends {
+        [key in keyof T]?: string | boolean;
+    } | Record<string, string>>(columns: R, as?: string): CurrentWhere<{
+        [key in keyof R]: R[key] extends boolean ? key extends keyof T ? T[key] : unknown : R[key] extends keyof T ? T[R[key]] : unknown;
+    }>;
+    select<R extends {}>(columns: "*" | string[] | {
+        [key in keyof R]?: key extends keyof T ? string | boolean : string;
+    }, as?: string): CurrentWhere<R>;
     // (undocumented)
     update(values: UpdateRowValue<T>, option?: UpdateOption): string;
     // (undocumented)
@@ -108,14 +120,14 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
 // @public (undocumented)
 export interface DeleteOption {
     // (undocumented)
-    where?: WhereParam;
+    where?: ConditionParam;
 }
 
 // @public
 export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
 
 // @public
-export function having(condition?: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
+export function having(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
 
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
@@ -134,7 +146,7 @@ export interface InsertOption<T extends object> {
         [key in keyof T]?: undefined | SqlRaw | T[key];
     };
     // (undocumented)
-    where?: WhereParam;
+    where?: ConditionParam;
 }
 
 // @public (undocumented)
@@ -151,7 +163,7 @@ export type OrderBehavior = {
 };
 
 // @public
-export function orderBy(by: OrderByParam | (() => OrderByParam)): string;
+export function orderBy(by?: OrderByParam | void | (() => OrderByParam | void)): string;
 
 // @public (undocumented)
 export type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
@@ -205,9 +217,11 @@ class Selection_2 {
     // (undocumented)
     select<T extends TableType = TableType>(columns: "*" | string[]): CurrentWhere<T>;
     // (undocumented)
-    select<T extends TableType = TableType>(columns: {
+    select<T extends TableType>(columns: {
         [key in keyof T]: string | boolean;
     }): CurrentWhere<T>;
+    // (undocumented)
+    select(columns: "*" | string[] | Record<string, string | boolean>): CurrentWhere<TableType>;
     // (undocumented)
     toString(): string;
 }
@@ -296,7 +310,7 @@ export class TypeChecker<T> {
 // @public (undocumented)
 export interface UpdateOption {
     // (undocumented)
-    where?: WhereParam;
+    where?: ConditionParam;
 }
 
 // @public (undocumented)
@@ -305,10 +319,7 @@ export type UpdateRowValue<T extends object> = {
 };
 
 // @public
-export function where(condition?: WhereParam | (() => WhereParam), type?: "AND" | "OR"): string;
-
-// @public (undocumented)
-export type WhereParam = string | string[];
+export function where(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
 
 // @public
 export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {

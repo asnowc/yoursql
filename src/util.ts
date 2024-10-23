@@ -22,7 +22,7 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
 }
 
 /** @public */
-export type WhereParam = string | string[];
+export type ConditionParam = string | string[];
 /**
  * 生成 WHERE 语句
  * @public
@@ -30,29 +30,43 @@ export type WhereParam = string | string[];
  *
  * ```
  */
-export function where(condition?: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND"): string {
-  if (!condition) return "";
-  return genCondition(condition, "WHERE", type);
+export function where(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string {
+  const sql = condition(conditions, type);
+  if (sql) return "\nWHERE " + sql;
+  return "";
 }
 /**
  *
  * 生成 HAVING 语句
  * @public
  */
-export function having(condition?: WhereParam | (() => WhereParam), type: "AND" | "OR" = "AND"): string {
-  if (!condition) return "";
-  return genCondition(condition, "HAVING", type);
+export function having(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string {
+  const sql = condition(conditions, type);
+  if (sql) return "\nHAVING " + sql;
+  return "";
 }
-function genCondition(condition: WhereParam | (() => WhereParam), statement: string, type: "AND" | "OR" = "AND") {
-  if (typeof condition === "function") condition = condition();
-  type = " " + type + " ";
-  let sql = "";
-  if (typeof condition === "string") sql += "\n" + statement + " " + condition;
+
+/**
+ * 生成条件语句
+ */
+function condition(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
+function condition(
+  conditions?: ConditionParam | void | (() => ConditionParam | void),
+  type: "AND" | "OR" = "AND"
+): string | undefined {
+  if (typeof conditions === "function") conditions = conditions();
+  if (!conditions) return;
+  if (typeof conditions === "string") return conditions;
   else {
-    if (condition.length) sql += "\n" + statement + " " + condition[0];
-    for (let i = 1; i < condition.length; i++) sql += type + condition[i];
+    if (conditions.length) {
+      let sql = "";
+      type = " " + type + " ";
+      sql += conditions[0];
+      for (let i = 1; i < conditions.length; i++) sql += type + conditions[i];
+      return sql;
+    }
+    return;
   }
-  return sql;
 }
 
 /**
@@ -112,12 +126,11 @@ export type OrderByParam =
  * orderBy({}) // ""
  * ```
  */
-export function orderBy(by: OrderByParam | (() => OrderByParam)): string {
+export function orderBy(by?: OrderByParam | void | (() => OrderByParam | void)): string {
   if (typeof by === "function") by = by();
-
   let sql = "";
+  if (!by) return sql;
   if (typeof by === "string") {
-    if (!by) return sql;
     sql += "\nORDER BY " + by;
   } else if (by instanceof Array) {
     if (by.length) {
