@@ -21,7 +21,8 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
   }
   return keys;
 }
-
+/** @public */
+export type Constructable<T> = T | (() => T);
 /** @public */
 export type ConditionParam = string | string[];
 /**
@@ -29,10 +30,15 @@ export type ConditionParam = string | string[];
  * @public
  * @example
  * ```ts
- *
+ * where(['a=1','b=2']) // "\nWHERE a=1 AND b=2"
+ * where(['a=1','b=2'],"OR") // "\nWHERE a=1 OR b=2"
+ * where("a=1 OR b=2") // "\nWHERE a=1 OR b=2"
+ * where(()=>"a=1 OR b=2") // "\nWHERE a=1 AND b=2"
+ * where([]) // ""
+ * where(undefined) // ""
  * ```
  */
-export function where(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string {
+export function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string {
   const sql = condition(conditions, type);
   if (sql) return "\nWHERE " + sql;
   return "";
@@ -42,7 +48,7 @@ export function where(conditions?: ConditionParam | (() => ConditionParam | void
  * 生成 HAVING 语句
  * @public
  */
-export function having(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string {
+export function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string {
   const sql = condition(conditions, type);
   if (sql) return "\nHAVING " + sql;
   return "";
@@ -58,7 +64,7 @@ export type SelectParam = string | Record<string, string | boolean>;
  * selectColumns("c1,count(*) AS c2,column as c3")  //  "c1,count(*) AS c2,column as c3"
  * ```
  */
-export function selectColumns(columns: SelectParam | (() => SelectParam)): string {
+export function selectColumns(columns: Constructable<SelectParam>): string {
   if (typeof columns === "function") columns = columns();
   switch (typeof columns) {
     case "string":
@@ -113,7 +119,7 @@ export type OrderByParam =
  * orderBy({}) // ""
  * ```
  */
-export function orderBy(by?: OrderByParam | void | (() => OrderByParam | void)): string {
+export function orderBy(by?: Constructable<OrderByParam | void>): string {
   if (typeof by === "function") by = by();
   let sql = "";
   if (!by) return sql;

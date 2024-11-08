@@ -1,5 +1,14 @@
 import { SqlSelectable, SqlQueryStatement } from "./selectable.ts";
-import { orderBy, OrderByParam, where, ConditionParam, selectColumns, having, SelectParam } from "../util.ts";
+import {
+  orderBy,
+  OrderByParam,
+  where,
+  ConditionParam,
+  selectColumns,
+  having,
+  SelectParam,
+  Constructable,
+} from "../util.ts";
 import type { TableType } from "./type.ts";
 import { condition } from "./_statement.ts";
 
@@ -9,11 +18,11 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 }
 /** @public */
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
-  orderBy(param: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T>;
+  orderBy(param: Constructable<OrderByParam | void>): CurrentLimit<T>;
 }
 /** @public */
 export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
-  having(param: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T>;
+  having(param: Constructable<ConditionParam | void>): CurrentLimit<T>;
 }
 /** @public */
 export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
@@ -21,14 +30,14 @@ export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
 }
 /** @public */
 export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
-  where(param: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T>;
+  where(param: Constructable<ConditionParam | void>): CurrentGroupBy<T>;
 }
 
 class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implements CurrentWhere<T> {
   constructor(sql: string, columns: readonly string[]) {
     super(sql, columns);
   }
-  where(param?: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T> {
+  where(param?: Constructable<ConditionParam | void>): CurrentGroupBy<T> {
     return new AfterSelectImpl(this.toString() + where(param), this.columns);
   }
   groupBy(columns: string | string[]): CurrentHaving<T> {
@@ -37,10 +46,10 @@ class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
     else sql += " GROUP BY " + columns.join(",");
     return new AfterSelectImpl(sql, this.columns);
   }
-  having(param?: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T> {
+  having(param?: Constructable<ConditionParam | void>): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + having(param), this.columns);
   }
-  orderBy(param?: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T> {
+  orderBy(param?: Constructable<OrderByParam | void>): CurrentLimit<T> {
     return new AfterSelectImpl(this.toString() + orderBy(param), this.columns);
   }
 
@@ -52,7 +61,8 @@ class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
   }
 }
 
-function fromAs(selectable: SqlSelectable<any> | string, as?: string) {
+function fromAs(selectable: Constructable<SqlSelectable<any> | string>, as?: string) {
+  if (typeof selectable === "function") selectable = selectable();
   let sql = typeof selectable === "string" ? selectable : selectable.toSelect();
   if (as) sql += " AS " + as;
   return sql;
@@ -60,11 +70,11 @@ function fromAs(selectable: SqlSelectable<any> | string, as?: string) {
 
 /** @public */
 export class Selection {
-  static from(selectable: SqlSelectable<any> | string, as?: string): Selection {
+  static from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection {
     return new this(selectable, as);
   }
   #sql: string;
-  constructor(selectable: SqlSelectable<any> | string, as?: string) {
+  constructor(selectable: Constructable<SqlSelectable<any> | string>, as?: string) {
     this.#sql = fromAs(selectable, as);
   }
 
@@ -73,9 +83,9 @@ export class Selection {
   }
   #join(
     type: string,
-    selectable: string | SqlSelectable<any>,
+    selectable: Constructable<SqlSelectable<any> | string>,
     as?: string,
-    on?: ConditionParam | (() => ConditionParam)
+    on?: Constructable<ConditionParam>
   ): Selection {
     let sql = this.#sql + "\n" + type + " " + fromAs(selectable, as);
     if (on) {
@@ -85,41 +95,41 @@ export class Selection {
   }
 
   fullJoin(
-    selectable: SqlSelectable<any>,
+    selectable: Constructable<SqlSelectable<any> | string>,
     as: string | undefined,
-    on: ConditionParam | (() => ConditionParam)
+    on: Constructable<ConditionParam>
   ): Selection {
     return this.#join("FULL JOIN", selectable, as, on);
   }
   innerJoin(
-    selectable: SqlSelectable<any>,
+    selectable: Constructable<SqlSelectable<any> | string>,
     as: string | undefined,
-    on: ConditionParam | (() => ConditionParam)
+    on: Constructable<ConditionParam>
   ): Selection {
     return this.#join("INNER JOIN", selectable, as, on);
   }
   leftJoin(
-    selectable: SqlSelectable<any>,
+    selectable: Constructable<SqlSelectable<any> | string>,
     as: string | undefined,
-    on: ConditionParam | (() => ConditionParam)
+    on: Constructable<ConditionParam>
   ): Selection {
     return this.#join("LEFT JOIN", selectable, as, on);
   }
   rightJoin(
-    selectable: SqlSelectable<any>,
+    selectable: Constructable<SqlSelectable<any> | string>,
     as: string | undefined,
-    on: ConditionParam | (() => ConditionParam)
+    on: Constructable<ConditionParam>
   ): Selection {
     return this.#join("RIGHT JOIN", selectable, as, on);
   }
 
-  naturalJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection {
+  naturalJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection {
     return this.#join("NATURAL JOIN", selectable, as);
   }
-  crossJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection {
+  crossJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection {
     return this.#join("CROSS JOIN", selectable, as);
   }
-  from(selectable: SqlSelectable<any> | string, as?: string): Selection {
+  from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
   /** 选择全部列 */
@@ -131,7 +141,7 @@ export class Selection {
    * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType = TableType>(columns: string | (() => string)): CurrentWhere<T>;
+  select<T extends TableType = TableType>(columns: Constructable<string>): CurrentWhere<T>;
   /**
    * 通过 object 选择 列
    * @example
@@ -139,11 +149,9 @@ export class Selection {
    * selection.select({"age":true, c:"count(*)"}) // SELECT age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType>(
-    columns: { [key in keyof T]: string | boolean } | (() => { [key in keyof T]: string | boolean })
-  ): CurrentWhere<T>;
-  select(columns: SelectParam | (() => SelectParam)): CurrentWhere<TableType>;
-  select(columnsIn: SelectParam | (() => SelectParam)): CurrentWhere<TableType> {
+  select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean }>): CurrentWhere<T>;
+  select(columns: Constructable<SelectParam>): CurrentWhere<TableType>;
+  select(columnsIn: Constructable<SelectParam>): CurrentWhere<TableType> {
     let columns: string[] = [];
     if (typeof columnsIn === "function") columnsIn = columnsIn();
     if (typeof columnsIn === "object") columns = Object.keys(columnsIn);

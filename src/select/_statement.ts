@@ -1,3 +1,4 @@
+import { Constructable } from "src/util.ts";
 import { ColumnsSelectAs } from "./type.ts";
 
 export function selectColumnsOrTable(columns: ColumnsSelectAs<any> | string[]) {
@@ -36,9 +37,9 @@ type ConditionParam = string | string[];
 /**
  * 生成条件语句
  */
-export function condition(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
+export function condition(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 export function condition(
-  conditions?: ConditionParam | void | (() => ConditionParam | void),
+  conditions?: Constructable<ConditionParam | void>,
   type: "AND" | "OR" = "AND"
 ): string | undefined {
   if (typeof conditions === "function") conditions = conditions();
