@@ -260,10 +260,10 @@ export class SqlValuesCreator {
 }
 class YourValuesAs<T extends TableType> extends SqlSelectable<T> {
   constructor(columns: readonly string[], asName: string, valuesStr: string) {
-    super(columns);
+    super();
     this.#asName = asName;
     this.#valuesStr = valuesStr;
-    this.#sql = `(VALUES\n${this.#valuesStr})\nAS ${this.#asName}(${this.columns.join(",")})`;
+    this.#sql = `(VALUES\n${this.#valuesStr})\nAS ${this.#asName}(${columns.join(",")})`;
   }
   #asName: string;
   #valuesStr: string;

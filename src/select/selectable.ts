@@ -13,34 +13,6 @@ const SQL_SELECTABLE = Symbol("SQL Selectable");
  * @public
  */
 export abstract class SqlSelectable<T extends TableType> {
-  constructor(columns: ArrayLike<string> | Iterable<string>) {
-    // Reflect.set(this, SQL_SELECTABLE, undefined);
-
-    let readonlyColumns: string[];
-    if (typeof (columns as any)[Symbol.iterator] === "function") {
-      let iterable = columns as Iterable<string>;
-      readonlyColumns = [];
-      let iter = iterable[Symbol.iterator]();
-      let i = 0;
-      let item = iter.next();
-      while (!item.done) {
-        readonlyColumns[i++] = item.value;
-        item = iter.next();
-      }
-      // readonlyColumns.length = i;
-    } else {
-      let arrayLike = columns as ArrayLike<string>;
-      readonlyColumns = new Array(arrayLike.length);
-      // readonlyColumns.length = arrayLike.length;
-      for (let i = 0; i < arrayLike.length; i++) {
-        readonlyColumns[i] = arrayLike[i];
-      }
-    }
-
-    this.columns = readonlyColumns;
-  }
-  /** 结果列 */
-  readonly columns: readonly string[];
   /**
    * 转成子选择语句, 你可以使用 select form xxx 选择
    * 如果是 table 则是 table name
@@ -58,10 +30,8 @@ export abstract class SqlSelectable<T extends TableType> {
  * @public
  */
 export class DbTable<T extends TableType> extends SqlSelectable<T> {
-  constructor(name: string, columns: readonly (keyof T)[]);
-  constructor(readonly name: string, columns: string[]) {
-    if (!(columns instanceof Array)) columns = Object.keys(columns);
-    super(columns);
+  constructor(readonly name: string) {
+    super();
   }
   toSelect(): string {
     return this.name;
@@ -76,15 +46,9 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
  * @public
  */
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
-  constructor(sql: string, columns: readonly string[]);
-  constructor(sql: SqlQueryStatement);
-  constructor(sql: string | SqlQueryStatement, columns?: readonly string[]) {
-    if (sql instanceof SqlQueryStatement) {
-      columns = sql.columns;
-      sql = sql.#sql;
-    }
-    super(columns!);
-    this.#sql = sql;
+  constructor(sql: string | SqlQueryStatement) {
+    super();
+    this.#sql = sql.toString();
   }
   #sql: string;
   toString(): string {

@@ -34,30 +34,30 @@ export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
 }
 
 class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implements CurrentWhere<T> {
-  constructor(sql: string, columns: readonly string[]) {
-    super(sql, columns);
+  constructor(sql: string) {
+    super(sql);
   }
   where(param?: Constructable<ConditionParam | void>): CurrentGroupBy<T> {
-    return new AfterSelectImpl(this.toString() + where(param), this.columns);
+    return new AfterSelectImpl(this.toString() + where(param));
   }
   groupBy(columns: string | string[]): CurrentHaving<T> {
     let sql: string = this.toString();
     if (typeof columns === "string") sql += " GROUP BY " + columns;
     else sql += " GROUP BY " + columns.join(",");
-    return new AfterSelectImpl(sql, this.columns);
+    return new AfterSelectImpl(sql);
   }
   having(param?: Constructable<ConditionParam | void>): CurrentLimit<T> {
-    return new AfterSelectImpl(this.toString() + having(param), this.columns);
+    return new AfterSelectImpl(this.toString() + having(param));
   }
   orderBy(param?: Constructable<OrderByParam | void>): CurrentLimit<T> {
-    return new AfterSelectImpl(this.toString() + orderBy(param), this.columns);
+    return new AfterSelectImpl(this.toString() + orderBy(param));
   }
 
   limit(limit?: number, offset?: number): SqlQueryStatement<T> {
     let sql = this.toString();
     if (limit) sql += "\nLIMIT " + limit;
     if (offset) sql += "\nOFFSET " + offset;
-    return new SqlQueryStatement(sql, Array.from(this.columns));
+    return new SqlQueryStatement(sql);
   }
 }
 
@@ -152,14 +152,12 @@ export class Selection {
   select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean }>): CurrentWhere<T>;
   select(columns: Constructable<SelectParam>): CurrentWhere<TableType>;
   select(columnsIn: Constructable<SelectParam>): CurrentWhere<TableType> {
-    let columns: string[] = [];
     if (typeof columnsIn === "function") columnsIn = columnsIn();
-    if (typeof columnsIn === "object") columns = Object.keys(columnsIn);
 
     let sql = "SELECT " + selectColumns(columnsIn);
     sql += "\n" + this.toString();
 
-    return new AfterSelectImpl(sql, columns);
+    return new AfterSelectImpl(sql);
   }
 }
 

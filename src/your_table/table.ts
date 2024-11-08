@@ -9,8 +9,10 @@ import { TypeChecker } from "./checker.ts";
  */
 export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
   constructor(name: string, private define: TableDefined, sqlValue: SqlValuesCreator) {
-    super(name, Object.keys(define), sqlValue);
+    super(name, sqlValue);
+    this.columns = Object.keys(define);
   }
+  readonly columns: readonly string[];
   getColumnMeta(name: keyof T): ColumnMeta<unknown> {
     return Reflect.get(this.define, name);
   }

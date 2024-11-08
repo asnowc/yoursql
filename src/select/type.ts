@@ -23,13 +23,6 @@ export type UpdateRowValue<T extends object> = {
   [key in keyof T]?: T[key] | SqlRaw;
 };
 
-/**
- * 选择列并重命名
- * @public
- */
-export type ColumnsSelectAs<T extends TableType> = {
-  [key in keyof T]?: boolean | string;
-};
 /** @public */
 export type OrderValue = "ASC" | "DESC";
 
@@ -37,7 +30,11 @@ export type OrderValue = "ASC" | "DESC";
  * 表的选择参数
  * @public
  */
-export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
+export type ColumnsSelected<T extends TableType> =
+  | {
+      [key in keyof T]?: boolean | string;
+    }
+  | "*";
 
 /**
  * 从一个表格选择列，生成新的表格类型
@@ -45,7 +42,9 @@ export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
  */
 export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends "*"
   ? T
-  : R extends ColumnsSelectAs<T>
+  : R extends {
+      [key in keyof T]?: boolean | string;
+    }
   ? {
       [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
     }

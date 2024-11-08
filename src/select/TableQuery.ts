@@ -10,8 +10,8 @@ export class DbTableQuery<
   T extends TableType = Record<string, any>,
   C extends TableType = Partial<T>
 > extends DbTable<T> {
-  constructor(name: string, columns: readonly string[], private statement: SqlValuesCreator) {
-    super(name, columns);
+  constructor(name: string, private statement: SqlValuesCreator) {
+    super(name);
   }
   fromAs(as?: string): Selection {
     return new Selection(this, as);
@@ -36,28 +36,61 @@ export class DbTableQuery<
   select(columns: "*" | Record<string, any>, as?: string): CurrentWhere<TableType> {
     return this.fromAs(as).select(columns);
   }
-  insert(values: Constructable<C | C[] | SqlQueryStatement<C>>, option?: InsertOption<T>): string {
+  /**
+   * @example
+   * ```ts
+   * table.insert({age:18, name:"hi"}) // INSERT INTO table(age,name) VALUES (18, 'hi')
+   * table.insert([{age:18, name:"hi"}, {age:17, name:"hh"}]) // INSERT INTO table(age,name) VALUES(18, 'hi'), (17, 'hh')
+   * ```
+   */
+  insert(values: Constructable<C | C[]>, option?: InsertOption<T>): string;
+  /**
+   * @example
+   * ```ts
+   * table.insert("VALUES (18, 'hi'), (17, 'hh')", ["age","name"]) // INSERT INTO table(age,name) VALUES(18, 'hi'), (17, 'hh')
+   * ```
+   */
+  insert(values: Constructable<string>, columns: string[], option?: InsertOption<T>): string;
+  insert(
+    values: Constructable<C | C[] | string>,
+    columns_option?: string[] | InsertOption<T>,
+    option?: InsertOption<T>
+  ): string {
     if (typeof values === "function") values = values();
 
-    let insertCol: readonly string[];
+    let columnStr: string;
     let valuesStr: string;
-    if (typeof values === "object") {
-      if (values instanceof Array) {
-        if (values.length === 0) throw new Error("值不能为空");
-        insertCol = Array.from(getObjectListKeys(values));
-        valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol)}`;
-      } else if (values instanceof SqlQueryStatement) {
-        // todo 验证 values.columns 和 this.columns 是否匹配
-        valuesStr = values.toString();
-        insertCol = values.columns;
-      } else {
-        insertCol = Object.keys(values);
-        valuesStr = `VALUES\n(${this.statement.objectToValues(values, insertCol)})`;
-      }
-    } else throw new Error("values 应该是 Array 或 TableQuery 类型");
-    if (insertCol.length === 0) throw new Error("插入列不能为空");
 
-    let sql = `INSERT INTO ${this.name} (${insertCol.join(",")})\n${valuesStr}`;
+    if (typeof values === "string") {
+      valuesStr = values;
+      if (typeof columns_option === "string") columnStr = columns_option;
+      else if (columns_option instanceof Array) {
+        if (columns_option.length === 0) throw new Error("插入列为空");
+        columnStr = columns_option.join(",");
+      } else throw new Error("当 values 为 string 类型时，必须指定 columns");
+    } else {
+      let insertCol: readonly string[];
+      option = columns_option as InsertOption<T>;
+
+      if (typeof values === "object") {
+        if (values instanceof Array) {
+          if (values.length === 0) throw new Error("值不能为空");
+          insertCol = Array.from(getObjectListKeys(values));
+          valuesStr = `VALUES\n${this.statement.objectListToValuesList(values, insertCol)}`;
+        } else if (values instanceof SqlQueryStatement) {
+          // todo 验证 values.columns 和 this.columns 是否匹配
+          valuesStr = values.toString();
+          insertCol = values.columns;
+        } else {
+          insertCol = Object.keys(values);
+          valuesStr = `VALUES\n(${this.statement.objectToValues(values, insertCol)})`;
+        }
+      } else throw new Error("values 应该是 Array 或 TableQuery 类型");
+      if (insertCol.length === 0) throw new Error("插入列不能为空");
+      columnStr = insertCol.join(",");
+    }
+
+    let sql = `INSERT INTO ${this.name} (${columnStr})\n${valuesStr}`;
 
     if (option) {
       let { updateValues, conflict, where: inputWhere } = option;
@@ -78,30 +111,50 @@ export class DbTableQuery<
     return sql;
   }
   insertWithResult<R extends ColumnsSelected<T>>(
-    values: Constructable<C | C[] | SqlQueryStatement<C>>,
+    values: Constructable<C | C[]>,
     returns: R,
     option?: InsertOption<T>
+  ): SqlQueryStatement<SelectColumns<T, R>>;
+  insertWithResult<R extends ColumnsSelected<T>>(
+    values: Constructable<string>,
+    returns: R,
+    columns: string | string[],
+    option?: InsertOption<T>
+  ): SqlQueryStatement<SelectColumns<T, R>>;
+  insertWithResult<R extends ColumnsSelected<T>>(
+    values: Constructable<C | C[] | string>,
+    returns: R,
+    columns?: string | string[] | InsertOption<T>,
+    option?: InsertOption<T>
   ): SqlQueryStatement<SelectColumns<T, R>> {
-    let sql = this.insert(values, option);
-    return genRetuningSql(
-      sql,
-      returns,
-      values instanceof SqlQueryStatement ? values.columns : this.columns
-    ) as SqlQueryStatement<SelectColumns<T, R>>;
+    let sql = this.insert(values as any, columns as any, option);
+    return genRetuningSql(sql, returns) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 
-  update(values: Constructable<UpdateRowValue<T>>, option: UpdateOption = {}): string {
+  /**
+   * @example
+   * ```ts
+   * table.update("age=3, name='hi'") // "UPDATE table SET age=3, name='hi'"
+   * table.update({age:3, name:"hi"}) // "UPDATE table SET age=3, name='hi'"
+   * ```
+   */
+  update(values: Constructable<UpdateRowValue<T> | string>, option: UpdateOption = {}): string {
     if (typeof values === "function") values = values();
-    const updateKey = Object.entries(values);
-    if (updateKey.length === 0) throw new Error("值不能为空");
-
-    let setList: string[] = [];
-    for (const [k, v] of updateKey) {
-      if (v === undefined) continue;
-      setList.push(k + " = " + this.statement.toSqlStr(v));
+    let setStr: string;
+    if (typeof values === "string") setStr = values;
+    else {
+      const updateKey = Object.entries(values);
+      let setList: string[] = [];
+      for (const [k, v] of updateKey) {
+        if (v === undefined) continue;
+        setList.push(k + " = " + this.statement.toSqlStr(v));
+      }
+      setStr = setList.join(",\n");
     }
 
-    let sql = `UPDATE ${this.name}\nSET ${setList.join(",\n")}`;
+    if (!setStr) throw new Error("值不能为空");
+
+    let sql = `UPDATE ${this.name}\nSET ${setStr}`;
     sql += where(option.where);
     return sql;
   }
@@ -111,11 +164,7 @@ export class DbTableQuery<
     option?: UpdateOption
   ): SqlQueryStatement<SelectColumns<T, R>> {
     let sql = this.update(values, option);
-    return genRetuningSql(
-      sql,
-      returns,
-      values instanceof SqlQueryStatement ? values.columns : this.columns
-    ) as SqlQueryStatement<SelectColumns<T, R>>;
+    return genRetuningSql(sql, returns) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 
   delete(option: DeleteOption = {}): string {
@@ -128,7 +177,7 @@ export class DbTableQuery<
     option?: DeleteOption
   ): SqlQueryStatement<SelectColumns<T, R>> {
     let sql = this.delete(option);
-    return genRetuningSql(sql, returns, this.columns) as SqlQueryStatement<SelectColumns<T, R>>;
+    return genRetuningSql(sql, returns) as SqlQueryStatement<SelectColumns<T, R>>;
   }
 }
 
@@ -147,21 +196,14 @@ export interface DeleteOption {
   where?: Constructable<ConditionParam | void>;
 }
 
-function genRetuningSql(
-  sql: string,
-  returns: ColumnsSelected<any>,
-  tableColumns: readonly string[]
-): SqlQueryStatement {
+function genRetuningSql(sql: string, returns: ColumnsSelected<any>): SqlQueryStatement {
   let columnsStr: string;
-  let columns: readonly string[];
   if (returns === "*") {
-    columns = tableColumns;
     columnsStr = "*";
   } else {
     const res = selectColumnsOrTable(returns as Parameters<typeof selectColumnsOrTable>[0]);
     columnsStr = res.sqlColumns;
-    columns = res.columns;
   }
   sql += "\nRETURNING " + columnsStr;
-  return new SqlQueryStatement(sql, columns);
+  return new SqlQueryStatement(sql);
 }

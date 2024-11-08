@@ -2,14 +2,14 @@ import { Selection, SqlQueryStatement, TableType, DbTable } from "@asnc/yoursql"
 import { test, expect, describe } from "vitest";
 
 class MockSqlSelectable<T extends TableType> extends SqlQueryStatement<T> {
-  constructor(name: string, columns: string[]) {
-    super(`SELECT * FROM ${name}`, columns);
+  constructor(name: string) {
+    super(`SELECT * FROM ${name}`);
   }
 }
 
-const t0 = new DbTable<{ c1: string; c2: number; c3: string | null }>("aaa", ["c1", "c2", "c3"]);
-const t1 = new MockSqlSelectable<{ c1: string; c2: number; c3: string | null }>("ccc", ["c1", "c2", "c3"]);
-const t2 = new MockSqlSelectable<{ c11: string; c22: string; c3: string }>("bbb", ["c11", "c22", "c3"]);
+const t0 = new DbTable<{ c1: string; c2: number; c3: string | null }>("aaa");
+const t1 = new MockSqlSelectable<{ c1: string; c2: number; c3: string | null }>("ccc");
+const t2 = new MockSqlSelectable<{ c11: string; c22: string; c3: string }>("bbb");
 
 test("单表 select", function () {
   let s0 = Selection.from(t0).select("*").toString();

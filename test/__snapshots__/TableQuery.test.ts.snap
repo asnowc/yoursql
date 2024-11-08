@@ -31,6 +31,11 @@ DO UPDATE SET
 level = 89"
 `;
 
+exports[`TableQuery > insert > insert 3`] = `
+"INSERT INTO user (name)
+VALUES('张三')"
+`;
+
 exports[`TableQuery > insert > insertWithResult 1`] = `
 "INSERT INTO user (name)
 VALUES

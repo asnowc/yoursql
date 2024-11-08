@@ -11,8 +11,7 @@ describe("TableQuery", function () {
     name: string;
     level?: number;
   }
-  const tableColumns: (keyof Table)[] = ["name", "id", "level"];
-  const table = new DbTableQuery<Table, CreateTable>("user", tableColumns, new SqlValuesCreator(pgSqlTransformer));
+  const table = new DbTableQuery<Table, CreateTable>("user", new SqlValuesCreator(pgSqlTransformer));
   describe("select", function () {
     test("select-columns", function () {
       expect(table.fromAs().select("*").toString()).toMatchSnapshot();
@@ -70,10 +69,16 @@ describe("TableQuery", function () {
         table.insert([{ name: "张三" }], { conflict: ["id", "level"], updateValues: { level: 89 } }),
         "冲突更新"
       ).toMatchSnapshot();
+
+      expect(table.insert("VALUES('张三')", ["name"]), "字符串值").toMatchSnapshot();
     });
     test("insert-error", function () {
       expect(() => table.insert([])).toThrowError();
       expect(() => table.insert([{}, {}] as any)).toThrowError();
+      expect(() => table.insert({} as any)).toThrowError();
+      //@ts-ignore
+      expect(() => table.insert("VALUES(1)"), "没有指定列").toThrowError();
+      expect(() => table.insert("VALUES(1)", []), "没有指定列").toThrowError();
     });
     test("insertWithResult", function () {
       const values = [{ name: "hh" }];

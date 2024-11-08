@@ -1,7 +1,6 @@
-import { Constructable } from "src/util.ts";
-import { ColumnsSelectAs } from "./type.ts";
+import { Constructable } from "../util.ts";
 
-export function selectColumnsOrTable(columns: ColumnsSelectAs<any> | string[]) {
+export function selectColumnsOrTable(columns: Record<string, boolean | string> | string[]) {
   let sqlSelect: string[];
   let select: string[];
   if (columns instanceof Array) {
