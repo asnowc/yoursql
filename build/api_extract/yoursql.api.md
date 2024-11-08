@@ -21,15 +21,15 @@ export class ColumnMeta<T> {
 }
 
 // @public
-export type ColumnsSelectAs<T extends TableType> = {
+export type ColumnsSelected<T extends TableType> = {
     [key in keyof T]?: boolean | string;
-};
-
-// @public
-export type ColumnsSelected<T extends TableType> = ColumnsSelectAs<T> | "*";
+} | "*";
 
 // @public (undocumented)
 export type ConditionParam = string | string[];
+
+// @public (undocumented)
+export type Constructable<T> = T | (() => T);
 
 // @public (undocumented)
 export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
@@ -40,7 +40,7 @@ export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
 // @public (undocumented)
 export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
     // (undocumented)
-    having(param: ConditionParam | (() => ConditionParam | void)): CurrentLimit<T>;
+    having(param: Constructable<ConditionParam | void>): CurrentLimit<T>;
 }
 
 // @public (undocumented)
@@ -52,13 +52,13 @@ export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> 
 // @public (undocumented)
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
     // (undocumented)
-    orderBy(param: OrderByParam | (() => OrderByParam | void)): CurrentLimit<T>;
+    orderBy(param: Constructable<OrderByParam | void>): CurrentLimit<T>;
 }
 
 // @public (undocumented)
 export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
     // (undocumented)
-    where(param: ConditionParam | (() => ConditionParam | void)): CurrentGroupBy<T>;
+    where(param: Constructable<ConditionParam | void>): CurrentGroupBy<T>;
 }
 
 // @public
@@ -80,7 +80,7 @@ export class CustomDbType<T> {
 
 // @public
 export class DbTable<T extends TableType> extends SqlSelectable<T> {
-    constructor(name: string, columns: readonly (keyof T)[]);
+    constructor(name: string);
     // (undocumented)
     readonly name: string;
     // (undocumented)
@@ -91,7 +91,7 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
 
 // @public (undocumented)
 export class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
-    constructor(name: string, columns: readonly string[], statement: SqlValuesCreator);
+    constructor(name: string, statement: SqlValuesCreator);
     // (undocumented)
     delete(option?: DeleteOption): string;
     // (undocumented)
@@ -99,37 +99,39 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
     // (undocumented)
     fromAs(as?: string): Selection_2;
     // (undocumented)
-    insert(values: C[] | SqlQueryStatement<C>, option?: InsertOption<T>): string;
+    insert(values: Constructable<C | C[]>, option?: InsertOption<T>): string;
     // (undocumented)
-    insertWithResult<R extends ColumnsSelected<T>>(values: C[] | SqlQueryStatement<C>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
+    insert(values: Constructable<string>, columns: string[], option?: InsertOption<T>): string;
+    // (undocumented)
+    insertWithResult<R extends ColumnsSelected<T>>(values: Constructable<C | C[]>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
+    // (undocumented)
+    insertWithResult<R extends ColumnsSelected<T>>(values: Constructable<string>, returns: R, columns: string | string[], option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
     select(columns: "*", as?: string): CurrentWhere<T>;
     select<R extends {
-        [key in keyof T]?: string | boolean;
-    } | Record<string, string>>(columns: R | (() => R), as?: string): CurrentWhere<{
-        [key in keyof R]: R[key] extends boolean ? key extends keyof T ? T[key] : unknown : R[key] extends keyof T ? T[R[key]] : unknown;
+        [key in keyof T]?: boolean;
+    }>(columns: Constructable<R>, as?: string): CurrentWhere<{
+        [key in keyof R]: key extends keyof T ? T[key] : unknown;
     }>;
-    select<R extends {}>(columns: string | {
+    select<R extends {}>(columns: Constructable<{
         [key in keyof R]?: key extends keyof T ? string | boolean : string;
-    } | (() => string | {
-        [key in keyof R]?: key extends keyof T ? string | boolean : string;
-    }), as?: string): CurrentWhere<R>;
+    } | string>, as?: string): CurrentWhere<R>;
     // (undocumented)
-    update(values: UpdateRowValue<T>, option?: UpdateOption): string;
+    update(values: Constructable<UpdateRowValue<T> | string>, option?: UpdateOption): string;
     // (undocumented)
-    updateWithResult<R extends ColumnsSelected<T>>(values: UpdateRowValue<T>, returns: R, option?: UpdateOption): SqlQueryStatement<SelectColumns<T, R>>;
+    updateWithResult<R extends ColumnsSelected<T>>(values: Constructable<UpdateRowValue<T>>, returns: R, option?: UpdateOption): SqlQueryStatement<SelectColumns<T, R>>;
 }
 
 // @public (undocumented)
 export interface DeleteOption {
     // (undocumented)
-    where?: ConditionParam;
+    where?: Constructable<ConditionParam | void>;
 }
 
 // @public
 export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
 
 // @public
-export function having(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
+export function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
 export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
@@ -142,13 +144,13 @@ export type InferTableDefined<T extends TableDefined> = {
 // @public (undocumented)
 export interface InsertOption<T extends object> {
     // (undocumented)
-    conflict?: (keyof T)[];
+    conflict?: (keyof T)[] | string;
     // (undocumented)
-    updateValues?: {
+    updateValues?: Constructable<{
         [key in keyof T]?: undefined | SqlRaw | T[key];
-    };
+    } | string | void>;
     // (undocumented)
-    where?: ConditionParam;
+    where?: Constructable<ConditionParam | void>;
 }
 
 // @public (undocumented)
@@ -165,7 +167,7 @@ export type OrderBehavior = {
 };
 
 // @public
-export function orderBy(by?: OrderByParam | void | (() => OrderByParam | void)): string;
+export function orderBy(by?: Constructable<OrderByParam | void>): string;
 
 // @public (undocumented)
 export type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
@@ -190,41 +192,41 @@ export type PickColumn<T extends {
 // Warning: (ae-forgotten-export) The symbol "StringOnly" needs to be exported by the entry point index.d.ts
 //
 // @public
-export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends "*" ? T : R extends ColumnsSelectAs<T> ? {
+export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends "*" ? T : R extends {
+    [key in keyof T]?: boolean | string;
+} ? {
     [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
 } : never;
 
 // @public (undocumented)
-export function selectColumns(columns: SelectParam | (() => SelectParam)): string;
+export function selectColumns(columns: Constructable<SelectParam>): string;
 
 // @public (undocumented)
 class Selection_2 {
-    constructor(selectable: SqlSelectable<any> | string, as?: string);
+    constructor(selectable: Constructable<SqlSelectable<any> | string>, as?: string);
     // (undocumented)
-    crossJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection_2;
+    crossJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection_2;
     // (undocumented)
-    static from(selectable: SqlSelectable<any> | string, as?: string): Selection_2;
+    static from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection_2;
     // (undocumented)
-    from(selectable: SqlSelectable<any> | string, as?: string): Selection_2;
+    from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection_2;
     // (undocumented)
-    fullJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
+    fullJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    innerJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
+    innerJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    leftJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
+    leftJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    naturalJoin(selectable: SqlSelectable<any>, as?: string | undefined): Selection_2;
+    naturalJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection_2;
     // (undocumented)
-    rightJoin(selectable: SqlSelectable<any>, as: string | undefined, on: ConditionParam | (() => ConditionParam)): Selection_2;
+    rightJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
-    select<T extends TableType = TableType>(columns: string | (() => string)): CurrentWhere<T>;
-    select<T extends TableType>(columns: {
+    select<T extends TableType = TableType>(columns: Constructable<string>): CurrentWhere<T>;
+    select<T extends TableType>(columns: Constructable<{
         [key in keyof T]: string | boolean;
-    } | (() => {
-        [key in keyof T]: string | boolean;
-    })): CurrentWhere<T>;
+    }>): CurrentWhere<T>;
     // (undocumented)
-    select(columns: SelectParam | (() => SelectParam)): CurrentWhere<TableType>;
+    select(columns: Constructable<SelectParam>): CurrentWhere<TableType>;
     // (undocumented)
     toString(): string;
 }
@@ -235,8 +237,7 @@ export type SelectParam = string | Record<string, string | boolean>;
 
 // @public
 export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
-    constructor(sql: string, columns: readonly string[]);
-    constructor(sql: SqlQueryStatement);
+    constructor(sql: string | SqlQueryStatement);
     // (undocumented)
     toSelect(): string;
     // (undocumented)
@@ -254,8 +255,6 @@ export class SqlRaw<T = any> {
 // @public
 export abstract class SqlSelectable<T extends TableType> {
     protected [SQL_SELECTABLE]: T;
-    constructor(columns: ArrayLike<string> | Iterable<string>);
-    readonly columns: readonly string[];
     abstract toSelect(): string;
     abstract toString(): string;
 }
@@ -316,7 +315,7 @@ export class TypeChecker<T> {
 // @public (undocumented)
 export interface UpdateOption {
     // (undocumented)
-    where?: ConditionParam;
+    where?: Constructable<ConditionParam | void>;
 }
 
 // @public (undocumented)
@@ -325,11 +324,13 @@ export type UpdateRowValue<T extends object> = {
 };
 
 // @public
-export function where(conditions?: ConditionParam | (() => ConditionParam | void), type?: "AND" | "OR"): string;
+export function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
 export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
     constructor(name: string, define: TableDefined, sqlValue: SqlValuesCreator);
+    // (undocumented)
+    readonly columns: readonly string[];
     // (undocumented)
     createTypeChecker<T>(keys: readonly string[]): TypeChecker<T>;
     // (undocumented)
