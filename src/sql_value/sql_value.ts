@@ -4,26 +4,19 @@ import { SqlSelectable } from "../select/selectable.ts";
 
 declare const SQL_RAW: unique symbol;
 /**
- * SQL 原始字符对象
+ * SQL 原始字符类。可以使用 String 类代替，这只是为了推断类型
  * @public
  */
-export class SqlRaw<T = any> {
-  #value: string;
-  constructor(value: string) {
-    this.#value = value;
-  }
-  toString(): string {
-    return this.#value;
-  }
+export class SqlRaw<T = any> extends String {
   /** 保留以推断类型 */
   protected declare [SQL_RAW]: T;
 }
 
-/** @public */
+/** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
-/** @public */
+/** @public 将 js 值转为 SQl 字符串的函数*/
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
-/** @public */
+/** @public 断言类型 */
 export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 /** @public */
@@ -86,7 +79,7 @@ export class SqlValuesCreator {
         return value.toString();
       case "object": {
         if (value === null) return "NULL";
-        if (value instanceof SqlRaw) return value.toString();
+        if (value instanceof String) return value.toString();
         return this.getObjectType(value).call(this, value);
       }
       case "undefined":
