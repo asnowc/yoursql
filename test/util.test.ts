@@ -41,7 +41,7 @@ test("selectColumns", function () {
   expect(selectColumns({ c1: true, c2: "count(*)", c3: "column" })).toBe(sql);
   expect(selectColumns(sql)).toBe(sql);
 
-  expect(() => selectColumns({})).toThrowError("");
+  expect(() => selectColumns({})).toThrowError();
 });
 test("getObjectListKeys", function () {
   let keys = getObjectListKeys([{ a: true }, { b: true }, { c: undefined }]);

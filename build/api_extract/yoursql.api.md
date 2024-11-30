@@ -4,6 +4,8 @@
 
 ```ts
 
+import { SqlValueFn as SqlValueFn_2 } from './sql_value/sql_value.ts';
+
 // @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -153,10 +155,10 @@ export interface InsertOption<T extends object> {
     where?: Constructable<ConditionParam | void>;
 }
 
-// @public (undocumented)
+// @public
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
-// @public (undocumented)
+// @public
 export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
@@ -245,11 +247,8 @@ export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelec
 }
 
 // @public
-export class SqlRaw<T = any> {
+export class SqlRaw<T = any> extends String {
     protected [SQL_RAW]: T;
-    constructor(value: string);
-    // (undocumented)
-    toString(): string;
 }
 
 // @public
@@ -259,12 +258,12 @@ export abstract class SqlSelectable<T extends TableType> {
     abstract toString(): string;
 }
 
-// @public (undocumented)
+// @public
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
 
 // @public (undocumented)
 export interface SqlValueFn {
-    (value: any, expectType?: ManualType): string;
+    (value: any, assertType?: ManualType): string;
 }
 
 // @public
@@ -285,9 +284,11 @@ export class SqlValuesCreator {
     objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
         [key in keyof T]?: string | undefined;
     }): string;
-    setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder): void;
+    setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
+    // (undocumented)
+    setTransformer(map: JsObjectMapSql): void;
     static string(value: string): string;
-    toSqlStr(value: any, expectType?: ManualType): string;
+    toSqlStr(value: any, assertType?: ManualType): string;
     toValues(values: readonly any[]): string;
 }
 
@@ -322,6 +323,9 @@ export interface UpdateOption {
 export type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | SqlRaw;
 };
+
+// @public
+export const v: SqlValuesCreator & SqlValueFn_2;
 
 // @public
 export function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
