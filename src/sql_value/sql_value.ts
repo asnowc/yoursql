@@ -20,20 +20,20 @@ export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => str
 export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 /** @public */
-export interface SqlValueFn {
+export type SqlValueFn = SqlValuesCreator & {
   /**
    * 安全将 JS 对象转为 SQL 的字符值的形式，可避免 SQL 注入。
    * undefined 将被转换为 DEFAULT
    */
   (value: any, assertType?: ManualType): string;
-}
+};
 
 /**
  * SQL value 生成器
  * @public
  */
 export class SqlValuesCreator {
-  static create(map?: JsObjectMapSql): SqlValuesCreator & SqlValueFn {
+  static create(map?: JsObjectMapSql): SqlValueFn {
     const obj = new this(map);
     const fn = obj.toSqlStr.bind(obj);
     Reflect.setPrototypeOf(fn, obj);

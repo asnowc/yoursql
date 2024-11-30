@@ -4,8 +4,6 @@
 
 ```ts
 
-import { SqlValueFn as SqlValueFn_2 } from './sql_value/sql_value.ts';
-
 // @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -262,15 +260,15 @@ export abstract class SqlSelectable<T extends TableType> {
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
 
 // @public (undocumented)
-export interface SqlValueFn {
+export type SqlValueFn = SqlValuesCreator & {
     (value: any, assertType?: ManualType): string;
-}
+};
 
 // @public
 export class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
-    static create(map?: JsObjectMapSql): SqlValuesCreator & SqlValueFn;
+    static create(map?: JsObjectMapSql): SqlValueFn;
     createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | {
         sqlType: string;
         sqlDefault?: string;
@@ -325,7 +323,7 @@ export type UpdateRowValue<T extends object> = {
 };
 
 // @public
-export const v: SqlValuesCreator & SqlValueFn_2;
+export const v: SqlValueFn;
 
 // @public
 export function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
