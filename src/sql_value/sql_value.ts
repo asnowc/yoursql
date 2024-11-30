@@ -21,8 +21,11 @@ export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" |
 
 /** @public */
 export interface SqlValueFn {
-  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-  (value: any, expectType?: ManualType): string;
+  /**
+   * 安全将 JS 对象转为 SQL 的字符值的形式，可避免 SQL 注入。
+   * undefined 将被转换为 DEFAULT
+   */
+  (value: any, assertType?: ManualType): string;
 }
 
 /**
@@ -46,26 +49,42 @@ export class SqlValuesCreator {
   /**
    * @param map - 自定义对象转换
    */
-  constructor(map: JsObjectMapSql = new Map()) {
-    this.map = map;
+  constructor(map?: JsObjectMapSql) {
+    this.#map = new Map(map);
   }
   /** 设置转换器 */
-  setTransformer<T>(type: new (...args: any[]) => T, transformer?: SqlValueEncoder) {
-    if (!transformer) this.map.delete(type);
-    else this.map.set(type, transformer);
+  setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
+  setTransformer(map: JsObjectMapSql): void;
+  setTransformer(type_map: (new (...args: any[]) => any) | JsObjectMapSql, encoder?: SqlValueEncoder): void {
+    if (typeof type_map === "function") {
+      if (encoder) this.#map.set(type_map, encoder);
+      else this.#map.delete(type_map);
+    } else {
+      for (const [type, encoder] of type_map) {
+        if (typeof type === "function" && typeof encoder === "function") {
+          this.#map.set(type, encoder);
+        }
+      }
+    }
   }
-  private readonly map: JsObjectMapSql;
+  readonly #map: JsObjectMapSql;
 
-  /** 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT */
-  toSqlStr(value: any, expectType?: ManualType): string {
+  /**
+   * 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT
+   * ```ts
+   *  const v=SqlValuesCreator.create()
+   *  v() 和 v.toSqlStr() 是等价的
+   * ```
+   */
+  toSqlStr(value: any, assertType?: ManualType): string {
     let basicType;
-    if (expectType) {
-      if (typeof expectType === "function") {
-        let type = this.map.get(expectType);
+    if (assertType) {
+      if (typeof assertType === "function") {
+        let type = this.#map.get(assertType);
         if (!type) throw new Error("类型不存在");
         return type.call(this, value);
       } else {
-        basicType = expectType;
+        basicType = assertType;
       }
     } else basicType = typeof value;
     switch (basicType) {
@@ -92,8 +111,8 @@ export class SqlValuesCreator {
   }
   /** 获取值对应的 SqlValueEncoder */
   getObjectType(value: object): SqlValueEncoder {
-    for (const Class of this.map.keys()) {
-      if (value instanceof Class) return this.map.get(Class)!;
+    for (const Class of this.#map.keys()) {
+      if (value instanceof Class) return this.#map.get(Class)!;
     }
     return this.defaultObject;
   }
@@ -102,7 +121,7 @@ export class SqlValuesCreator {
   }
 
   /**
-   * 将对象列表转为 SQL 的 VALUES
+   * 将对象列表转为 SQL 的 VALUES。
    * @example 返回示例： " (...),(...) "
    * @param keys - 选择的键。如果指定了 keys, 值为 undefined 的属性将自动填充为 null; 如果未指定 keys，将选择 objectList 所有不是 undefined 项的键的并集
    */
