@@ -67,6 +67,9 @@ describe("objectListToValuesList", function () {
     );
     expect(s).toMatchSnapshot();
   });
+  test("getObjectType", function () {
+    expect(v.getObjectType({}).call(v, {})).toBe("'{}'");
+  });
 });
 
 test("createValues", function () {

@@ -50,24 +50,24 @@ export class SqlValuesCreator {
    * @param map - 自定义对象转换
    */
   constructor(map?: JsObjectMapSql) {
-    this.#map = new Map(map);
+    this._map = new Map(map);
   }
   /** 设置转换器 */
   setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
   setTransformer(map: JsObjectMapSql): void;
   setTransformer(type_map: (new (...args: any[]) => any) | JsObjectMapSql, encoder?: SqlValueEncoder): void {
     if (typeof type_map === "function") {
-      if (encoder) this.#map.set(type_map, encoder);
-      else this.#map.delete(type_map);
+      if (encoder) this._map.set(type_map, encoder);
+      else this._map.delete(type_map);
     } else {
       for (const [type, encoder] of type_map) {
         if (typeof type === "function" && typeof encoder === "function") {
-          this.#map.set(type, encoder);
+          this._map.set(type, encoder);
         }
       }
     }
   }
-  readonly #map: JsObjectMapSql;
+  private readonly _map: JsObjectMapSql;
 
   /**
    * 将 JS 对象转为 SQL 的字符值的形式 。 undefined 将被转换为 DEFAULT
@@ -80,7 +80,7 @@ export class SqlValuesCreator {
     let basicType;
     if (assertType) {
       if (typeof assertType === "function") {
-        let type = this.#map.get(assertType);
+        let type = this._map.get(assertType);
         if (!type) throw new Error("类型不存在");
         return type.call(this, value);
       } else {
@@ -111,8 +111,8 @@ export class SqlValuesCreator {
   }
   /** 获取值对应的 SqlValueEncoder */
   getObjectType(value: object): SqlValueEncoder {
-    for (const Class of this.#map.keys()) {
-      if (value instanceof Class) return this.#map.get(Class)!;
+    for (const Class of this._map.keys()) {
+      if (value instanceof Class) return this._map.get(Class)!;
     }
     return this.defaultObject;
   }
