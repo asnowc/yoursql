@@ -16,16 +16,23 @@ export class SqlRaw<T = any> extends String {
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 /** @public 将 js 值转为 SQl 字符串的函数*/
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
+
 /** @public 断言类型 */
-export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+/**
+ * @deprecated 改用 AssertJsType
+ * @public 断言类型
+ */
+export type ManualType = AssertJsType;
 
 /** @public */
 export type SqlValueFn = SqlValuesCreator & {
   /**
    * 安全将 JS 对象转为 SQL 的字符值的形式，可避免 SQL 注入。
    * undefined 将被转换为 DEFAULT
+   * @param assertType - 如果断言了基本类型，并且值的基本类型与断言的类型不一致，则会抛出异常。 如果不是基本类型，则 value 会被传递给指定的转义器
    */
-  (value: any, assertType?: ManualType): string;
+  (value: any, assertType?: AssertJsType): string;
 };
 
 /**
@@ -76,17 +83,23 @@ export class SqlValuesCreator {
    *  v() 和 v.toSqlStr() 是等价的
    * ```
    */
-  toSqlStr(value: any, assertType?: ManualType): string {
-    let basicType;
-    if (assertType) {
-      if (typeof assertType === "function") {
-        let type = this._map.get(assertType);
-        if (!type) throw new Error("类型不存在");
+  toSqlStr(value: any, assertJsType?: AssertJsType): string {
+    if (value === null) return "NULL";
+    else if (value === undefined) return "DEFAULT";
+    let basicType = typeof value;
+    if (assertJsType) {
+      if (typeof assertJsType === "function") {
+        if (basicType !== "object") throw new AssertError("object", basicType);
+        let type = this._map.get(assertJsType);
+        if (!type) {
+          if (assertJsType === Object) return this.defaultObject(value);
+          throw new Error("类型不存在");
+        }
         return type.call(this, value);
-      } else {
-        basicType = assertType;
+      } else if (basicType !== assertJsType) {
+        throw new AssertError(assertJsType, basicType);
       }
-    } else basicType = typeof value;
+    }
     switch (basicType) {
       case "bigint":
         return value.toString();
@@ -97,7 +110,6 @@ export class SqlValuesCreator {
       case "boolean":
         return value.toString();
       case "object": {
-        if (value === null) return "NULL";
         if (value instanceof String) return value.toString();
         return this.getObjectType(value).call(this, value);
       }
@@ -106,15 +118,24 @@ export class SqlValuesCreator {
       default:
         //function、symbol
         let type = typeof value;
-        throw new Error("不支持转换 " + type + " 类型");
+        throw new Error("不支持 " + type + " 类型");
     }
   }
-  /** 获取值对应的 SqlValueEncoder */
+  /**
+   * @deprecated 已废弃
+   * 获取值对应的 SqlValueEncoder
+   */
   getObjectType(value: object): SqlValueEncoder {
     for (const Class of this._map.keys()) {
       if (value instanceof Class) return this._map.get(Class)!;
     }
     return this.defaultObject;
+  }
+  /** 获取值对应已定义的类 */
+  getClassType(value: object): undefined | (new (...args: unknown[]) => unknown) {
+    for (const Class of this._map.keys()) {
+      if (value instanceof Class) return Class;
+    }
   }
   protected defaultObject(value: object): string {
     return SqlValuesCreator.string(JSON.stringify(value));
@@ -127,24 +148,26 @@ export class SqlValuesCreator {
    */
   objectListToValuesList<T extends object>(
     objectList: T[],
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined },
+    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig },
     keepUndefinedKey?: boolean
   ): string;
   objectListToValuesList(
     objectList: Record<string | number | symbol, any>[],
-    keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined>,
+    keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined | ColumnToValueConfig>,
     keepUndefinedKey?: boolean
   ): string {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
+    let asserts: Record<string, ColumnToValueConfig | undefined> = {};
     if (!keys_types) {
       keys = Array.from(getObjectListKeys(objectList, keepUndefinedKey));
     } else if (keys_types instanceof Array) {
       keys = keys_types as string[];
     } else {
       keys = Object.keys(keys_types);
+      asserts = initColumnAssert(keys, keys_types);
     }
-    let str = "(" + this.objectToValues(objectList[0], keys_types ?? keys) + ")";
+    let str = "(" + this._internalObjectToValues(objectList[0], keys, asserts) + ")";
     let i = 1;
     let j: number;
     let value: any;
@@ -174,24 +197,45 @@ export class SqlValuesCreator {
    */
   objectToValues<T extends object>(
     object: T,
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined }
+    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig }
   ): string;
   objectToValues(
     object: Record<string | number, any>,
     keys_types: readonly string[] | Record<string, string | undefined> | undefined
   ): string {
-    const { keys, type } = toKeyType(object, keys_types);
+    let type: Record<string, ColumnToValueConfig> = {};
+    let keys: readonly string[];
 
+    if (keys_types instanceof Array) {
+      keys = keys_types;
+      type = {};
+    } else if (keys_types) {
+      keys = Object.keys(keys_types);
+      type = initColumnAssert(keys, keys_types);
+    } else {
+      keys = Object.keys(object);
+    }
+    return this._internalObjectToValues(object, keys, type);
+  }
+  private _internalObjectToValues(
+    object: Record<string, any>,
+    keys: readonly string[],
+    type: Record<string, ColumnToValueConfig | undefined>
+  ) {
     const values: string[] = [];
     let i = 0;
     let key: string;
     let value: any;
+    let assertType: ColumnToValueConfig | undefined;
     try {
       for (; i < keys.length; i++) {
         key = keys[i];
         value = object[key];
-        if (type[key]) values[i] = this.toSqlStr(value) + "::" + type[key];
-        else values[i] = this.toSqlStr(value);
+        assertType = type[key];
+        if (assertType) {
+          values[i] = this.toSqlStr(value, assertType.assertJsType);
+          if (assertType.sqlType) values[i] += "::" + assertType.sqlType;
+        } else values[i] = this.toSqlStr(value);
       }
     } catch (error) {
       let message = error instanceof Error ? error.message : String(error);
@@ -222,12 +266,12 @@ export class SqlValuesCreator {
   createValues<T extends {}>(
     asName: string,
     values: T[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
   ): SqlSelectable<T>;
   createValues(
     asName: string,
     values: Record<string, any>[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
   ): SqlSelectable<any> {
     if (values.length === 0) throw new Error("values 不能为空");
     const insertKeys: string[] = Object.keys(valuesTypes);
@@ -237,22 +281,24 @@ export class SqlValuesCreator {
     {
       const column0: string[] = new Array(insertKeys.length);
       let columnName: string;
-      let item: string | { sqlType: string; sqlDefault?: string };
-      let type: string;
+      let item: (typeof valuesTypes)[string];
+      let sqlType: string;
+      let assertJsType: AssertJsType | undefined;
       let value: any;
       for (let i = 0; i < insertKeys.length; i++) {
         columnName = insertKeys[i];
         item = valuesTypes[columnName];
         if (typeof item === "string") {
-          type = item;
+          sqlType = item;
           defaultValues[i] = "NULL";
         } else {
-          type = item.sqlType;
+          sqlType = item.sqlType;
+          assertJsType = item.assertJsType;
           defaultValues[i] = item.sqlDefault ?? "NULL";
         }
         value = values[0][columnName];
-        if (value === undefined) column0[i] = defaultValues[i] + "::" + type;
-        else column0[i] = this.toSqlStr(value) + "::" + type;
+        if (value === undefined) column0[i] = defaultValues[i] + "::" + sqlType;
+        else column0[i] = this.toSqlStr(value, assertJsType) + "::" + sqlType;
       }
       valuesStr[0] = "(" + column0.join(",") + ")";
     }
@@ -287,18 +333,29 @@ class YourValuesAs<T extends TableType> extends SqlSelectable<T> {
     return this.#sql;
   }
 }
-function toKeyType(object: Record<string, any>, keys_types?: readonly string[] | Record<string, string | undefined>) {
-  let type: Record<string, string | undefined> = {};
-  let keys: readonly string[];
+/** @public */
+export type ColumnToValueConfig = { sqlType?: string; assertJsType?: AssertJsType };
 
-  if (keys_types instanceof Array) {
-    keys = keys_types;
-    type = {};
-  } else if (keys_types) {
-    keys = Object.keys(keys_types);
-    type = keys_types;
-  } else {
-    keys = Object.keys(object);
+function initColumnAssert(
+  keys: readonly string[],
+  keys_types: Record<string, string | undefined | ColumnToValueConfig>
+) {
+  let key: string;
+  let value: any;
+  let type: Record<string, ColumnToValueConfig> = {};
+  for (let i = 0; i < keys.length; i++) {
+    key = keys[i];
+    value = keys_types[key];
+    if (typeof value === "string") {
+      type[key] = { sqlType: value };
+    } else {
+      type[key] = value;
+    }
   }
-  return { type, keys };
+  return type;
+}
+class AssertError extends TypeError {
+  constructor(assertType: string, actual: string) {
+    super(`Assert ${assertType} type, Actual ${actual} type`);
+  }
 }

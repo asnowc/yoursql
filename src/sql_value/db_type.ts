@@ -11,16 +11,24 @@ export const pgSqlTransformer: JsObjectMapSql = new Map<new (...args: any[]) => 
       let type: ManualType | undefined;
       let basicType;
       for (let i = 0; i < value.length; i++) {
-        if (type) {
+        if (value[i] === null || value[i] === undefined) valueStr[i] = this.toSqlStr(value[i]);
+        else if (type) {
           valueStr[i] = this.toSqlStr(value[i], type);
         } else {
           basicType = typeof value[i];
-          if (value[i] === null || basicType === "undefined") basicType = undefined;
+          if (basicType === "object") {
+            type = this.getClassType(value[i]) as any;
+          } else type = basicType as any;
           valueStr[i] = this.toSqlStr(value[i], type);
         }
       }
       return "ARRAY[" + valueStr.join(",") + "]";
     },
   ],
-  [Date, (value) => SqlValuesCreator.string(value.toISOString())],
+  [
+    Date,
+    function (value) {
+      return SqlValuesCreator.string(value.toISOString());
+    },
+  ],
 ]);

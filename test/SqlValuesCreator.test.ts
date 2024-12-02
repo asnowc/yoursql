@@ -1,6 +1,11 @@
-import { SqlValuesCreator } from "@asnc/yoursql";
+import { JsObjectMapSql, SqlValuesCreator } from "@asnc/yoursql";
 import { describe, expect, test } from "vitest";
-
+function toJson(this: SqlValuesCreator, value: object) {
+  return this.toSqlStr(JSON.stringify(value));
+}
+function toArray(this: SqlValuesCreator, values: any[]) {
+  return "ARRAY[" + values.map((v) => this.toSqlStr(v)).join(",") + "]";
+}
 let v = SqlValuesCreator.create();
 describe("转换值", function () {
   test("string", function () {
@@ -17,11 +22,35 @@ describe("转换值", function () {
   test("object", function () {
     expect(v({ a: 8 }), "默认使用JSON序列化").toBe(SqlValuesCreator.string(JSON.stringify({ a: 8 })));
   });
+  test("单值断言", function () {
+    const define: JsObjectMapSql = new Map();
+    define.set(Array, toArray);
+    define.set(Object, toJson);
+    const v = SqlValuesCreator.create(define);
+
+    const value = ["1", 2]; // 期望value转换为 JSON数组，但是配置的Array比Object优先级高
+    expect(v(value, Object), "断言为JSON, 预期应该转换为JSON数字").toBe(`'["1",2]'`);
+
+    expect(v(null, "boolean")).toBe("NULL");
+  });
+  test("断言空值", function () {
+    expect(v(null, "boolean")).toBe("NULL");
+    expect(v(undefined, "boolean")).toBe("DEFAULT");
+  });
 });
 
 test("objectToValues-auto-columns", function () {
   const s = v.objectToValues({ ab: 1, cd: 3, ef: undefined });
   expect(s).toMatchSnapshot();
+});
+test("objectToValues断言", function () {
+  const define: JsObjectMapSql = new Map();
+  define.set(Array, toArray);
+  define.set(Object, toJson);
+  const v = SqlValuesCreator.create(define);
+  expect(v.objectToValues({ a: ["1", 2], b: 3 }, { a: { assertJsType: Object, sqlType: "JSONB" }, b: undefined })).toBe(
+    `'["1",2]'::JSONB,3`
+  );
 });
 
 describe("objectListToValuesList", function () {

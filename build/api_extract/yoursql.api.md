@@ -5,6 +5,9 @@
 ```ts
 
 // @public
+export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+
+// @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
     sqlType: string,
@@ -24,6 +27,12 @@ export class ColumnMeta<T> {
 export type ColumnsSelected<T extends TableType> = {
     [key in keyof T]?: boolean | string;
 } | "*";
+
+// @public (undocumented)
+export type ColumnToValueConfig = {
+    sqlType?: string;
+    assertJsType?: AssertJsType;
+};
 
 // @public (undocumented)
 export type ConditionParam = string | string[];
@@ -156,8 +165,8 @@ export interface InsertOption<T extends object> {
 // @public
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
-// @public
-export type ManualType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+// @public @deprecated (undocumented)
+export type ManualType = AssertJsType;
 
 // @public (undocumented)
 export type OrderBehavior = {
@@ -261,7 +270,7 @@ export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => str
 
 // @public (undocumented)
 export type SqlValueFn = SqlValuesCreator & {
-    (value: any, assertType?: ManualType): string;
+    (value: any, assertType?: AssertJsType): string;
 };
 
 // @public
@@ -272,21 +281,24 @@ export class SqlValuesCreator {
     createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | {
         sqlType: string;
         sqlDefault?: string;
+        assertJsType?: AssertJsType;
     }>): SqlSelectable<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
+    getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
+    // @deprecated (undocumented)
     getObjectType(value: object): SqlValueEncoder;
     objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
-        [key in keyof T]?: string | undefined;
+        [key in keyof T]?: string | undefined | ColumnToValueConfig;
     }, keepUndefinedKey?: boolean): string;
     objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
-        [key in keyof T]?: string | undefined;
+        [key in keyof T]?: string | undefined | ColumnToValueConfig;
     }): string;
     setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
     // (undocumented)
     setTransformer(map: JsObjectMapSql): void;
     static string(value: string): string;
-    toSqlStr(value: any, assertType?: ManualType): string;
+    toSqlStr(value: any, assertJsType?: AssertJsType): string;
     toValues(values: readonly any[]): string;
 }
 
