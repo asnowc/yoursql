@@ -99,6 +99,16 @@ describe("objectListToValuesList", function () {
   test("getObjectType", function () {
     expect(v.getObjectType({}).call(v, {})).toBe("'{}'");
   });
+
+  test("断言", function () {
+    const define: JsObjectMapSql = new Map();
+    define.set(Array, toArray);
+    define.set(Object, toJson);
+    const v = SqlValuesCreator.create(define);
+    expect(v.objectListToValuesList([{ a: [1] }, { a: [2] }], { a: { assertJsType: Object, sqlType: "JSONB" } })).toBe(
+      `('[1]'::JSONB),\n('[2]')`
+    );
+  });
 });
 
 test("createValues", function () {

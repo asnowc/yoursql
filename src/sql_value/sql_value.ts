@@ -158,11 +158,13 @@ export class SqlValuesCreator {
   ): string {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
-    let asserts: Record<string, ColumnToValueConfig | undefined> = {};
+    let asserts: (ColumnToValueConfig | undefined)[];
     if (!keys_types) {
       keys = Array.from(getObjectListKeys(objectList, keepUndefinedKey));
+      asserts = [];
     } else if (keys_types instanceof Array) {
       keys = keys_types as string[];
+      asserts = [];
     } else {
       keys = Object.keys(keys_types);
       asserts = initColumnAssert(keys, keys_types);
@@ -179,7 +181,7 @@ export class SqlValuesCreator {
         j = 0;
         for (; j < keys.length; j++) {
           value = object[keys[j]];
-          rows[j] = this.toSqlStr(value);
+          rows[j] = this.toSqlStr(value, asserts[j]?.assertJsType);
         }
         str += ",\n(" + rows.join(",") + ")";
       }
@@ -203,24 +205,25 @@ export class SqlValuesCreator {
     object: Record<string | number, any>,
     keys_types: readonly string[] | Record<string, string | undefined> | undefined
   ): string {
-    let type: Record<string, ColumnToValueConfig> = {};
+    let type: (ColumnToValueConfig | undefined)[];
     let keys: readonly string[];
 
     if (keys_types instanceof Array) {
       keys = keys_types;
-      type = {};
+      type = [];
     } else if (keys_types) {
       keys = Object.keys(keys_types);
       type = initColumnAssert(keys, keys_types);
     } else {
       keys = Object.keys(object);
+      type = [];
     }
     return this._internalObjectToValues(object, keys, type);
   }
   private _internalObjectToValues(
     object: Record<string, any>,
     keys: readonly string[],
-    type: Record<string, ColumnToValueConfig | undefined>
+    type: (ColumnToValueConfig | undefined)[]
   ) {
     const values: string[] = [];
     let i = 0;
@@ -231,7 +234,7 @@ export class SqlValuesCreator {
       for (; i < keys.length; i++) {
         key = keys[i];
         value = object[key];
-        assertType = type[key];
+        assertType = type[i];
         if (assertType) {
           values[i] = this.toSqlStr(value, assertType.assertJsType);
           if (assertType.sqlType) values[i] += "::" + assertType.sqlType;
@@ -342,14 +345,14 @@ function initColumnAssert(
 ) {
   let key: string;
   let value: any;
-  let type: Record<string, ColumnToValueConfig> = {};
+  let type = new Array(keys.length);
   for (let i = 0; i < keys.length; i++) {
     key = keys[i];
     value = keys_types[key];
     if (typeof value === "string") {
-      type[key] = { sqlType: value };
+      type[i] = { sqlType: value };
     } else {
-      type[key] = value;
+      type[i] = value;
     }
   }
   return type;
