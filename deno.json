@@ -1,9 +1,12 @@
 {
   "name": "@asla/yoursql",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "license": "MIT",
   "nodeModulesDir": "manual",
   "lock": false,
+  "tasks": {
+    "publishDry": "deno publish --dry-run --allow-dirty"
+  },
   "exports": {
     ".": "./src/mod.ts"
   },
