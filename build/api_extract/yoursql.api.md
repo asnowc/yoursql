@@ -156,7 +156,7 @@ export interface InsertOption<T extends object> {
     conflict?: (keyof T)[] | string;
     // (undocumented)
     updateValues?: Constructable<{
-        [key in keyof T]?: undefined | SqlRaw | T[key];
+        [key in keyof T]?: undefined | String | T[key];
     } | string | void>;
     // (undocumented)
     where?: Constructable<ConditionParam | void>;

@@ -1,5 +1,5 @@
 import { selectColumnsOrTable } from "./_statement.ts";
-import { SqlValuesCreator, SqlRaw } from "../sql_value/sql_value.ts";
+import { SqlValuesCreator } from "../sql_value/sql_value.ts";
 import { ColumnsSelected, SelectColumns, UpdateRowValue, TableType } from "./type.ts";
 import { CurrentWhere, Selection } from "./select.ts";
 import { DbTable, SqlQueryStatement } from "./selectable.ts";
@@ -184,7 +184,7 @@ export class DbTableQuery<
 /** @public */
 export interface InsertOption<T extends object> {
   conflict?: (keyof T)[] | string;
-  updateValues?: Constructable<{ [key in keyof T]?: undefined | SqlRaw | T[key] } | string | void>;
+  updateValues?: Constructable<{ [key in keyof T]?: undefined | String | T[key] } | string | void>;
   where?: Constructable<ConditionParam | void>;
 }
 /** @public */
