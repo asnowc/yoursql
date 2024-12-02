@@ -279,6 +279,7 @@ export class SqlValuesCreator {
     if (values.length === 0) throw new Error("values 不能为空");
     const insertKeys: string[] = Object.keys(valuesTypes);
     const defaultValues: string[] = [];
+    const asserts = new Array(insertKeys.length);
 
     const valuesStr: string[] = new Array(values.length);
     {
@@ -297,6 +298,7 @@ export class SqlValuesCreator {
         } else {
           sqlType = item.sqlType;
           assertJsType = item.assertJsType;
+          asserts[i] = assertJsType;
           defaultValues[i] = item.sqlDefault ?? "NULL";
         }
         value = values[0][columnName];
@@ -312,7 +314,7 @@ export class SqlValuesCreator {
       for (let j = 0; j < insertKeys.length; j++) {
         value = values[i][insertKeys[j]];
         if (value === undefined) items[j] = defaultValues[j];
-        else items[j] = this.toSqlStr(value);
+        else items[j] = this.toSqlStr(value, asserts[j]);
       }
       valuesStr[i] = "(" + items.join(",") + ")";
     }
