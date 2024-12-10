@@ -141,7 +141,7 @@ export class Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
   /** 选择全部列 */
-  select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
+  select<T extends TableType = Record<string, any>>(columns: "*"): CurrentWhere<T>;
   /**
    * 自定义SQL选择语句
    * @example
@@ -149,7 +149,7 @@ export class Selection {
    * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType = TableType>(columns: Constructable<string>): CurrentWhere<T>;
+  select(columns: Constructable<SelectParam>): CurrentWhere<Record<string, any>>;
   /**
    * 通过 object 选择 列
    * @example
@@ -157,8 +157,7 @@ export class Selection {
    * selection.select({"age":true, c:"count(*)"}) // SELECT age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean }>): CurrentWhere<T>;
-  select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
+  select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean } | string>): CurrentWhere<T>;
   select(columnsIn: Constructable<SelectParam>): CurrentWhere<TableType> {
     if (typeof columnsIn === "function") columnsIn = columnsIn();
 

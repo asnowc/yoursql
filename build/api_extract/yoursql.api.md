@@ -127,11 +127,10 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
     // (undocumented)
     readonly name: string;
     select(columns: "*", as?: string): CurrentWhere<T>;
+    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): CurrentWhere<Record<string, any>>;
     select<R extends {}>(columns: Constructable<{
         [key in keyof R]: boolean | string;
     } | string>, as?: string): CurrentWhere<R>;
-    // (undocumented)
-    select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
     // (undocumented)
     toSelect(): string;
     // (undocumented)
@@ -235,13 +234,11 @@ class Selection_2 {
     naturalJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection_2;
     // (undocumented)
     rightJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    select<T extends TableType = TableType>(columns: "*"): CurrentWhere<T>;
-    select<T extends TableType = TableType>(columns: Constructable<string>): CurrentWhere<T>;
+    select<T extends TableType = Record<string, any>>(columns: "*"): CurrentWhere<T>;
+    select(columns: Constructable<SelectParam>): CurrentWhere<Record<string, any>>;
     select<T extends TableType>(columns: Constructable<{
         [key in keyof T]: string | boolean;
-    }>): CurrentWhere<T>;
-    // (undocumented)
-    select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
+    } | string>): CurrentWhere<T>;
     // (undocumented)
     toString(): string;
 }

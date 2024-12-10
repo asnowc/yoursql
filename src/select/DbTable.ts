@@ -1,5 +1,5 @@
 import { SqlSelectable } from "./selectable.ts";
-import { where, ConditionParam, Constructable, SelectParam } from "../util.ts";
+import { where, ConditionParam, Constructable } from "../util.ts";
 import type { TableType } from "./type.ts";
 import { CurrentModifyWhere, CurrentOnConflict, CurrentWhere, Selection } from "./query_link.ts";
 import { AfterUpdateOrReturn } from "./_update_impl.ts";
@@ -19,12 +19,16 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
   /** 选择单表全部列 */
   select(columns: "*", as?: string): CurrentWhere<T>;
   /** 选择单表  */
+  select(
+    columns: Constructable<Record<string, boolean | string> | string>,
+    as?: string
+  ): CurrentWhere<Record<string, any>>;
+  /** 选择单表  */
   select<R extends {}>(
     columns: Constructable<{ [key in keyof R]: boolean | string } | string>,
     as?: string
   ): CurrentWhere<R>;
-  select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
-  select(columns: "*" | Record<string, any>, as?: string): CurrentWhere<TableType> {
+  select(columns: "*" | Record<string, any>, as?: string): CurrentWhere<Record<string, any>> {
     return this.fromAs(as).select(columns);
   }
   /**
@@ -76,6 +80,7 @@ export class DbTable<T extends TableType> extends SqlSelectable<T> {
     return this.name;
   }
 }
+
 /** @public */
 export interface DeleteOption {
   where?: Constructable<ConditionParam | void>;
