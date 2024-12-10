@@ -71,7 +71,7 @@ export type CurrentOnConflict<T extends TableType = {}> = CurrentReturn<T> & {
 // @public (undocumented)
 export type CurrentOnConflictDo<T extends TableType = {}> = {
     doNotThing(): CurrentReturn<T>;
-    doUpdate(set: Constructable<{
+    doUpdate(set: Constructable<string | {
         [key in keyof T]?: string;
     }>): CurrentModifyWhere<T>;
     toString(): string;

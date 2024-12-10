@@ -186,7 +186,7 @@ export type CurrentOnConflictDo<T extends TableType = {}> = {
   /**
    * 需要注意 SQL 注入
    */
-  doUpdate(set: Constructable<{ [key in keyof T]?: string }>): CurrentModifyWhere<T>;
+  doUpdate(set: Constructable<string | { [key in keyof T]?: string }>): CurrentModifyWhere<T>;
   toString(): string;
 };
 /** @public */
