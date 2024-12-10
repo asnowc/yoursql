@@ -9,7 +9,7 @@ import {
   SelectParam,
   Constructable,
 } from "../util.ts";
-import type { ColumnsSelected, SelectColumns, TableType } from "./type.ts";
+import type { ColumnsSelected, TableType } from "./type.ts";
 import { condition } from "./_statement.ts";
 
 /** @public */
@@ -171,8 +171,8 @@ export class Selection {
 /** @public */
 export interface CurrentReturn<T extends TableType = {}> extends SqlQueryStatement<{}> {
   returning(columns: "*"): SqlQueryStatement<T>;
-  returning<R extends ColumnsSelected<T>>(columns: Constructable<R>): SqlQueryStatement<SelectColumns<T, R>>;
-  returning<R extends TableType>(columns: Constructable<R | string>): SqlQueryStatement<T>;
+  returning(columns: Constructable<ColumnsSelected<T> | string>): SqlQueryStatement<Record<string, any>>;
+  returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlQueryStatement<R>;
 }
 /** @public */
 export type CurrentModifyWhere<T extends TableType = {}> = CurrentReturn<T> & {

@@ -88,9 +88,9 @@ export interface CurrentReturn<T extends TableType = {}> extends SqlQueryStateme
     // (undocumented)
     returning(columns: "*"): SqlQueryStatement<T>;
     // (undocumented)
-    returning<R extends ColumnsSelected<T>>(columns: Constructable<R>): SqlQueryStatement<SelectColumns<T, R>>;
+    returning(columns: Constructable<ColumnsSelected<T> | string>): SqlQueryStatement<Record<string, any>>;
     // (undocumented)
-    returning<R extends TableType>(columns: Constructable<R | string>): SqlQueryStatement<T>;
+    returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlQueryStatement<R>;
 }
 
 // @public (undocumented)
