@@ -1,4 +1,4 @@
-import { SqlValuesCreator, JsObjectMapSql, SqlValueEncoder, ManualType } from "./sql_value.ts";
+import { SqlValuesCreator, JsObjectMapSql, SqlValueEncoder, AssertJsType } from "./sql_value.ts";
 
 /** @public PgSql 转换器 */
 export const pgSqlTransformer: JsObjectMapSql = new Map<new (...args: any[]) => any, SqlValueEncoder>([
@@ -8,7 +8,7 @@ export const pgSqlTransformer: JsObjectMapSql = new Map<new (...args: any[]) => 
       if (value.length === 0) return "NULL";
       const valueStr: string[] = [];
 
-      let type: ManualType | undefined;
+      let type: AssertJsType | undefined;
       let basicType;
       for (let i = 0; i < value.length; i++) {
         if (value[i] === null || value[i] === undefined) valueStr[i] = this.toSqlStr(value[i]);

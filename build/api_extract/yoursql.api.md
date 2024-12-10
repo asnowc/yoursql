@@ -26,7 +26,7 @@ export class ColumnMeta<T> {
 // @public
 export type ColumnsSelected<T extends TableType> = {
     [key in keyof T]?: boolean | string;
-} | "*";
+};
 
 // @public (undocumented)
 export type ColumnToValueConfig = {
@@ -55,13 +55,42 @@ export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
 // @public (undocumented)
 export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> {
     // (undocumented)
-    limit(limit?: number, offset?: number): SqlQueryStatement<T>;
+    limit(limit?: number | bigint, offset?: number | bigint): SqlQueryStatement<T>;
 }
+
+// @public (undocumented)
+export type CurrentModifyWhere<T extends TableType = {}> = CurrentReturn<T> & {
+    where(where: Constructable<ConditionParam | void>): CurrentReturn<T>;
+};
+
+// @public (undocumented)
+export type CurrentOnConflict<T extends TableType = {}> = CurrentReturn<T> & {
+    onConflict(option: Constructable<readonly (keyof T)[] | string>): CurrentOnConflictDo<T>;
+};
+
+// @public (undocumented)
+export type CurrentOnConflictDo<T extends TableType = {}> = {
+    doNotThing(): CurrentReturn<T>;
+    doUpdate(set: Constructable<{
+        [key in keyof T]?: string;
+    }>): CurrentModifyWhere<T>;
+    toString(): string;
+};
 
 // @public (undocumented)
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
     // (undocumented)
     orderBy(param: Constructable<OrderByParam | void>): CurrentLimit<T>;
+}
+
+// @public (undocumented)
+export interface CurrentReturn<T extends TableType = {}> extends SqlQueryStatement<{}> {
+    // (undocumented)
+    returning(columns: "*"): SqlQueryStatement<T>;
+    // (undocumented)
+    returning<R extends ColumnsSelected<T>>(columns: Constructable<R>): SqlQueryStatement<SelectColumns<T, R>>;
+    // (undocumented)
+    returning<R extends TableType>(columns: Constructable<R | string>): SqlQueryStatement<T>;
 }
 
 // @public (undocumented)
@@ -91,43 +120,35 @@ export class CustomDbType<T> {
 export class DbTable<T extends TableType> extends SqlSelectable<T> {
     constructor(name: string);
     // (undocumented)
+    delete(option?: DeleteOption): CurrentModifyWhere<T>;
+    // (undocumented)
+    fromAs(as?: string): Selection_2;
+    insert(columns: string, values: Constructable<string>): CurrentOnConflict<T>;
+    // (undocumented)
     readonly name: string;
+    select(columns: "*", as?: string): CurrentWhere<T>;
+    select<R extends {}>(columns: Constructable<{
+        [key in keyof R]: boolean | string;
+    } | string>, as?: string): CurrentWhere<R>;
+    // (undocumented)
+    select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
     // (undocumented)
     toSelect(): string;
     // (undocumented)
     toString(): string;
+    update(values: Constructable<{
+        [key in keyof T]?: string;
+    } | string>): CurrentModifyWhere<T>;
 }
 
 // @public (undocumented)
 export class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
     constructor(name: string, statement: SqlValuesCreator);
     // (undocumented)
-    delete(option?: DeleteOption): string;
+    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): CurrentOnConflict<T>;
     // (undocumented)
-    deleteWithResult<R extends ColumnsSelected<T>>(returns?: ColumnsSelected<T> | "*", option?: DeleteOption): SqlQueryStatement<SelectColumns<T, R>>;
-    // (undocumented)
-    fromAs(as?: string): Selection_2;
-    // (undocumented)
-    insert(values: Constructable<C | C[]>, option?: InsertOption<T>): string;
-    // (undocumented)
-    insert(values: Constructable<string>, columns: string[], option?: InsertOption<T>): string;
-    // (undocumented)
-    insertWithResult<R extends ColumnsSelected<T>>(values: Constructable<C | C[]>, returns: R, option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
-    // (undocumented)
-    insertWithResult<R extends ColumnsSelected<T>>(values: Constructable<string>, returns: R, columns: string | string[], option?: InsertOption<T>): SqlQueryStatement<SelectColumns<T, R>>;
-    select(columns: "*", as?: string): CurrentWhere<T>;
-    select<R extends {
-        [key in keyof T]?: boolean;
-    }>(columns: Constructable<R>, as?: string): CurrentWhere<{
-        [key in keyof R]: key extends keyof T ? T[key] : unknown;
-    }>;
-    select<R extends {}>(columns: Constructable<{
-        [key in keyof R]?: key extends keyof T ? string | boolean : string;
-    } | string>, as?: string): CurrentWhere<R>;
-    // (undocumented)
-    update(values: Constructable<UpdateRowValue<T> | string>, option?: UpdateOption): string;
-    // (undocumented)
-    updateWithResult<R extends ColumnsSelected<T>>(values: Constructable<UpdateRowValue<T>>, returns: R, option?: UpdateOption): SqlQueryStatement<SelectColumns<T, R>>;
+    insert(columns: string, values: Constructable<string>): CurrentOnConflict<T>;
+    updateFrom(values: Constructable<UpdateRowValue<T>>): CurrentModifyWhere<T>;
 }
 
 // @public (undocumented)
@@ -150,23 +171,8 @@ export type InferTableDefined<T extends TableDefined> = {
     [key in keyof T]: T[key] extends ColumnMeta<infer P> ? P : unknown;
 };
 
-// @public (undocumented)
-export interface InsertOption<T extends object> {
-    // (undocumented)
-    conflict?: (keyof T)[] | string;
-    // (undocumented)
-    updateValues?: Constructable<{
-        [key in keyof T]?: undefined | String | T[key];
-    } | string | void>;
-    // (undocumented)
-    where?: Constructable<ConditionParam | void>;
-}
-
 // @public
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
-
-// @public @deprecated (undocumented)
-export type ManualType = AssertJsType;
 
 // @public (undocumented)
 export type OrderBehavior = {
@@ -201,7 +207,7 @@ export type PickColumn<T extends {
 // Warning: (ae-forgotten-export) The symbol "StringOnly" needs to be exported by the entry point index.d.ts
 //
 // @public
-export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends "*" ? T : R extends {
+export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends {
     [key in keyof T]?: boolean | string;
 } ? {
     [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
@@ -235,7 +241,7 @@ class Selection_2 {
         [key in keyof T]: string | boolean;
     }>): CurrentWhere<T>;
     // (undocumented)
-    select(columns: Constructable<SelectParam>): CurrentWhere<TableType>;
+    select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
     // (undocumented)
     toString(): string;
 }
@@ -321,12 +327,6 @@ export class TypeChecker<T> {
     }): T;
     // (undocumented)
     checkList(value: any[]): T[];
-}
-
-// @public (undocumented)
-export interface UpdateOption {
-    // (undocumented)
-    where?: Constructable<ConditionParam | void>;
 }
 
 // @public (undocumented)

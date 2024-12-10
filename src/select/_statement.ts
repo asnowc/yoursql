@@ -26,12 +26,6 @@ export function selectColumnsOrTable(columns: Record<string, boolean | string> |
   return { columns: select, sqlColumns: sqlSelect.join(", ") };
 }
 
-class ColumnRepeatError extends Error {
-  constructor(columnName: string | number) {
-    super("Column name '" + columnName + "' repeated");
-  }
-}
-
 type ConditionParam = string | string[];
 /**
  * 生成条件语句
@@ -54,4 +48,34 @@ export function condition(
     }
     return;
   }
+}
+export function createUpdateSetFromObject(set: Record<string, string | undefined>): string {
+  const updateKey = Object.keys(set);
+  let i = 0;
+  let key: string;
+  let value: any;
+  let sql: string | undefined;
+  for (; i < updateKey.length; i++) {
+    key = updateKey[i];
+    value = set[key];
+    if (value === undefined) continue;
+    if (typeof value === "string") {
+      if (value) {
+        sql = "SET\n" + key + "= " + value;
+        break;
+      }
+    } else throw new TypeError(`key ${key} 类型错误(${typeof value})`);
+  }
+  if (sql) {
+    i++;
+    for (; i < updateKey.length; i++) {
+      key = updateKey[i];
+      value = set[key];
+      if (value === undefined) continue;
+      if (typeof value === "string") {
+        if (value) sql += "," + key + "= " + value;
+      } else throw new TypeError(`key ${key} 类型错误(${typeof value})`);
+    }
+    return sql;
+  } else throw new Error("值不能为空");
 }

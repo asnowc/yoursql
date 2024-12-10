@@ -23,20 +23,19 @@ VALUES
 `;
 
 exports[`TableQuery > insert > insert 2`] = `
-"INSERT INTO user (name)
-VALUES
-('张三')
-ON CONFLICT (id,level)
-DO UPDATE SET
-level = 89"
-`;
-
-exports[`TableQuery > insert > insert 3`] = `
-"INSERT INTO user (name)
+"INSERT INTO user(name)
 VALUES('张三')"
 `;
 
-exports[`TableQuery > insert > insertWithResult 1`] = `
+exports[`TableQuery > insert > insert-conflict 1`] = `
+"INSERT INTO user(name)
+VALUES('张三')
+ON CONFLICT (id,level)
+DO UPDATE SET
+level= 89,name= 11"
+`;
+
+exports[`TableQuery > insert > insert-returning 1`] = `
 "INSERT INTO user (name)
 VALUES
 ('hh')
@@ -53,7 +52,7 @@ exports[`TableQuery > select > select-columns 2`] = `
 FROM user"
 `;
 
-exports[`TableQuery > select > select-option 1`] = `
+exports[`TableQuery > select > select-where-order-limit 1`] = `
 "SELECT *
 FROM user
 WHERE limit IS NULL
@@ -62,19 +61,20 @@ LIMIT 100
 OFFSET 23"
 `;
 
-exports[`TableQuery > update > update-base 1`] = `
-"UPDATE user
-SET id = 78"
-`;
-
-exports[`TableQuery > update > update-base 2`] = `
-"UPDATE user
-SET id = 78
+exports[`TableQuery > update > update 1`] = `
+"UPDATE user SET
+level=1
 WHERE id IS NULL"
 `;
 
-exports[`TableQuery > update > updateWithResult 1`] = `
-"UPDATE user
-SET id = 78
+exports[`TableQuery > updateFrom > update-base 1`] = `
+"UPDATE user SET
+id= 78
+WHERE id IS NULL"
+`;
+
+exports[`TableQuery > updateFrom > update-returning 1`] = `
+"UPDATE user SET
+id= 78
 RETURNING level AS rename, name"
 `;

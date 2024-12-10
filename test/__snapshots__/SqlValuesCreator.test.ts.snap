@@ -9,13 +9,6 @@ exports[`createValues > str 1`] = `
 AS customName(age,name)"
 `;
 
-exports[`createValues断言 > str 1`] = `
-"(VALUES
-('[1]'::JSONB,NULL::TEXT),
-(ARRAY[2],NULL))
-AS customName(age,name)"
-`;
-
 exports[`objectListToValuesList > auto-columns 1`] = `
 "(1,3,DEFAULT),
 (2,4,99)"

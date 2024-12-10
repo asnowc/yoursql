@@ -26,22 +26,6 @@ export abstract class SqlSelectable<T extends TableType> {
 }
 
 /**
- * 数据库表
- * @public
- */
-export class DbTable<T extends TableType> extends SqlSelectable<T> {
-  constructor(readonly name: string) {
-    super();
-  }
-  toSelect(): string {
-    return this.name;
-  }
-  toString(): string {
-    return this.name;
-  }
-}
-
-/**
  * SELECT 以及 UPDATE、DELETE、INSERT INTO 带结果的 SQL 语句
  * @public
  */

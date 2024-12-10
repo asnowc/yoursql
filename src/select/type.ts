@@ -30,21 +30,17 @@ export type OrderValue = "ASC" | "DESC";
  * 表的选择参数
  * @public
  */
-export type ColumnsSelected<T extends TableType> =
-  | {
-      [key in keyof T]?: boolean | string;
-    }
-  | "*";
+export type ColumnsSelected<T extends TableType> = {
+  [key in keyof T]?: boolean | string;
+};
 
 /**
  * 从一个表格选择列，生成新的表格类型
  * @public
  */
-export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends "*"
-  ? T
-  : R extends {
-      [key in keyof T]?: boolean | string;
-    }
+export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends {
+  [key in keyof T]?: boolean | string;
+}
   ? {
       [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
     }

@@ -9,12 +9,12 @@ import {
   SelectParam,
   Constructable,
 } from "../util.ts";
-import type { TableType } from "./type.ts";
+import type { ColumnsSelected, SelectColumns, TableType } from "./type.ts";
 import { condition } from "./_statement.ts";
 
 /** @public */
 export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> {
-  limit(limit?: number, offset?: number): SqlQueryStatement<T>;
+  limit(limit?: number | bigint, offset?: number | bigint): SqlQueryStatement<T>;
 }
 /** @public */
 export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
@@ -55,12 +55,20 @@ class AfterSelectImpl<T extends TableType> extends SqlQueryStatement<T> implemen
 
   limit(limit?: number, offset?: number): SqlQueryStatement<T> {
     let sql = this.toString();
-    if (limit) sql += "\nLIMIT " + limit;
-    if (offset) sql += "\nOFFSET " + offset;
+    let type: string;
+    if (limit) {
+      type = typeof limit;
+      if (type === "number" || type === "bigint") sql += "\nLIMIT " + limit;
+      else throw new TypeError("limit 必须是个整数：" + limit);
+    }
+    if (offset) {
+      type = typeof offset;
+      if (type === "number" || type === "bigint") sql += "\nOFFSET " + offset;
+      else throw new TypeError("offset 必须是个整数：" + limit);
+    }
     return new SqlQueryStatement(sql);
   }
 }
-
 function fromAs(selectable: Constructable<SqlSelectable<any> | string>, as?: string) {
   if (typeof selectable === "function") selectable = selectable();
   let sql = typeof selectable === "string" ? selectable : selectable.toSelect();
@@ -150,7 +158,7 @@ export class Selection {
    * ```
    */
   select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean }>): CurrentWhere<T>;
-  select(columns: Constructable<SelectParam>): CurrentWhere<TableType>;
+  select<R extends {}>(columns: Constructable<SelectParam>): CurrentWhere<R>;
   select(columnsIn: Constructable<SelectParam>): CurrentWhere<TableType> {
     if (typeof columnsIn === "function") columnsIn = columnsIn();
 
@@ -161,8 +169,27 @@ export class Selection {
   }
 }
 
-class TableRepeatError extends Error {
-  constructor(tableName: string | number) {
-    super("Table name '" + tableName + "' repeated");
-  }
+/** @public */
+export interface CurrentReturn<T extends TableType = {}> extends SqlQueryStatement<{}> {
+  returning(columns: "*"): SqlQueryStatement<T>;
+  returning<R extends ColumnsSelected<T>>(columns: Constructable<R>): SqlQueryStatement<SelectColumns<T, R>>;
+  returning<R extends TableType>(columns: Constructable<R | string>): SqlQueryStatement<T>;
 }
+/** @public */
+export type CurrentModifyWhere<T extends TableType = {}> = CurrentReturn<T> & {
+  where(where: Constructable<ConditionParam | void>): CurrentReturn<T>;
+};
+
+/** @public */
+export type CurrentOnConflictDo<T extends TableType = {}> = {
+  doNotThing(): CurrentReturn<T>;
+  /**
+   * 需要注意 SQL 注入
+   */
+  doUpdate(set: Constructable<{ [key in keyof T]?: string }>): CurrentModifyWhere<T>;
+  toString(): string;
+};
+/** @public */
+export type CurrentOnConflict<T extends TableType = {}> = CurrentReturn<T> & {
+  onConflict(option: Constructable<readonly (keyof T)[] | string>): CurrentOnConflictDo<T>;
+};

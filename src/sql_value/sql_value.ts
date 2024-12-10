@@ -19,11 +19,6 @@ export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => str
 
 /** @public 断言类型 */
 export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
-/**
- * @deprecated 改用 AssertJsType
- * @public 断言类型
- */
-export type ManualType = AssertJsType;
 
 /** @public */
 export type SqlValueFn = SqlValuesCreator & {
@@ -111,7 +106,9 @@ export class SqlValuesCreator {
         return value.toString();
       case "object": {
         if (value instanceof String) return value.toString();
-        return this.getObjectType(value).call(this, value);
+        const Class = this.getClassType(value);
+        if (Class) return this._map.get(Class)!.call(this, value);
+        return this.defaultObject(value);
       }
       case "undefined":
         return "DEFAULT";
