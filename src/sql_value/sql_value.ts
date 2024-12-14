@@ -1,6 +1,6 @@
 import { getObjectListKeys } from "../util.ts";
 import type { TableType } from "../select/type.ts";
-import { SqlSelectable } from "../select/selectable.ts";
+import { SqlStatementDataset } from "../select/query_chain_abstract.ts";
 
 declare const SQL_RAW: unique symbol;
 /**
@@ -267,12 +267,12 @@ export class SqlValuesCreator {
     asName: string,
     values: T[],
     valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
-  ): SqlSelectable<T>;
+  ): SqlStatementDataset<T>;
   createValues(
     asName: string,
     values: Record<string, any>[],
     valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
-  ): SqlSelectable<any> {
+  ): SqlStatementDataset<any> {
     if (values.length === 0) throw new Error("values 不能为空");
     const insertKeys: string[] = Object.keys(valuesTypes);
     const defaultValues: string[] = [];
@@ -318,7 +318,7 @@ export class SqlValuesCreator {
     return new YourValuesAs(insertKeys, asName, valuesStr.join(",\n"));
   }
 }
-class YourValuesAs<T extends TableType> extends SqlSelectable<T> {
+class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
   constructor(columns: readonly string[], asName: string, valuesStr: string) {
     super();
     this.#asName = asName;

@@ -1,9 +1,9 @@
 import { SqlValuesCreator } from "../sql_value/sql_value.ts";
 import { UpdateRowValue, TableType } from "./type.ts";
 import { getObjectListKeys, Constructable } from "../util.ts";
-import { AfterUpdateOrReturn } from "./_update_impl.ts";
+import { SqlChainModify } from "./query_chain_insert.ts";
 import { DbTable } from "./DbTable.ts";
-import type { CurrentModifyWhere, CurrentOnConflict } from "./query_link.ts";
+import { ChainModifyWhere, ChainOnConflict } from "./query_chain_abstract.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -20,12 +20,12 @@ export class DbTableQuery<
    * table.insert([{age:18, name:"hi"}, {age:17, name:"hh"}]) // INSERT INTO table(age,name) VALUES(18, 'hi'), (17, 'hh')
    * ```
    */
-  override insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): CurrentOnConflict<T>;
-  override insert(columns: string, values: Constructable<string>): CurrentOnConflict<T>;
+  override insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainOnConflict<T>;
+  override insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
   override insert(
     values_column: string | Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>,
     _values?: Constructable<string>
-  ): CurrentOnConflict<T> {
+  ): ChainOnConflict<T> {
     if (_values) return super.insert(values_column as string, _values);
 
     let values = values_column as Constructable<C | C[]>;
@@ -45,7 +45,7 @@ export class DbTableQuery<
     const columnStr = insertCol.join(",");
 
     let sql = `INSERT INTO ${this.name} (${columnStr})\n${valuesStr}`;
-    return new AfterUpdateOrReturn(sql);
+    return new SqlChainModify(sql);
   }
   /**
    * UPDATE 语句，与 update() 不同的是，它会将值进行安全转换
@@ -54,7 +54,7 @@ export class DbTableQuery<
    * table.update({age:3, name:"hi"}, true) // "UPDATE table SET age=3, name='hi'"
    * ```
    */
-  updateFrom(values: Constructable<UpdateRowValue<T>>): CurrentModifyWhere<T> {
+  updateFrom(values: Constructable<UpdateRowValue<T>>): ChainModifyWhere<T> {
     if (typeof values === "function") values = values();
     let setStr: string;
     if (typeof values === "string") setStr = values;
@@ -71,6 +71,6 @@ export class DbTableQuery<
     if (!setStr) throw new Error("值不能为空");
 
     let sql = `UPDATE ${this.name} SET\n${setStr}`;
-    return new AfterUpdateOrReturn(sql);
+    return new SqlChainModify(sql);
   }
 }

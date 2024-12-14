@@ -7,6 +7,69 @@
 // @public
 export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
+// @public (undocumented)
+export interface ChainConflictDo<T extends TableType = {}> {
+    // (undocumented)
+    doNotThing(): ChainModifyReturning<T>;
+    doUpdate(set: Constructable<string | {
+        [key in keyof T]?: string;
+    }>): ChainModifyWhere<T>;
+    // (undocumented)
+    toString(): string;
+}
+
+// @public (undocumented)
+export interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
+    // (undocumented)
+    returning(columns: "*"): SqlStatementDataset<T>;
+    // (undocumented)
+    returning(columns: Constructable<ColumnsSelected<T> | string>): SqlStatementDataset<Record<string, any>>;
+    // (undocumented)
+    returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlStatementDataset<R>;
+}
+
+// @public (undocumented)
+export interface ChainModifyWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+    // (undocumented)
+    where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+}
+
+// @public (undocumented)
+export interface ChainOnConflict<T extends TableType = {}> extends ChainModifyReturning<T> {
+    // (undocumented)
+    onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainConflictDo<T>;
+}
+
+// @public (undocumented)
+export interface ChainSelectGroupBy<T extends TableType> extends ChainSelectOrderBy<T> {
+    // (undocumented)
+    groupBy(columns: string | string[]): ChainSelectHaving<T>;
+}
+
+// @public (undocumented)
+export interface ChainSelectHaving<T extends TableType> extends ChainSelectOrderBy<T> {
+    // (undocumented)
+    having(param: Constructable<ConditionParam | void>): ChainSelectLimit<T>;
+}
+
+// @public (undocumented)
+export interface ChainSelectLimit<T extends TableType> extends SqlStatementDataset<T> {
+    // (undocumented)
+    limit(limit?: number | bigint, offset?: number | bigint): SqlStatementDataset<T>;
+}
+
+// @public (undocumented)
+export interface ChainSelectOrderBy<T extends TableType> extends ChainSelectLimit<T> {
+    // (undocumented)
+    orderBy(param: Constructable<OrderByParam | void>): ChainSelectLimit<T>;
+}
+
+// @public (undocumented)
+export interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupBy<T> {
+    // (undocumented)
+    where(param: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
+}
+
 // @public
 export class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -40,65 +103,6 @@ export type ConditionParam = string | string[];
 // @public (undocumented)
 export type Constructable<T> = T | (() => T);
 
-// @public (undocumented)
-export interface CurrentGroupBy<T extends TableType> extends CurrentOrderBy<T> {
-    // (undocumented)
-    groupBy(columns: string | string[]): CurrentHaving<T>;
-}
-
-// @public (undocumented)
-export interface CurrentHaving<T extends TableType> extends CurrentOrderBy<T> {
-    // (undocumented)
-    having(param: Constructable<ConditionParam | void>): CurrentLimit<T>;
-}
-
-// @public (undocumented)
-export interface CurrentLimit<T extends TableType> extends SqlQueryStatement<T> {
-    // (undocumented)
-    limit(limit?: number | bigint, offset?: number | bigint): SqlQueryStatement<T>;
-}
-
-// @public (undocumented)
-export type CurrentModifyWhere<T extends TableType = {}> = CurrentReturn<T> & {
-    where(where: Constructable<ConditionParam | void>): CurrentReturn<T>;
-};
-
-// @public (undocumented)
-export type CurrentOnConflict<T extends TableType = {}> = CurrentReturn<T> & {
-    onConflict(option: Constructable<readonly (keyof T)[] | string>): CurrentOnConflictDo<T>;
-};
-
-// @public (undocumented)
-export type CurrentOnConflictDo<T extends TableType = {}> = {
-    doNotThing(): CurrentReturn<T>;
-    doUpdate(set: Constructable<string | {
-        [key in keyof T]?: string;
-    }>): CurrentModifyWhere<T>;
-    toString(): string;
-};
-
-// @public (undocumented)
-export interface CurrentOrderBy<T extends TableType> extends CurrentLimit<T> {
-    // (undocumented)
-    orderBy(param: Constructable<OrderByParam | void>): CurrentLimit<T>;
-}
-
-// @public (undocumented)
-export interface CurrentReturn<T extends TableType = {}> extends SqlQueryStatement<{}> {
-    // (undocumented)
-    returning(columns: "*"): SqlQueryStatement<T>;
-    // (undocumented)
-    returning(columns: Constructable<ColumnsSelected<T> | string>): SqlQueryStatement<Record<string, any>>;
-    // (undocumented)
-    returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlQueryStatement<R>;
-}
-
-// @public (undocumented)
-export interface CurrentWhere<T extends TableType> extends CurrentGroupBy<T> {
-    // (undocumented)
-    where(param: Constructable<ConditionParam | void>): CurrentGroupBy<T>;
-}
-
 // @public
 export class CustomDbType<T> {
     constructor(is: (this: CustomDbType<T>, value: any) => boolean, name: string);
@@ -117,37 +121,35 @@ export class CustomDbType<T> {
 }
 
 // @public
-export class DbTable<T extends TableType> extends SqlSelectable<T> {
+export class DbTable<T extends TableType> {
     constructor(name: string);
     // (undocumented)
-    delete(option?: DeleteOption): CurrentModifyWhere<T>;
+    delete(option?: DeleteOption): ChainModifyWhere<T>;
     // (undocumented)
     fromAs(as?: string): Selection_2;
-    insert(columns: string, values: Constructable<string>): CurrentOnConflict<T>;
+    insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
     // (undocumented)
     readonly name: string;
-    select(columns: "*", as?: string): CurrentWhere<T>;
-    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): CurrentWhere<Record<string, any>>;
+    select(columns: "*", as?: string): ChainSelectWhere<T>;
+    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): ChainSelectWhere<Record<string, any>>;
     select<R extends {}>(columns: Constructable<{
         [key in keyof R]: boolean | string;
-    } | string>, as?: string): CurrentWhere<R>;
+    } | string>, as?: string): ChainSelectWhere<R>;
     // (undocumented)
     toSelect(): string;
-    // (undocumented)
-    toString(): string;
     update(values: Constructable<{
         [key in keyof T]?: string;
-    } | string>): CurrentModifyWhere<T>;
+    } | string>): ChainModifyWhere<T>;
 }
 
 // @public (undocumented)
 export class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
     constructor(name: string, statement: SqlValuesCreator);
     // (undocumented)
-    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): CurrentOnConflict<T>;
+    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainOnConflict<T>;
     // (undocumented)
-    insert(columns: string, values: Constructable<string>): CurrentOnConflict<T>;
-    updateFrom(values: Constructable<UpdateRowValue<T>>): CurrentModifyWhere<T>;
+    insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
+    updateFrom(values: Constructable<UpdateRowValue<T>>): ChainModifyWhere<T>;
 }
 
 // @public (undocumented)
@@ -163,7 +165,7 @@ export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean)
 export function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
-export type InferQueryResult<T> = T extends SqlSelectable<infer P> ? (P extends TableType ? P : never) : never;
+export type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
 
 // @public (undocumented)
 export type InferTableDefined<T extends TableDefined> = {
@@ -217,28 +219,28 @@ export function selectColumns(columns: Constructable<SelectParam>): string;
 
 // @public (undocumented)
 class Selection_2 {
-    constructor(selectable: Constructable<SqlSelectable<any> | string>, as?: string);
+    constructor(selectable: Constructable<SqlSelectable | string>, as?: string);
     // (undocumented)
-    crossJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection_2;
+    crossJoin(selectable: Constructable<SqlSelectable | string>, as?: string | undefined): Selection_2;
     // (undocumented)
-    static from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection_2;
+    static from(selectable: Constructable<SqlSelectable | string>, as?: string): Selection_2;
     // (undocumented)
-    from(selectable: Constructable<SqlSelectable<any> | string>, as?: string): Selection_2;
+    from(selectable: Constructable<SqlSelectable | string>, as?: string): Selection_2;
     // (undocumented)
-    fullJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
+    fullJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    innerJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
+    innerJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    leftJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
+    leftJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
     // (undocumented)
-    naturalJoin(selectable: Constructable<SqlSelectable<any> | string>, as?: string | undefined): Selection_2;
+    naturalJoin(selectable: Constructable<SqlSelectable | string>, as?: string | undefined): Selection_2;
     // (undocumented)
-    rightJoin(selectable: Constructable<SqlSelectable<any> | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    select<T extends TableType = Record<string, any>>(columns: "*"): CurrentWhere<T>;
-    select(columns: Constructable<SelectParam>): CurrentWhere<Record<string, any>>;
+    rightJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
+    select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelectWhere<T>;
+    select(columns: Constructable<SelectParam>): ChainSelectWhere<Record<string, any>>;
     select<T extends TableType>(columns: Constructable<{
         [key in keyof T]: string | boolean;
-    } | string>): CurrentWhere<T>;
+    } | string>): ChainSelectWhere<T>;
     // (undocumented)
     toString(): string;
 }
@@ -248,24 +250,46 @@ export { Selection_2 as Selection }
 export type SelectParam = string | Record<string, string | boolean>;
 
 // @public
-export class SqlQueryStatement<T extends TableType = TableType> extends SqlSelectable<T> {
-    constructor(sql: string | SqlQueryStatement);
-    // (undocumented)
-    toSelect(): string;
-    // (undocumented)
-    toString(): string;
-}
-
-// @public
 export class SqlRaw<T = any> extends String {
     protected [SQL_RAW]: T;
 }
 
 // @public
-export abstract class SqlSelectable<T extends TableType> {
-    protected [SQL_SELECTABLE]: T;
-    abstract toSelect(): string;
+export interface SqlSelectable {
+    toSelect(): string;
+}
+
+// @public
+export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectWhere<T> {
+    // (undocumented)
+    groupBy(columns: string | string[]): ChainSelectHaving<T>;
+    // (undocumented)
+    having(param?: Constructable<ConditionParam | void>): ChainSelectLimit<T>;
+    // (undocumented)
+    limit(limit?: number, offset?: number): SqlStatementDataset<T>;
+    // (undocumented)
+    orderBy(param?: Constructable<OrderByParam | void>): ChainSelectLimit<T>;
+    // (undocumented)
+    where(param?: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
+}
+
+// @public (undocumented)
+export abstract class SqlStatement {
     abstract toString(): string;
+}
+
+// @public (undocumented)
+export abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelectable {
+    toSelect(): string;
+}
+
+// @public (undocumented)
+export class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
+    constructor(sql: string);
+    // (undocumented)
+    readonly sql: string;
+    // (undocumented)
+    toString(): string;
 }
 
 // @public
@@ -285,7 +309,7 @@ export class SqlValuesCreator {
         sqlType: string;
         sqlDefault?: string;
         assertJsType?: AssertJsType;
-    }>): SqlSelectable<T>;
+    }>): SqlStatementDataset<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);

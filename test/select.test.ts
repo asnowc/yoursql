@@ -1,7 +1,7 @@
-import { Selection, SqlQueryStatement, TableType, DbTable } from "@asnc/yoursql";
+import { Selection, SqlTextStatementDataset, TableType, DbTable } from "@asnc/yoursql";
 import { test, expect, describe } from "vitest";
 
-class MockSqlSelectable<T extends TableType> extends SqlQueryStatement<T> {
+class MockSqlSelectable<T extends TableType> extends SqlTextStatementDataset<T> {
   constructor(name: string) {
     super(`SELECT * FROM ${name}`);
   }
