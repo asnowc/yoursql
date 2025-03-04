@@ -23,9 +23,9 @@ export interface ChainModifyReturning<T extends TableType = {}> extends SqlState
     // (undocumented)
     returning(columns: "*"): SqlStatementDataset<T>;
     // (undocumented)
-    returning(columns: Constructable<ColumnsSelected<T> | string>): SqlStatementDataset<Record<string, any>>;
+    returning(columns: Constructable<SelectParam>): SqlStatementDataset<Record<string, any>>;
     // (undocumented)
-    returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlStatementDataset<R>;
+    returning<R extends TableType>(columns: Constructable<SelectParam>): SqlStatementDataset<R>;
 }
 
 // @public (undocumented)
@@ -85,11 +85,6 @@ export class ColumnMeta<T> {
     // (undocumented)
     readonly type: CustomDbType<T> | (new (...args: any[]) => T);
 }
-
-// @public
-export type ColumnsSelected<T extends TableType> = {
-    [key in keyof T]?: boolean | string;
-};
 
 // @public (undocumented)
 export type ColumnToValueConfig = {
@@ -205,15 +200,6 @@ export type PickColumn<T extends {
     [key in Pa]?: T[key];
 };
 
-// Warning: (ae-forgotten-export) The symbol "StringOnly" needs to be exported by the entry point index.d.ts
-//
-// @public
-export type SelectColumns<T extends TableType, R extends ColumnsSelected<T>> = R extends {
-    [key in keyof T]?: boolean | string;
-} ? {
-    [key in keyof T as R[key] extends true ? key : StringOnly<R[key]>]: T[key];
-} : never;
-
 // @public (undocumented)
 export function selectColumns(columns: Constructable<SelectParam>): string;
 
@@ -247,7 +233,7 @@ class Selection_2 {
 export { Selection_2 as Selection }
 
 // @public (undocumented)
-export type SelectParam = string | Record<string, string | boolean>;
+export type SelectParam = string | string[] | Record<string, string | boolean>;
 
 // @public
 export class SqlRaw<T = any> extends String {
