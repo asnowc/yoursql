@@ -24,6 +24,9 @@ test("单表 select", function () {
   s0 = Selection.from(t1).select({ c1: true, rename: "c2" }).toString();
   expect(s0).toMatchSnapshot("t0 rename");
 
+  s0 = Selection.from(t1).select(["c1", "c2 AS rename"]).toString(); // 数组
+  expect(s0).toMatchSnapshot("t0 rename");
+
   expect(() => Selection.from(t1).select([]), "没有选择任何列").toThrowError();
 });
 

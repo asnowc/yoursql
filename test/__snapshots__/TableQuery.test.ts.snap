@@ -12,7 +12,7 @@ RETURNING *"
 
 exports[`TableQuery > delete > deleteWithResult 2`] = `
 "DELETE FROM user
-RETURNING level AS rename, name"
+RETURNING rename AS level,name"
 `;
 
 exports[`TableQuery > insert > insert 1`] = `
@@ -39,7 +39,7 @@ exports[`TableQuery > insert > insert-returning 1`] = `
 "INSERT INTO user (name)
 VALUES
 ('hh')
-RETURNING level AS rename, name"
+RETURNING rename AS level,name"
 `;
 
 exports[`TableQuery > select > select-columns 1`] = `
@@ -76,5 +76,5 @@ WHERE id IS NULL"
 exports[`TableQuery > updateFrom > update-returning 1`] = `
 "UPDATE user SET
 id= 78
-RETURNING level AS rename, name"
+RETURNING rename AS level,name"
 `;

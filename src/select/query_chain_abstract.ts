@@ -1,5 +1,5 @@
-import { ConditionParam, Constructable, OrderByParam } from "../util.ts";
-import { ColumnsSelected, TableType } from "./type.ts";
+import { ConditionParam, Constructable, OrderByParam, SelectParam } from "../util.ts";
+import { TableType } from "./type.ts";
 
 /** @public */
 export abstract class SqlStatement {
@@ -61,8 +61,8 @@ export interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupB
 /** @public */
 export interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
   returning(columns: "*"): SqlStatementDataset<T>;
-  returning(columns: Constructable<ColumnsSelected<T> | string>): SqlStatementDataset<Record<string, any>>;
-  returning<R extends TableType>(columns: Constructable<ColumnsSelected<R> | string>): SqlStatementDataset<R>;
+  returning(columns: Constructable<SelectParam>): SqlStatementDataset<Record<string, any>>;
+  returning<R extends TableType>(columns: Constructable<SelectParam>): SqlStatementDataset<R>;
 }
 /** @public */
 export interface ChainModifyWhere<T extends TableType = {}> extends ChainModifyReturning<T> {

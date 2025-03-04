@@ -55,7 +55,7 @@ export function having(conditions?: Constructable<ConditionParam | void>, type?:
 }
 
 /** @public */
-export type SelectParam = string | Record<string, string | boolean>;
+export type SelectParam = string | string[] | Record<string, string | boolean>;
 /**
  * @public
  * @example
@@ -70,23 +70,28 @@ export function selectColumns(columns: Constructable<SelectParam>): string {
     case "string":
       return columns;
     case "object": {
-      let sql = "";
-      const keys = Object.keys(columns);
-      if (keys.length === 0) throw new Error("没有选择任何列");
-      let k: string = keys[0];
-      let v = columns[k];
+      if (columns instanceof Array) {
+        if (columns.length === 0) throw new Error("没有选择任何列");
+        return columns.join(",");
+      } else {
+        let sql = "";
+        const keys = Object.keys(columns);
+        if (keys.length === 0) throw new Error("没有选择任何列");
+        let k: string = keys[0];
+        let v = columns[k];
 
-      if (typeof v === "string") sql += v + " AS " + k;
-      else sql += k;
-
-      for (let i = 1; i < keys.length; i++) {
-        k = keys[i];
-        v = columns[k];
-        sql += ",";
         if (typeof v === "string") sql += v + " AS " + k;
         else sql += k;
+
+        for (let i = 1; i < keys.length; i++) {
+          k = keys[i];
+          v = columns[k];
+          sql += ",";
+          if (typeof v === "string") sql += v + " AS " + k;
+          else sql += k;
+        }
+        return sql;
       }
-      return sql;
     }
 
     default:

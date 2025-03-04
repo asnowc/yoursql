@@ -1,5 +1,5 @@
-import { ConditionParam, Constructable, where as createWhere } from "../util.ts";
-import { createUpdateSetFromObject, selectColumnsOrTable } from "./_statement.ts";
+import { ConditionParam, Constructable, where as createWhere, selectColumns, SelectParam } from "../util.ts";
+import { createUpdateSetFromObject } from "./_statement.ts";
 import {
   SqlStatementDataset,
   SqlStatement,
@@ -9,7 +9,7 @@ import {
   ChainConflictDo,
   ChainModifyReturning,
 } from "./query_chain_abstract.ts";
-import { ColumnsSelected, TableType } from "./type.ts";
+import { TableType } from "./type.ts";
 
 export class SqlChainModify<T extends TableType = {}>
   extends SqlStatement
@@ -18,14 +18,13 @@ export class SqlChainModify<T extends TableType = {}>
   constructor(readonly sql: string) {
     super();
   }
-  returning<R extends {}>(returns: Constructable<ColumnsSelected<any> | "*">): SqlStatementDataset<R> {
+  returning<R extends {}>(returns: Constructable<SelectParam | "*">): SqlStatementDataset<R> {
     if (typeof returns === "function") returns = returns();
     let columnsStr: string;
     if (returns === "*") {
       columnsStr = "*";
     } else {
-      const res = selectColumnsOrTable(returns as Parameters<typeof selectColumnsOrTable>[0]);
-      columnsStr = res.sqlColumns;
+      columnsStr = selectColumns(returns);
     }
     let sql = this.toString() + "\nRETURNING " + columnsStr;
     return new SqlTextStatementDataset(sql);
