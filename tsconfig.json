@@ -10,9 +10,11 @@
     "noEmit": true,
     "allowJs": true,
     "isolatedModules": true,
+    "noImplicitOverride": true,
     "baseUrl": ".",
     "paths": {
-      "@asnc/yoursql": ["./src/mod.ts"]
+      "@asla/yoursql": ["./src/sql_gen/mod.ts"],
+      "@asla/yoursql/client": ["./src/client/mod.ts"]
     }
   },
 

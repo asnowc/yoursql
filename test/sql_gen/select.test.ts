@@ -1,4 +1,4 @@
-import { Selection, SqlTextStatementDataset, TableType, DbTable } from "@asnc/yoursql";
+import { Selection, SqlTextStatementDataset, TableType, DbTable } from "@asla/yoursql";
 import { test, expect, describe } from "vitest";
 
 class MockSqlSelectable<T extends TableType> extends SqlTextStatementDataset<T> {

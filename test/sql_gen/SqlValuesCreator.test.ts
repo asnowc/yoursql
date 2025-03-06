@@ -1,4 +1,4 @@
-import { JsObjectMapSql, SqlValuesCreator } from "@asnc/yoursql";
+import { JsObjectMapSql, SqlValuesCreator } from "@asla/yoursql";
 import { describe, expect, test } from "vitest";
 
 let v = SqlValuesCreator.create();

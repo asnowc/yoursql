@@ -1,4 +1,4 @@
-import { DbTableQuery } from "@asnc/yoursql";
+import { DbTableQuery } from "@asla/yoursql";
 
 //select 测试
 declare const y: DbTableQuery<{ a: number; c: string; b: bigint }>;

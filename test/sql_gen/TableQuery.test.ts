@@ -1,4 +1,4 @@
-import { DbTableQuery, pgSqlTransformer, SqlValuesCreator } from "@asnc/yoursql";
+import { DbTableQuery, pgSqlTransformer, SqlValuesCreator } from "@asla/yoursql";
 import { test, expect, describe } from "vitest";
 
 describe("TableQuery", function () {

@@ -1,4 +1,4 @@
-import { SqlValuesCreator, pgSqlTransformer } from "@asnc/yoursql";
+import { SqlValuesCreator, pgSqlTransformer } from "@asla/yoursql";
 import { expect, test } from "vitest";
 
 const v = SqlValuesCreator.create(pgSqlTransformer);

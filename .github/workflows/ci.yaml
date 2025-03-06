@@ -2,8 +2,8 @@ name: CI
 on:
   push:
     branches:
-      - main
-      - feat/*
+      - "*"
+      - "**"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,11 +11,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup NodeJS
-        uses: asnowc/actions@setup-node/v2
+      - uses: pnpm/action-setup@v4
         with:
-          node_v: 18
-          pnpm_v: 9
           run_install: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
       - name: Test
         run: pnpm ci:test
+  check:
+    if: ${{github.ref_name=='main'}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: jsr-dry-run
+        run: npx jsr publish --dry-run
