@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "types": "./dist/mod.d.ts",
+  "packageManager": "pnpm@10.4.0",
   "scripts": {
     "ci:test": "vitest run",
     "ci:build": "pnpm rollup -c build/rollup.config.js",
