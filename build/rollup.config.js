@@ -4,9 +4,11 @@ import { defineConfig } from "rollup";
 const tsPlugin = esmTsPlugin;
 
 export default defineConfig({
-  input: { sql_gen: "./src/sql_gen/mod.ts", client: "./src/client/mod.ts" },
+  input: { "sql_gen/mod": "./src/sql_gen/mod.ts", "client/mod": "./src/client/mod.ts" },
   output: {
     dir: "dist",
+    preserveModules: true,
+    preserveModulesRoot: "src",
   },
   plugins: [
     tsPlugin({

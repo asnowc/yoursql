@@ -1,6 +1,6 @@
 {
   "name": "@asla/yoursql",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "",
   "type": "module",
   "types": "./dist/mod.d.ts",
@@ -29,8 +29,8 @@
     "url": "https://github.com/asnowc/yoursql"
   },
   "exports": {
-    ".": "./dist/sql_gen.js",
-    "./client": "./dist/client.js"
+    ".": "./dist/sql_gen/mod.js",
+    "./client": "./dist/client/mod.js"
   },
   "files": [
     "dist/**/*.js",
