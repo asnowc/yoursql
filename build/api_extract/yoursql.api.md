@@ -5,10 +5,10 @@
 ```ts
 
 // @public
-export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
+type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
-export interface ChainConflictDo<T extends TableType = {}> {
+interface ChainConflictDo<T extends TableType = {}> {
     // (undocumented)
     doNotThing(): ChainModifyReturning<T>;
     doUpdate(set: Constructable<string | {
@@ -19,7 +19,7 @@ export interface ChainConflictDo<T extends TableType = {}> {
 }
 
 // @public (undocumented)
-export interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
+interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
     // (undocumented)
     returning(columns: "*"): SqlStatementDataset<T>;
     // (undocumented)
@@ -29,49 +29,49 @@ export interface ChainModifyReturning<T extends TableType = {}> extends SqlState
 }
 
 // @public (undocumented)
-export interface ChainModifyWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainModifyWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
     // (undocumented)
     where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
 }
 
 // @public (undocumented)
-export interface ChainOnConflict<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainOnConflict<T extends TableType = {}> extends ChainModifyReturning<T> {
     // (undocumented)
     onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainConflictDo<T>;
 }
 
 // @public (undocumented)
-export interface ChainSelectGroupBy<T extends TableType> extends ChainSelectOrderBy<T> {
+interface ChainSelectGroupBy<T extends TableType> extends ChainSelectOrderBy<T> {
     // (undocumented)
     groupBy(columns: string | string[]): ChainSelectHaving<T>;
 }
 
 // @public (undocumented)
-export interface ChainSelectHaving<T extends TableType> extends ChainSelectOrderBy<T> {
+interface ChainSelectHaving<T extends TableType> extends ChainSelectOrderBy<T> {
     // (undocumented)
     having(param: Constructable<ConditionParam | void>): ChainSelectLimit<T>;
 }
 
 // @public (undocumented)
-export interface ChainSelectLimit<T extends TableType> extends SqlStatementDataset<T> {
+interface ChainSelectLimit<T extends TableType> extends SqlStatementDataset<T> {
     // (undocumented)
     limit(limit?: number | bigint, offset?: number | bigint): SqlStatementDataset<T>;
 }
 
 // @public (undocumented)
-export interface ChainSelectOrderBy<T extends TableType> extends ChainSelectLimit<T> {
+interface ChainSelectOrderBy<T extends TableType> extends ChainSelectLimit<T> {
     // (undocumented)
     orderBy(param: Constructable<OrderByParam | void>): ChainSelectLimit<T>;
 }
 
 // @public (undocumented)
-export interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupBy<T> {
+interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupBy<T> {
     // (undocumented)
     where(param: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
 }
 
 // @public
-export class ColumnMeta<T> {
+class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
     sqlType: string,
     notNull?: boolean,
@@ -87,19 +87,73 @@ export class ColumnMeta<T> {
 }
 
 // @public (undocumented)
-export type ColumnToValueConfig = {
+type ColumnToValueConfig = {
     sqlType?: string;
     assertJsType?: AssertJsType;
 };
 
 // @public (undocumented)
-export type ConditionParam = string | string[];
+type ConditionParam = string | string[];
 
 // @public (undocumented)
-export type Constructable<T> = T | (() => T);
+type Constructable<T> = T | (() => T);
+
+declare namespace core {
+    export {
+        v,
+        pgSqlTransformer,
+        SqlRaw,
+        JsObjectMapSql,
+        SqlValueEncoder,
+        AssertJsType,
+        SqlValueFn,
+        SqlValuesCreator,
+        ColumnToValueConfig,
+        PickColumn,
+        UpdateRowValue,
+        OrderValue,
+        TableType,
+        DbTable,
+        DeleteOption,
+        SqlSelectChain,
+        Selection_2 as Selection,
+        SqlStatement,
+        SqlSelectable,
+        SqlStatementDataset,
+        ChainSelectLimit,
+        ChainSelectOrderBy,
+        ChainSelectHaving,
+        ChainSelectGroupBy,
+        ChainSelectWhere,
+        ChainModifyReturning,
+        ChainModifyWhere,
+        ChainConflictDo,
+        ChainOnConflict,
+        SqlTextStatementDataset,
+        InferQueryResult,
+        DbTableQuery,
+        getObjectListKeys,
+        where,
+        having,
+        selectColumns,
+        orderBy,
+        Constructable,
+        ConditionParam,
+        SelectParam,
+        OrderBehavior,
+        OrderByParam,
+        TypeChecker,
+        ColumnMeta,
+        YourTypeMap,
+        CustomDbType,
+        TableDefined,
+        InferTableDefined,
+        YourTable
+    }
+}
 
 // @public
-export class CustomDbType<T> {
+class CustomDbType<T> {
     constructor(is: (this: CustomDbType<T>, value: any) => boolean, name: string);
     // (undocumented)
     static readonly bigint: CustomDbType<bigint>;
@@ -116,7 +170,7 @@ export class CustomDbType<T> {
 }
 
 // @public
-export class DbTable<T extends TableType> {
+class DbTable<T extends TableType> {
     constructor(name: string);
     // (undocumented)
     delete(option?: DeleteOption): ChainModifyWhere<T>;
@@ -138,7 +192,7 @@ export class DbTable<T extends TableType> {
 }
 
 // @public (undocumented)
-export class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
+class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
     constructor(name: string, statement: SqlValuesCreator);
     // (undocumented)
     insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainOnConflict<T>;
@@ -148,49 +202,49 @@ export class DbTableQuery<T extends TableType = Record<string, any>, C extends T
 }
 
 // @public (undocumented)
-export interface DeleteOption {
+interface DeleteOption {
     // (undocumented)
     where?: Constructable<ConditionParam | void>;
 }
 
 // @public
-export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
+function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
 
 // @public
-export function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
+function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
-export type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
+type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
 
 // @public (undocumented)
-export type InferTableDefined<T extends TableDefined> = {
+type InferTableDefined<T extends TableDefined> = {
     [key in keyof T]: T[key] extends ColumnMeta<infer P> ? P : unknown;
 };
 
 // @public
-export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
+type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
-export type OrderBehavior = {
+type OrderBehavior = {
     key: string;
     asc: boolean;
     nullLast?: boolean;
 };
 
 // @public
-export function orderBy(by?: Constructable<OrderByParam | void>): string;
+function orderBy(by?: Constructable<OrderByParam | void>): string;
 
 // @public (undocumented)
-export type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
+type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
 
 // @public (undocumented)
-export type OrderValue = "ASC" | "DESC";
+type OrderValue = "ASC" | "DESC";
 
 // @public
-export const pgSqlTransformer: JsObjectMapSql;
+const pgSqlTransformer: JsObjectMapSql;
 
 // @public (undocumented)
-export type PickColumn<T extends {
+type PickColumn<T extends {
     [key: string]: any;
 }, Rq extends keyof T = keyof T, Pa extends Exclude<keyof T, Rq> = never> = {
     [key in Rq as null extends T[key] ? key : never]?: T[key];
@@ -201,7 +255,7 @@ export type PickColumn<T extends {
 };
 
 // @public (undocumented)
-export function selectColumns(columns: Constructable<SelectParam>): string;
+function selectColumns(columns: Constructable<SelectParam>): string;
 
 // @public (undocumented)
 class Selection_2 {
@@ -230,23 +284,22 @@ class Selection_2 {
     // (undocumented)
     toString(): string;
 }
-export { Selection_2 as Selection }
 
 // @public (undocumented)
-export type SelectParam = string | string[] | Record<string, string | boolean>;
+type SelectParam = string | string[] | Record<string, string | boolean>;
 
 // @public
-export class SqlRaw<T = any> extends String {
+class SqlRaw<T = any> extends String {
     protected [SQL_RAW]: T;
 }
 
 // @public
-export interface SqlSelectable {
+interface SqlSelectable {
     toSelect(): string;
 }
 
 // @public
-export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectWhere<T> {
+class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectWhere<T> {
     // (undocumented)
     groupBy(columns: string | string[]): ChainSelectHaving<T>;
     // (undocumented)
@@ -260,17 +313,17 @@ export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset
 }
 
 // @public (undocumented)
-export abstract class SqlStatement {
+abstract class SqlStatement {
     abstract toString(): string;
 }
 
 // @public (undocumented)
-export abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelectable {
+abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelectable {
     toSelect(): string;
 }
 
 // @public (undocumented)
-export class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
+class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
     constructor(sql: string);
     // (undocumented)
     readonly sql: string;
@@ -279,15 +332,15 @@ export class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
 }
 
 // @public
-export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
+type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
 
 // @public (undocumented)
-export type SqlValueFn = SqlValuesCreator & {
+type SqlValueFn = SqlValuesCreator & {
     (value: any, assertType?: AssertJsType): string;
 };
 
 // @public
-export class SqlValuesCreator {
+class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     static create(map?: JsObjectMapSql): SqlValueFn;
@@ -316,17 +369,17 @@ export class SqlValuesCreator {
 }
 
 // @public (undocumented)
-export type TableDefined = {
+type TableDefined = {
     [key: string]: ColumnMeta<any>;
 };
 
 // @public (undocumented)
-export type TableType = {
+type TableType = {
     [key: string]: any;
 };
 
 // @public (undocumented)
-export class TypeChecker<T> {
+class TypeChecker<T> {
     constructor(map: Map<string, ColumnMeta<any>>);
     // (undocumented)
     check(value: {
@@ -337,18 +390,18 @@ export class TypeChecker<T> {
 }
 
 // @public (undocumented)
-export type UpdateRowValue<T extends object> = {
+type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | SqlRaw;
 };
 
 // @public
-export const v: SqlValueFn;
+const v: SqlValueFn;
 
 // @public
-export function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
+function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
-export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
+class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
     constructor(name: string, define: TableDefined, sqlValue: SqlValuesCreator);
     // (undocumented)
     readonly columns: readonly string[];
@@ -361,7 +414,7 @@ export class YourTable<T extends TableType = TableType, C extends TableType = T>
 // Warning: (ae-forgotten-export) The symbol "TypeMapDefined" needs to be exported by the entry point index.d.ts
 //
 // @public
-export class YourTypeMap<M extends TypeMapDefined> {
+class YourTypeMap<M extends TypeMapDefined> {
     constructor(typeMap?: M);
     // Warning: (ae-forgotten-export) The symbol "InferTypeMapDefined" needs to be exported by the entry point index.d.ts
     //

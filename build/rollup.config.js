@@ -2,12 +2,11 @@ import esmTsPlugin from "@rollup/plugin-typescript";
 import { defineConfig } from "rollup";
 
 const tsPlugin = esmTsPlugin;
-const output = "dist/mod.js";
 
 export default defineConfig({
-  input: "./src/mod.ts",
+  input: { sql_gen: "./src/sql_gen/mod.ts" },
   output: {
-    file: output,
+    dir: "dist",
   },
   plugins: [
     tsPlugin({

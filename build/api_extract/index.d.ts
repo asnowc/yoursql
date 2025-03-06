@@ -1,1 +1,1 @@
-export * from "../../dist/mod.ts";
+export * as core from "../../dist/sql_gen/mod.d.ts";

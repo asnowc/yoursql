@@ -12,7 +12,8 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "@asnc/yoursql": ["./src/mod.ts"]
+      "@asla/yoursql": ["./src/mod.ts"],
+      "@asla/yoursql/client": ["./src/client/mod.ts"]
     }
   },
 

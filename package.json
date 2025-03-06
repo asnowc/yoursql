@@ -27,7 +27,8 @@
     "url": "https://github.com/asnowc/yoursql"
   },
   "exports": {
-    ".": "./dist/mod.js"
+    ".": "./dist/sql_gen.js",
+    "./client": "./dist/client.js"
   },
   "files": [
     "dist/**/*.js",
