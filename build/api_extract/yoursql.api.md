@@ -70,6 +70,26 @@ interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupBy<T> {
     where(param: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
 }
 
+declare namespace client {
+    export {
+        ParallelQueryError,
+        ConnectionNotAvailableError,
+        DbConnection,
+        TransactionMode,
+        DbTransaction,
+        DbQueryPool,
+        SingleQueryResult,
+        QueryRowsResult,
+        MultipleQueryResult,
+        QueryResult,
+        DbQuery,
+        DbCursorOption,
+        DbCursor,
+        DbPoolConnection,
+        DbPoolTransaction
+    }
+}
+
 // @public
 class ColumnMeta<T> {
     constructor(type: CustomDbType<T> | (new (...args: any[]) => T),
@@ -94,6 +114,11 @@ type ColumnToValueConfig = {
 
 // @public (undocumented)
 type ConditionParam = string | string[];
+
+// @public (undocumented)
+class ConnectionNotAvailableError extends Error {
+    constructor(message: string);
+}
 
 // @public (undocumented)
 type Constructable<T> = T | (() => T);
@@ -170,6 +195,130 @@ class CustomDbType<T> {
 }
 
 // @public
+interface DbConnection extends DbQuery, AsyncDisposable {
+    // (undocumented)
+    close(): Promise<void>;
+}
+
+// @public (undocumented)
+abstract class DbCursor<T> {
+    // (undocumented)
+    [Symbol.asyncDispose](): Promise<void>;
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncGenerator<Awaited<T>, void, unknown>;
+    abstract close(): Promise<void>;
+    abstract read(maxSize?: number): Promise<T[]>;
+}
+
+// @public (undocumented)
+interface DbCursorOption {
+    // (undocumented)
+    defaultSize?: number;
+}
+
+// @public
+class DbPoolConnection extends DbQuery {
+    // (undocumented)
+    [Symbol.dispose](): void;
+    constructor(conn: DbConnection, onRelease: () => void);
+    // (undocumented)
+    begin(mode?: TransactionMode): Promise<void>;
+    // (undocumented)
+    commit(): Promise<void>;
+    // (undocumented)
+    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: {
+        toString(): string;
+    }): Promise<T>;
+    // (undocumented)
+    query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    // (undocumented)
+    query<T = any>(sql: {
+        toString(): string;
+    }): Promise<QueryRowsResult<T>>;
+    release(): void;
+    // (undocumented)
+    get released(): boolean;
+    // (undocumented)
+    rollback(): Promise<void>;
+}
+
+// @public
+class DbPoolTransaction extends DbQuery implements DbTransaction {
+    // (undocumented)
+    [Symbol.asyncDispose](): Promise<void>;
+    constructor(connect: () => Promise<DbPoolConnection>, mode?: TransactionMode | undefined);
+    // (undocumented)
+    commit(): Promise<void>;
+    // (undocumented)
+    readonly mode?: TransactionMode | undefined;
+    // (undocumented)
+    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
+    // (undocumented)
+    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: {
+        toString(): string;
+    }): Promise<T>;
+    // (undocumented)
+    query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    // (undocumented)
+    query<T extends object = any>(sql: {
+        toString(): string;
+    }): Promise<QueryRowsResult<T>>;
+    // (undocumented)
+    get released(): boolean;
+    // (undocumented)
+    rollback(): Promise<void>;
+    // (undocumented)
+    rollbackTo(savePoint: string): Promise<void>;
+    // (undocumented)
+    savePoint(savePoint: string): Promise<void>;
+}
+
+// @public
+abstract class DbQuery {
+    abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
+    abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: {
+        toString(): string;
+    }): Promise<T>;
+    multipleQueryRows<T extends any[] = any[]>(sql: SqlStatementDataset<T>): Promise<T[]>;
+    multipleQueryRows<T extends any[] = any[]>(sql: {
+        toString(): string;
+    }): Promise<T[]>;
+    abstract query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    abstract query<T = any>(sql: {
+        toString(): string;
+    }): Promise<QueryRowsResult<T>>;
+    queryCount(sql: string | {
+        toString(): string;
+    }): Promise<number>;
+    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: SqlStatementDataset<T>, key: K): Promise<Map<T[K], T>>;
+    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: {
+        toString(): string;
+    }, key: K): Promise<Map<T[K], T>>;
+    queryRows<T = any>(sql: SqlStatementDataset<T>): Promise<T[]>;
+    queryRows<T = any>(sql: {
+        toString(): string;
+    }): Promise<T[]>;
+}
+
+// @public
+interface DbQueryPool extends DbQuery {
+    // (undocumented)
+    begin(mode?: TransactionMode): DbTransaction;
+    // (undocumented)
+    connect(): Promise<DbPoolConnection>;
+    // (undocumented)
+    cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
+    // (undocumented)
+    cursor<T>(sql: {
+        toString(): string;
+    }, option?: DbCursorOption): Promise<DbCursor<T>>;
+    // (undocumented)
+    idleCount: number;
+    // (undocumented)
+    totalCount: number;
+}
+
+// @public
 class DbTable<T extends TableType> {
     constructor(name: string);
     // (undocumented)
@@ -201,6 +350,15 @@ class DbTableQuery<T extends TableType = Record<string, any>, C extends TableTyp
     updateFrom(values: Constructable<UpdateRowValue<T>>): ChainModifyWhere<T>;
 }
 
+// @public
+interface DbTransaction extends DbQuery, AsyncDisposable {
+    commit(): Promise<void>;
+    rollback(): Promise<void>;
+    rollbackTo(savePoint: string): Promise<void>;
+    // (undocumented)
+    savePoint(savePoint: string): Promise<void>;
+}
+
 // @public (undocumented)
 interface DeleteOption {
     // (undocumented)
@@ -225,6 +383,9 @@ type InferTableDefined<T extends TableDefined> = {
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
 // @public (undocumented)
+type MultipleQueryResult = SingleQueryResult[];
+
+// @public (undocumented)
 type OrderBehavior = {
     key: string;
     asc: boolean;
@@ -240,6 +401,11 @@ type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean
 // @public (undocumented)
 type OrderValue = "ASC" | "DESC";
 
+// @public (undocumented)
+class ParallelQueryError extends Error {
+    constructor();
+}
+
 // @public
 const pgSqlTransformer: JsObjectMapSql;
 
@@ -253,6 +419,17 @@ type PickColumn<T extends {
 } & {
     [key in Pa]?: T[key];
 };
+
+// @public (undocumented)
+type QueryResult = MultipleQueryResult | SingleQueryResult;
+
+// @public (undocumented)
+interface QueryRowsResult<T = any> extends SingleQueryResult {
+    // (undocumented)
+    rowCount: number;
+    // (undocumented)
+    rows: T[];
+}
 
 // @public (undocumented)
 function selectColumns(columns: Constructable<SelectParam>): string;
@@ -287,6 +464,14 @@ class Selection_2 {
 
 // @public (undocumented)
 type SelectParam = string | string[] | Record<string, string | boolean>;
+
+// @public (undocumented)
+interface SingleQueryResult {
+    // (undocumented)
+    rowCount: number;
+    // (undocumented)
+    rows?: any[];
+}
 
 // @public
 class SqlRaw<T = any> extends String {
@@ -377,6 +562,9 @@ type TableDefined = {
 type TableType = {
     [key: string]: any;
 };
+
+// @public (undocumented)
+type TransactionMode = "SERIALIZABLE" | "REPEATABLE READ" | "READ COMMITTED" | "READ UNCOMMITTED";
 
 // @public (undocumented)
 class TypeChecker<T> {

@@ -4,7 +4,7 @@ import { defineConfig } from "rollup";
 const tsPlugin = esmTsPlugin;
 
 export default defineConfig({
-  input: { sql_gen: "./src/sql_gen/mod.ts" },
+  input: { sql_gen: "./src/sql_gen/mod.ts", client: "./src/client/mod.ts" },
   output: {
     dir: "dist",
   },
@@ -12,7 +12,7 @@ export default defineConfig({
     tsPlugin({
       include: ["./src/**"],
       compilerOptions: {
-        target: "ES2020",
+        target: "ES2022",
         module: "nodenext",
         declaration: true,
         declarationDir: "dist",

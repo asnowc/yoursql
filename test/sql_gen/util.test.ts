@@ -1,4 +1,4 @@
-import { where, having, orderBy, selectColumns, getObjectListKeys } from "@asnc/yoursql";
+import { where, having, orderBy, selectColumns, getObjectListKeys } from "@asla/yoursql";
 import { expect, test } from "vitest";
 
 test("orderBy", function () {

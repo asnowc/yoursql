@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "@asla/yoursql": ["./src/mod.ts"],
+      "@asla/yoursql": ["./src/sql_gen/mod.ts"],
       "@asla/yoursql/client": ["./src/client/mod.ts"]
     }
   },
