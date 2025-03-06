@@ -10,7 +10,10 @@ import type { DbTransaction, TransactionMode } from "./interfaces.ts";
  * 池连接事务
  */
 export class DbPoolTransaction extends DbQuery implements DbTransaction {
-  constructor(connect: () => Promise<DbPoolConnection>, readonly mode?: TransactionMode) {
+  constructor(
+    connect: () => Promise<DbPoolConnection>,
+    readonly mode?: TransactionMode
+  ) {
     super();
     this.#query = (sql: string) => {
       return new Promise<QueryRowsResult<any>>((resolve, reject) => {
@@ -97,10 +100,10 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
     this.#conn = undefined;
     conn.release();
   }
-  get released() {
+  get released(): boolean {
     return !!this.#error;
   }
-  [Symbol.asyncDispose]() {
+  [Symbol.asyncDispose](): Promise<void> {
     return this.rollback();
   }
 }

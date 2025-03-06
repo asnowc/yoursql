@@ -12,7 +12,7 @@
     "@asla/yoursql": "./src/sql_gen/mod.ts"
   },
   "exports": {
-    ".": "./src/mod.ts",
+    ".": "./src/sql_gen/mod.ts",
     "./client": "./src/client/mod.ts"
   },
   "publish": {

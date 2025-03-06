@@ -10,10 +10,10 @@ export abstract class DbCursor<T> {
   /** 提前关闭游标，如果多次调用，会被忽略 */
   abstract close(): Promise<void>;
   // implement
-  [Symbol.asyncDispose]() {
+  [Symbol.asyncDispose](): Promise<void> {
     return this.close();
   }
-  async *[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator](): AsyncGenerator<T, undefined, void> {
     let data = await this.read();
     try {
       while (data.length) {

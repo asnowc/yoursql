@@ -9,7 +9,7 @@ declare const SQL_RAW: unique symbol;
  */
 export class SqlRaw<T = any> extends String {
   /** 保留以推断类型 */
-  protected declare [SQL_RAW]: T;
+  declare protected [SQL_RAW]: T;
 }
 
 /** @public js 对象到编码函数的映射*/
@@ -328,7 +328,7 @@ class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
   #asName: string;
   #valuesStr: string;
   #sql: string;
-  toSelect(): string {
+  override toSelect(): string {
     return this.#sql;
   }
   toString(): string {

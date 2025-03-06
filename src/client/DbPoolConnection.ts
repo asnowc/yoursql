@@ -41,7 +41,7 @@ export class DbPoolConnection extends DbQuery {
   async commit() {
     await this.query("COMMIT");
   }
-  get released() {
+  get released(): boolean {
     return !this.#conn;
   }
   /** 调用 release() 时，如果事务未提交，则抛出异常 */
@@ -52,7 +52,7 @@ export class DbPoolConnection extends DbQuery {
     }
   }
   //implement
-  [Symbol.dispose]() {
+  [Symbol.dispose](): void {
     return this.release();
   }
 }
