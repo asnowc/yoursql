@@ -20,3 +20,11 @@ jobs:
           cache: pnpm
       - name: Test
         run: pnpm ci:test
+  check:
+    if: ${{github.ref_name=='main'}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: jsr-dry-run
+        run: npx jsr publish --dry-run

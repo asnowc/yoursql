@@ -205,7 +205,7 @@ abstract class DbCursor<T> {
     // (undocumented)
     [Symbol.asyncDispose](): Promise<void>;
     // (undocumented)
-    [Symbol.asyncIterator](): AsyncGenerator<Awaited<T>, void, unknown>;
+    [Symbol.asyncIterator](): AsyncGenerator<T, undefined, void>;
     abstract close(): Promise<void>;
     abstract read(maxSize?: number): Promise<T[]>;
 }
