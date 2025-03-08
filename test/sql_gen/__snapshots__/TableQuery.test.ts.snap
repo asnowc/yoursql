@@ -1,33 +1,33 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`TableQuery > delete > delete 1`] = `
+exports[`delete > delete 1`] = `
 "DELETE FROM user
 WHERE id IS NULL"
 `;
 
-exports[`TableQuery > delete > deleteWithResult 1`] = `
+exports[`delete > deleteWithResult 1`] = `
 "DELETE FROM user
 RETURNING *"
 `;
 
-exports[`TableQuery > delete > deleteWithResult 2`] = `
+exports[`delete > deleteWithResult 2`] = `
 "DELETE FROM user
 RETURNING rename AS level,name"
 `;
 
-exports[`TableQuery > insert > insert 1`] = `
+exports[`insert > insert 1`] = `
 "INSERT INTO user (name,level)
 VALUES
 ('张三',8),
 ('王五',9)"
 `;
 
-exports[`TableQuery > insert > insert 2`] = `
+exports[`insert > insert 2`] = `
 "INSERT INTO user(name)
 VALUES('张三')"
 `;
 
-exports[`TableQuery > insert > insert-conflict 1`] = `
+exports[`insert > insert-conflict > m 1`] = `
 "INSERT INTO user(name)
 VALUES('张三')
 ON CONFLICT (id,level)
@@ -35,24 +35,30 @@ DO UPDATE SET
 level= 89,name= 11"
 `;
 
-exports[`TableQuery > insert > insert-returning 1`] = `
+exports[`insert > insert-conflict > m 2`] = `
+"INSERT INTO user(name)
+VALUES('张三')
+ON CONFLICT (id,level)DO UPDATE SET level=89, name='11'"
+`;
+
+exports[`insert > insert-returning 1`] = `
 "INSERT INTO user (name)
 VALUES
 ('hh')
 RETURNING rename AS level,name"
 `;
 
-exports[`TableQuery > select > select-columns 1`] = `
+exports[`select > select-columns 1`] = `
 "SELECT *
 FROM user"
 `;
 
-exports[`TableQuery > select > select-columns 2`] = `
+exports[`select > select-columns 2`] = `
 "SELECT name,level AS rename_level,id AS id
 FROM user"
 `;
 
-exports[`TableQuery > select > select-where-order-limit 1`] = `
+exports[`select > select-where-order-limit 1`] = `
 "SELECT *
 FROM user
 WHERE limit IS NULL
@@ -61,19 +67,19 @@ LIMIT 100
 OFFSET 23"
 `;
 
-exports[`TableQuery > update > update 1`] = `
+exports[`update > update 1`] = `
 "UPDATE user SET
 level=1
 WHERE id IS NULL"
 `;
 
-exports[`TableQuery > updateFrom > update-base 1`] = `
+exports[`updateFrom > update-base 1`] = `
 "UPDATE user SET
 id= 78
 WHERE id IS NULL"
 `;
 
-exports[`TableQuery > updateFrom > update-returning 1`] = `
+exports[`updateFrom > update-returning 1`] = `
 "UPDATE user SET
 id= 78
 RETURNING rename AS level,name"

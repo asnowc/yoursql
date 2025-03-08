@@ -1,19 +1,12 @@
 import { ConditionParam, Constructable, where as createWhere, selectColumns, SelectParam } from "../util.ts";
 import { createUpdateSetFromObject } from "./_statement.ts";
-import {
-  SqlStatementDataset,
-  SqlStatement,
-  SqlTextStatementDataset,
-  ChainModifyWhere,
-  ChainOnConflict,
-  ChainConflictDo,
-  ChainModifyReturning,
-} from "./query_chain_abstract.ts";
+import { SqlStatementDataset, SqlStatement, SqlTextStatementDataset } from "./chain_base.ts";
+import { ChainAfterConflictDo, ChainModifyReturning, ChainInsert, ChainDelete, ChainUpdate } from "./chain_modify.ts";
 import { TableType } from "./type.ts";
 
 export class SqlChainModify<T extends TableType = {}>
   extends SqlStatement
-  implements ChainOnConflict<T>, ChainModifyWhere<T>
+  implements ChainInsert<T>, ChainUpdate<T>, ChainDelete<T>
 {
   constructor(readonly sql: string) {
     super();
@@ -29,7 +22,7 @@ export class SqlChainModify<T extends TableType = {}>
     let sql = this.toString() + "\nRETURNING " + columnsStr;
     return new SqlTextStatementDataset(sql);
   }
-  onConflict(onConflict: Constructable<readonly string[] | string>): ChainConflictDo<T> {
+  onConflict(onConflict: Constructable<readonly string[] | string>): ChainAfterConflictDo<T> {
     if (typeof onConflict === "function") onConflict = onConflict();
 
     if (typeof onConflict !== "string") onConflict = onConflict.join(",");
@@ -46,9 +39,9 @@ export class SqlChainModify<T extends TableType = {}>
   }
 }
 
-export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainConflictDo<T> {
+export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainAfterConflictDo<T> {
   constructor(readonly sql: string) {}
-  doUpdate(set?: Constructable<string | { [key: string]: string | undefined }>): ChainModifyWhere<T> {
+  doUpdate(set?: Constructable<string | { [key: string]: string | undefined }>): ChainModifyReturning<T> {
     if (typeof set === "function") set = set();
 
     let sql = this.sql;
@@ -56,12 +49,15 @@ export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainC
     if (typeof set === "object") {
       sql += "\nDO UPDATE ";
       sql += createUpdateSetFromObject(set);
-    } else if (set) sql += "DO UPDATE SET\n" + set;
+    } else if (set) sql += "DO UPDATE\n" + set;
     else sql += "DO NOTHING";
 
     return new SqlChainModify(sql);
   }
   doNotThing(): ChainModifyReturning<T> {
     return new SqlChainModify(this.sql + " DO NOTHING");
+  }
+  toString(): string {
+    return this.sql;
   }
 }

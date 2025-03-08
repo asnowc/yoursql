@@ -1,6 +1,6 @@
 import { getObjectListKeys } from "../util.ts";
 import type { TableType } from "../select/type.ts";
-import { SqlStatementDataset } from "../select/query_chain_abstract.ts";
+import { SqlStatementDataset } from "../select/chain_base.ts";
 
 declare const SQL_RAW: unique symbol;
 /**

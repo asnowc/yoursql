@@ -3,14 +3,17 @@ import { UpdateRowValue, TableType } from "./type.ts";
 import { getObjectListKeys, Constructable } from "../util.ts";
 import { SqlChainModify } from "./query_chain_insert.ts";
 import { DbTable } from "./DbTable.ts";
-import { ChainModifyWhere, ChainOnConflict } from "./query_chain_abstract.ts";
+import { ChainInsert, ChainUpdate } from "./chain_modify.ts";
 
 /** @public */
 export class DbTableQuery<
   T extends TableType = Record<string, any>,
-  C extends TableType = Partial<T>
+  C extends TableType = Partial<T>,
 > extends DbTable<T> {
-  constructor(name: string, private statement: SqlValuesCreator) {
+  constructor(
+    name: string,
+    private statement: SqlValuesCreator
+  ) {
     super(name);
   }
   /**
@@ -20,12 +23,12 @@ export class DbTableQuery<
    * table.insert([{age:18, name:"hi"}, {age:17, name:"hh"}]) // INSERT INTO table(age,name) VALUES(18, 'hi'), (17, 'hh')
    * ```
    */
-  override insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainOnConflict<T>;
-  override insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
+  override insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainInsert<T>;
+  override insert(columns: string, values: Constructable<string>): ChainInsert<T>;
   override insert(
     values_column: string | Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>,
     _values?: Constructable<string>
-  ): ChainOnConflict<T> {
+  ): ChainInsert<T> {
     if (_values) return super.insert(values_column as string, _values);
 
     let values = values_column as Constructable<C | C[]>;
@@ -54,7 +57,7 @@ export class DbTableQuery<
    * table.update({age:3, name:"hi"}, true) // "UPDATE table SET age=3, name='hi'"
    * ```
    */
-  updateFrom(values: Constructable<UpdateRowValue<T>>): ChainModifyWhere<T> {
+  updateFrom(values: Constructable<UpdateRowValue<T>>): ChainUpdate<T> {
     if (typeof values === "function") values = values();
     let setStr: string;
     if (typeof values === "string") setStr = values;

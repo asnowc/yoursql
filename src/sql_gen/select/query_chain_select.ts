@@ -1,12 +1,12 @@
+import { SqlSelectable, SqlTextStatementDataset } from "./chain_base.ts";
 import {
-  ChainSelectGroupBy,
-  ChainSelectHaving,
-  ChainSelectLimit,
-  ChainSelectWhere,
-  SqlSelectable,
-  SqlStatementDataset,
-  SqlTextStatementDataset,
-} from "./query_chain_abstract.ts";
+  ChainSelect,
+  ChainSelectAfterHaving,
+  ChainSelectAfterLimit,
+  ChainSelectAfterOrderBy,
+  ChainSelectAfterGroupBy,
+  ChainSelectAfterWhere,
+} from "./chain_select.ts";
 import {
   orderBy,
   OrderByParam,
@@ -23,23 +23,23 @@ import { condition } from "./_statement.ts";
 /**
  * @public ChainSelectWhere 的默认实现
  */
-export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectWhere<T> {
-  where(param?: Constructable<ConditionParam | void>): ChainSelectGroupBy<T> {
+export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelect<T> {
+  where(param?: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T> {
     return new SqlSelectChain(this.toString() + where(param));
   }
-  groupBy(columns: string | string[]): ChainSelectHaving<T> {
+  groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T> {
     let sql: string = this.toString();
     if (typeof columns === "string") sql += " GROUP BY " + columns;
     else sql += " GROUP BY " + columns.join(",");
     return new SqlSelectChain(sql);
   }
-  having(param?: Constructable<ConditionParam | void>): ChainSelectLimit<T> {
+  having(param?: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T> {
     return new SqlSelectChain(this.toString() + having(param));
   }
-  orderBy(param?: Constructable<OrderByParam | void>): ChainSelectLimit<T> {
+  orderBy(param?: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T> {
     return new SqlSelectChain(this.toString() + orderBy(param));
   }
-  limit(limit?: number, offset?: number): SqlStatementDataset<T> {
+  limit(limit?: number, offset?: number): ChainSelectAfterLimit<T> {
     let sql = this.toString();
     let type: string;
     if (limit) {
@@ -127,7 +127,7 @@ export class Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
   /** 选择全部列 */
-  select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelectWhere<T>;
+  select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelect<T>;
   /**
    * 自定义SQL选择语句
    * @example
@@ -135,7 +135,7 @@ export class Selection {
    * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
    * ```
    */
-  select(columns: Constructable<SelectParam>): ChainSelectWhere<Record<string, any>>;
+  select(columns: Constructable<SelectParam>): ChainSelect<Record<string, any>>;
   /**
    * 通过 object 选择 列
    * @example
@@ -145,8 +145,8 @@ export class Selection {
    */
   select<T extends TableType>(
     columns: Constructable<{ [key in keyof T]: string | boolean } | string>
-  ): ChainSelectWhere<T>;
-  select(columnsIn: Constructable<SelectParam>): ChainSelectWhere<TableType> {
+  ): ChainSelect<T>;
+  select(columnsIn: Constructable<SelectParam>): ChainSelect<TableType> {
     if (typeof columnsIn === "function") columnsIn = columnsIn();
 
     let sql = "SELECT " + selectColumns(columnsIn);

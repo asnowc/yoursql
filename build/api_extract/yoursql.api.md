@@ -8,14 +8,26 @@
 type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
-interface ChainConflictDo<T extends TableType = {}> {
+interface ChainAfterConflictDo<T extends TableType = {}> {
     // (undocumented)
     doNotThing(): ChainModifyReturning<T>;
     doUpdate(set: Constructable<string | {
         [key in keyof T]?: string;
-    }>): ChainModifyWhere<T>;
+    }>): ChainModifyReturning<T>;
     // (undocumented)
     toString(): string;
+}
+
+// @public (undocumented)
+interface ChainDelete<T extends TableType = {}> extends ChainModifyReturning<T> {
+    // (undocumented)
+    where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+}
+
+// @public (undocumented)
+interface ChainInsert<T extends TableType = {}> extends ChainModifyReturning<T> {
+    // (undocumented)
+    onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainAfterConflictDo<T>;
 }
 
 // @public (undocumented)
@@ -29,45 +41,45 @@ interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
 }
 
 // @public (undocumented)
-interface ChainModifyWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainSelect<T extends TableType> extends ChainSelectAfterWhere<T> {
+    // (undocumented)
+    where(param: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterGroupBy<T extends TableType> extends ChainSelectAfterHaving<T> {
+    // (undocumented)
+    having(param: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T>;
+    // (undocumented)
+    orderBy(param: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterHaving<T extends TableType> extends ChainSelectAfterOrderBy<T> {
+    // (undocumented)
+    orderBy(param: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterLimit<T extends TableType> extends SqlStatementDataset<T> {
+}
+
+// @public (undocumented)
+interface ChainSelectAfterOrderBy<T extends TableType> extends SqlStatementDataset<T> {
+    // (undocumented)
+    limit(limit?: number | bigint, offset?: number | bigint): ChainSelectAfterLimit<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterWhere<T extends TableType> extends ChainSelectAfterHaving<T> {
+    // (undocumented)
+    groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T>;
+}
+
+// @public (undocumented)
+interface ChainUpdate<T extends TableType = {}> extends ChainModifyReturning<T> {
     // (undocumented)
     where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
-}
-
-// @public (undocumented)
-interface ChainOnConflict<T extends TableType = {}> extends ChainModifyReturning<T> {
-    // (undocumented)
-    onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainConflictDo<T>;
-}
-
-// @public (undocumented)
-interface ChainSelectGroupBy<T extends TableType> extends ChainSelectOrderBy<T> {
-    // (undocumented)
-    groupBy(columns: string | string[]): ChainSelectHaving<T>;
-}
-
-// @public (undocumented)
-interface ChainSelectHaving<T extends TableType> extends ChainSelectOrderBy<T> {
-    // (undocumented)
-    having(param: Constructable<ConditionParam | void>): ChainSelectLimit<T>;
-}
-
-// @public (undocumented)
-interface ChainSelectLimit<T extends TableType> extends SqlStatementDataset<T> {
-    // (undocumented)
-    limit(limit?: number | bigint, offset?: number | bigint): SqlStatementDataset<T>;
-}
-
-// @public (undocumented)
-interface ChainSelectOrderBy<T extends TableType> extends ChainSelectLimit<T> {
-    // (undocumented)
-    orderBy(param: Constructable<OrderByParam | void>): ChainSelectLimit<T>;
-}
-
-// @public (undocumented)
-interface ChainSelectWhere<T extends TableType> extends ChainSelectGroupBy<T> {
-    // (undocumented)
-    where(param: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
 }
 
 declare namespace client {
@@ -145,17 +157,19 @@ declare namespace core {
         SqlStatement,
         SqlSelectable,
         SqlStatementDataset,
-        ChainSelectLimit,
-        ChainSelectOrderBy,
-        ChainSelectHaving,
-        ChainSelectGroupBy,
-        ChainSelectWhere,
-        ChainModifyReturning,
-        ChainModifyWhere,
-        ChainConflictDo,
-        ChainOnConflict,
         SqlTextStatementDataset,
         InferQueryResult,
+        ChainModifyReturning,
+        ChainAfterConflictDo,
+        ChainInsert,
+        ChainUpdate,
+        ChainDelete,
+        ChainSelect,
+        ChainSelectAfterWhere,
+        ChainSelectAfterGroupBy,
+        ChainSelectAfterHaving,
+        ChainSelectAfterOrderBy,
+        ChainSelectAfterLimit,
         DbTableQuery,
         getObjectListKeys,
         where,
@@ -322,32 +336,32 @@ interface DbQueryPool extends DbQuery {
 class DbTable<T extends TableType> {
     constructor(name: string);
     // (undocumented)
-    delete(option?: DeleteOption): ChainModifyWhere<T>;
+    delete(option?: DeleteOption): ChainDelete<T>;
     // (undocumented)
     fromAs(as?: string): Selection_2;
-    insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
+    insert(columns: string, values: Constructable<string>): ChainInsert<T>;
     // (undocumented)
     readonly name: string;
-    select(columns: "*", as?: string): ChainSelectWhere<T>;
-    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): ChainSelectWhere<Record<string, any>>;
+    select(columns: "*", as?: string): ChainSelect<T>;
+    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): ChainSelect<Record<string, any>>;
     select<R extends {}>(columns: Constructable<{
         [key in keyof R]: boolean | string;
-    } | string>, as?: string): ChainSelectWhere<R>;
+    } | string>, as?: string): ChainSelect<R>;
     // (undocumented)
     toSelect(): string;
     update(values: Constructable<{
         [key in keyof T]?: string;
-    } | string>): ChainModifyWhere<T>;
+    } | string>): ChainUpdate<T>;
 }
 
 // @public (undocumented)
 class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
     constructor(name: string, statement: SqlValuesCreator);
     // (undocumented)
-    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainOnConflict<T>;
+    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainInsert<T>;
     // (undocumented)
-    insert(columns: string, values: Constructable<string>): ChainOnConflict<T>;
-    updateFrom(values: Constructable<UpdateRowValue<T>>): ChainModifyWhere<T>;
+    insert(columns: string, values: Constructable<string>): ChainInsert<T>;
+    updateFrom(values: Constructable<UpdateRowValue<T>>): ChainUpdate<T>;
 }
 
 // @public
@@ -453,11 +467,11 @@ class Selection_2 {
     naturalJoin(selectable: Constructable<SqlSelectable | string>, as?: string | undefined): Selection_2;
     // (undocumented)
     rightJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelectWhere<T>;
-    select(columns: Constructable<SelectParam>): ChainSelectWhere<Record<string, any>>;
+    select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelect<T>;
+    select(columns: Constructable<SelectParam>): ChainSelect<Record<string, any>>;
     select<T extends TableType>(columns: Constructable<{
         [key in keyof T]: string | boolean;
-    } | string>): ChainSelectWhere<T>;
+    } | string>): ChainSelect<T>;
     // (undocumented)
     toString(): string;
 }
@@ -484,17 +498,17 @@ interface SqlSelectable {
 }
 
 // @public
-class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectWhere<T> {
+class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelect<T> {
     // (undocumented)
-    groupBy(columns: string | string[]): ChainSelectHaving<T>;
+    groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T>;
     // (undocumented)
-    having(param?: Constructable<ConditionParam | void>): ChainSelectLimit<T>;
+    having(param?: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T>;
     // (undocumented)
-    limit(limit?: number, offset?: number): SqlStatementDataset<T>;
+    limit(limit?: number, offset?: number): ChainSelectAfterLimit<T>;
     // (undocumented)
-    orderBy(param?: Constructable<OrderByParam | void>): ChainSelectLimit<T>;
+    orderBy(param?: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
     // (undocumented)
-    where(param?: Constructable<ConditionParam | void>): ChainSelectGroupBy<T>;
+    where(param?: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T>;
 }
 
 // @public (undocumented)
