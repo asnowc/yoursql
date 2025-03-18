@@ -46,18 +46,18 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
             (e) => {
               // 语法错误、查询错误、网络错误
               this.#pending = undefined;
-              reject(e);
               const conn = this.#conn;
-              if (!conn) return;
-
-              if (this.#errorRollback) {
-                const onFinally = () => {
-                  this.#release(conn, e);
-                };
-                return conn.rollback().then(onFinally, onFinally);
-              } else {
-                this.#release(conn, e);
+              if (!conn) {
+                reject(e);
+                return;
               }
+              const onFinally = () => {
+                this.#release(conn, e);
+                reject(e);
+              };
+              if (this.#errorRollback) {
+                return conn.rollback().then(onFinally, onFinally);
+              } else onFinally();
             }
           );
       });
