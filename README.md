@@ -77,3 +77,116 @@ const s = Selection.from("user", "u")
   .where(`u.name LIKE %${v(searchName)}%`)
   .toString();
 ```
+
+### client 抽象类
+
+yoursql 还导出了一些抽象类，实现抽象类后可以方便的进行数据查询
+
+```ts
+import {
+  type DbQueryPool,
+  type DbTransaction,
+  type DbConnection,
+  DbQuery,
+  DbCursor,
+  DbPoolConnection,
+  DbPoolTransaction,
+} from "@asla/yoursql/client";
+```
+
+#### DbQuery 抽象类
+
+```ts
+class YourQuery extends DbQuery {
+  // implement
+}
+const db: DbQuery = new YourQuery();
+```
+
+```ts
+declare const db: DbQuery;
+
+type Row = { name: string; age: number };
+const sqlText = "SELECT * FROM user";
+
+const rows: Row[] = await db.queryRows<Row>(sqlText);
+const count: number = await db.queryCount(sqlText);
+const rows: Map<string, Row> = await db.queryMap<Row>(sqlText, "name");
+```
+
+#### DbQueryPool 接口
+
+```ts
+class YourPool extends DbQuery implements DbQuery {
+  // implement
+}
+const pool: DbQueryPool = new YourPool();
+```
+
+##### 普通查询
+
+```ts
+const conn = await pool.connect();
+try {
+  await conn.queryRows(sqlText);
+} finally {
+  conn.release();
+}
+```
+
+或者，使用 `using` 语法更优雅
+
+```ts
+using conn = await pool.connect();
+await conn.queryRows(sqlText);
+```
+
+##### 事务查询
+
+```ts
+const conn = pool.begin();
+try {
+  await conn.queryRows(sqlText);
+  await conn.queryRows(sqlText);
+  await conn.commit();
+} catch (e) {
+  await conn.rollback();
+  throw e;
+}
+```
+
+或者，使用 `using` 语法更优雅
+
+```ts
+await using conn = pool.begin();
+
+await conn.queryRows(sqlText);
+await conn.queryRows(sqlText);
+await conn.commit();
+```
+
+##### 游标查询
+
+```ts
+const cursor = await pool.cursor(sqlText);
+
+let rows = await cursor.read(20);
+while (rows.length) {
+  console.log(rows);
+  rows = await cursor.read(20);
+  if (conditions) {
+    await cursor.close(); // 提前关闭游标
+    break;
+  }
+}
+```
+
+或者使用 `for await of` 更优雅
+
+```ts
+const cursor = await pool.cursor(sqlText);
+for await (const element of cursor) {
+  console.log(element);
+  if (conditions) break; //提前关闭游标
+}
+```
