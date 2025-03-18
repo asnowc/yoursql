@@ -48,11 +48,15 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
               this.#pending = undefined;
               reject(e);
               const conn = this.#conn;
-              if (conn) {
+              if (!conn) return;
+
+              if (this.#errorRollback) {
+                const onFinally = () => {
+                  this.#release(conn, e);
+                };
+                return conn.rollback().then(onFinally, onFinally);
+              } else {
                 this.#release(conn, e);
-                if (this.#errorRollback) {
-                  return conn.rollback().catch((e) => {});
-                }
               }
             }
           );
@@ -95,18 +99,16 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
       },
       (e) => {
         this.#pending = undefined;
-        this.#release(conn, e);
         if (this.#errorRollback) {
-          return conn.rollback().then(
-            () => {
-              throw e;
-            },
-            () => {
-              throw e;
-            }
-          );
+          const onOk = () => {
+            this.#release(conn, e);
+            throw e;
+          };
+          return conn.rollback().then(onOk, onOk);
+        } else {
+          this.#release(conn, e);
+          throw e;
         }
-        throw e;
       }
     );
   }

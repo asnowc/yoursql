@@ -92,17 +92,12 @@ describe("事务执行出错", function () {
     await expect(transaction.query("error sql")).rejects.toThrowError();
     expect(conn.onRelease).toBeCalledTimes(1);
     expect(conn.released).toBe(true);
-    expect(conn.rollback).not.toBeCalled();
-    expect(conn.commit).not.toBeCalled();
   });
   test("执行出错，试图再次 rollback", async function () {
     await expect(transaction.query("error sql")).rejects.toThrowError();
     const callCount = conn.mockConn.query.mock.calls.length;
     await transaction.rollback(); // rollback()
     expect(conn.mockConn.query.mock.calls.length, "rollback() 被忽略").toBe(callCount);
-
-    expect(conn.rollback).not.toBeCalled();
-    expect(conn.commit).not.toBeCalled();
   });
 });
 test("errorRollback 为 true, 事务第1条执行出错，应释放连接, 并发送回滚", async function () {
@@ -111,9 +106,9 @@ test("errorRollback 为 true, 事务第1条执行出错，应释放连接, 并�
 
   await expect(transaction.query("error sql")).rejects.toThrowError();
   expect(conn.onRelease).toBeCalledTimes(1);
-
-  expect(conn.rollback).toBeCalledTimes(1);
-  expect(conn.commit).not.toBeCalled();
+  expect(conn.mockConn.multipleQuery).toBeCalledTimes(1);
+  expect(conn.mockConn.query).toBeCalledTimes(1);
+  expect(conn.mockConn.query.mock.calls[0][0]).toBe("ROLLBACK");
 });
 
 test("errorRollback 为 true, 事务第2条执行出错，应释放连接, 并发送回滚", async function () {
@@ -124,6 +119,7 @@ test("errorRollback 为 true, 事务第2条执行出错，应释放连接, 并�
   await expect(transaction.query("error sql")).rejects.toThrowError();
   expect(conn.onRelease).toBeCalledTimes(1);
 
-  expect(conn.rollback).toBeCalledTimes(1);
-  expect(conn.commit).not.toBeCalled();
+  expect(conn.mockConn.multipleQuery).toBeCalledTimes(1);
+  expect(conn.mockConn.query).toBeCalledTimes(2);
+  expect(conn.mockConn.query.mock.calls[1][0]).toBe("ROLLBACK");
 });

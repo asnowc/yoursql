@@ -35,6 +35,4 @@ export class MockDbPoolConnection extends DbPoolConnection {
   }
   mockConn: MockDbConnection;
   onRelease: Mock<() => void>;
-  override rollback: Mock<DbPoolConnection["rollback"]> = vi.fn(async () => {});
-  override commit: Mock<DbPoolConnection["commit"]> = vi.fn(async () => {});
 }
