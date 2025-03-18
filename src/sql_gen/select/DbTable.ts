@@ -23,6 +23,8 @@ export class DbTable<T extends TableType> {
     as?: string
   ): ChainSelect<Record<string, any>>;
   /** 选择单表  */
+  select<R extends {} = Record<string, any>>(columns: Constructable<string | string[]>, as?: string): ChainSelect<R>;
+  /** 选择单表  */
   select<R extends {}>(
     columns: Constructable<{ [key in keyof R]: boolean | string } | string | string[]>,
     as?: string

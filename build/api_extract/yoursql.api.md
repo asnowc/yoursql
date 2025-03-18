@@ -355,6 +355,7 @@ class DbTable<T extends TableType> {
     } & {
         [key: string]: string | boolean;
     }>, as?: string): ChainSelect<Record<string, any>>;
+    select<R extends {} = Record<string, any>>(columns: Constructable<string | string[]>, as?: string): ChainSelect<R>;
     select<R extends {}>(columns: Constructable<{
         [key in keyof R]: boolean | string;
     } | string | string[]>, as?: string): ChainSelect<R>;
