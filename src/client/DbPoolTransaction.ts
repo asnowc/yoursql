@@ -5,17 +5,28 @@ import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
 import type { DbTransaction, TransactionMode } from "./interfaces.ts";
 
+/** @public */
+export type DbPoolTransactionOption = {
+  errorRollback?: boolean;
+  mode?: TransactionMode;
+};
 /**
  * @public
  * 池连接事务
  */
 export class DbPoolTransaction extends DbQuery implements DbTransaction {
-  constructor(
-    connect: () => Promise<DbPoolConnection>,
-    readonly mode?: TransactionMode
-  ) {
+  #errorRollback?: boolean;
+  readonly mode?: TransactionMode;
+  constructor(connect: () => Promise<DbPoolConnection>, option?: TransactionMode | DbPoolTransactionOption) {
     super();
-    this.#query = (sql: string) => {
+    if (option) {
+      if (typeof option === "string") this.mode = option;
+      else {
+        this.mode = option.mode;
+        this.#errorRollback = option.errorRollback;
+      }
+    }
+    this.#query = (sql: { toString(): string }) => {
       return new Promise<QueryRowsResult<any>>((resolve, reject) => {
         this.#pending = connect()
           .then((conn) => {
@@ -33,9 +44,16 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
               resolve(res[1]);
             },
             (e) => {
+              // 语法错误、查询错误、网络错误
               this.#pending = undefined;
               reject(e);
-              if (this.#conn) this.#release(this.#conn, e);
+              const conn = this.#conn;
+              if (conn) {
+                this.#release(conn, e);
+                if (this.#errorRollback) {
+                  return conn.rollback().catch((e) => {});
+                }
+              }
             }
           );
       });
@@ -59,6 +77,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
       await promise;
     }
   }
+
   savePoint(savePoint: string): Promise<void> {
     return this.query("SAVEPOINT" + savePoint).then(() => {});
   }
@@ -67,31 +86,42 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   }
 
   /** 拿到连接后执行这个 */
-  #queryAfter(sql: string) {
-    return this.#conn!.query(sql).then(
+  #queryAfter(sql: { toString(): string }) {
+    const conn = this.#conn!;
+    return conn.query(sql).then(
       (res) => {
         this.#pending = undefined;
         return res;
       },
       (e) => {
         this.#pending = undefined;
-        this.#release(this.#conn!, e);
+        this.#release(conn, e);
+        if (this.#errorRollback) {
+          return conn.rollback().then(
+            () => {
+              throw e;
+            },
+            () => {
+              throw e;
+            }
+          );
+        }
         throw e;
       }
     );
   }
-  #query: (sql: string) => Promise<QueryRowsResult<any>>;
+  #query: (sql: { toString(): string }) => Promise<QueryRowsResult<any>>;
   override query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
   override query<T extends object = any>(sql: { toString(): string }): Promise<QueryRowsResult<T>>;
   override query(sql: { toString(): string }): Promise<QueryRowsResult<any>> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
-    return this.#query(sql.toString());
+    return this.#query(sql);
   }
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: { toString(): string }): Promise<T>;
   override multipleQuery(sql: { toString(): string }): Promise<MultipleQueryResult> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
-    return this.#query(sql.toString()) as any;
+    return this.#query(sql) as any;
   }
   #error: any;
   #release(conn: DbPoolConnection, error: any = new ConnectionNotAvailableError("Connection already release")) {

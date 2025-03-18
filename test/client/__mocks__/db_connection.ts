@@ -11,10 +11,14 @@ export class MockDbConnection extends DbQuery implements DbConnection {
   [Symbol.asyncDispose]() {
     return this.close();
   }
-  query = vi.fn(async function () {
+  query = vi.fn(async function (sql: { toString(): string }) {
+    const text = sql.toString();
+    if (text === "error sql") throw new Error("error sql");
     return { rowCount: 0, rows: [] };
   });
-  multipleQuery = vi.fn(async function () {
+  multipleQuery = vi.fn(async function (sql: { toString(): string }) {
+    const text = sql.toString();
+    if (text.endsWith("error sql")) throw new Error("error sql");
     return [
       { rowCount: 0, rows: [] },
       { rowCount: 0, rows: [] },
@@ -31,4 +35,6 @@ export class MockDbPoolConnection extends DbPoolConnection {
   }
   mockConn: MockDbConnection;
   onRelease: Mock<() => void>;
+  override rollback: Mock<DbPoolConnection["rollback"]> = vi.fn(async () => {});
+  override commit: Mock<DbPoolConnection["commit"]> = vi.fn(async () => {});
 }

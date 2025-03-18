@@ -1,4 +1,4 @@
-import { where, ConditionParam, Constructable } from "../util.ts";
+import { where, ConditionParam, Constructable, SelectParam } from "../util.ts";
 import type { TableType } from "./type.ts";
 import { Selection } from "./query_chain_select.ts";
 import { SqlChainModify } from "./query_chain_insert.ts";
@@ -17,17 +17,17 @@ export class DbTable<T extends TableType> {
   }
   /** 选择单表全部列 */
   select(columns: "*", as?: string): ChainSelect<T>;
-  /** 选择单表  */
+  /** 选择单表，带提示  */
   select(
-    columns: Constructable<Record<string, boolean | string> | string>,
+    columns: Constructable<{ [key in keyof T]?: string | boolean } & { [key: string]: string | boolean }>,
     as?: string
   ): ChainSelect<Record<string, any>>;
   /** 选择单表  */
   select<R extends {}>(
-    columns: Constructable<{ [key in keyof R]: boolean | string } | string>,
+    columns: Constructable<{ [key in keyof R]: boolean | string } | string | string[]>,
     as?: string
   ): ChainSelect<R>;
-  select(columns: "*" | Record<string, any>, as?: string): ChainSelect<Record<string, any>> {
+  select(columns: Constructable<SelectParam>, as?: string): ChainSelect<Record<string, any>> {
     return this.fromAs(as).select(columns);
   }
   /**

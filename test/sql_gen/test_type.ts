@@ -1,9 +1,18 @@
 import { DbTableQuery } from "@asla/yoursql";
+declare module "@asla/yoursql" {
+  export interface SqlStatementDataset<T> {
+    inferResult(): T;
+  }
+}
+declare function assertType<T>(type: T): { pass(): void };
+declare function assertType<T>(type: any): { notPass(): void };
 
-//select 测试
-declare const y: DbTableQuery<{ a: number; c: string; b: bigint }>;
-//@ts-expect-error: aaa 不在断言的返回类型中
-y.select<{ yi: number }>({ aaa: "aa" });
+function select(table: DbTableQuery<{ a: number; c: string; b: bigint }>) {
+  //@ts-expect-error: aaa 不在断言的返回类型中
+  table.select<{ yi: number }>({ aaa: "aa" });
 
-// let c = y.select({ a: true, cc: "c", count: "xxx" } as const);
-let b = y.select<{ yi: number }>({ yi: "aa" });
+  assertType<{ yi: number }>(table.select<{ yi: number }>({ yi: "aa" }).inferResult()).pass();
+
+  assertType<Record<string, any>>(table.select({ yi: "aa" }).inferResult()).pass();
+  assertType<Record<string, any>>(table.select({ a: true, c: true }).inferResult()).pass();
+}

@@ -79,21 +79,51 @@ describe("事务执行出错", function () {
   let transaction: DbPoolTransaction;
   beforeEach(function () {
     conn = new MockDbPoolConnection();
-    conn.mockConn.query.mockImplementation(() => Promise.reject("err"));
-    conn.mockConn.multipleQuery.mockImplementation(() => Promise.reject("err"));
-    const connect = vi.fn(async () => conn);
-    transaction = new DbPoolTransaction(connect);
+    transaction = new DbPoolTransaction(vi.fn(async () => conn));
   });
-  test("事务中通出错，应释放连接", async function () {
-    await expect(transaction.query("aaa")).rejects.toThrowError();
+  test("事务第1条执行出错，应释放连接", async function ({}) {
+    await expect(transaction.query("error sql")).rejects.toThrowError();
     expect(conn.onRelease).toBeCalledTimes(1);
     expect(conn.released).toBe(true);
   });
+  test("事务第2条执行出错，应释放连接", async function () {
+    await transaction.query("abc");
 
+    await expect(transaction.query("error sql")).rejects.toThrowError();
+    expect(conn.onRelease).toBeCalledTimes(1);
+    expect(conn.released).toBe(true);
+    expect(conn.rollback).not.toBeCalled();
+    expect(conn.commit).not.toBeCalled();
+  });
   test("执行出错，试图再次 rollback", async function () {
-    await expect(transaction.query("aaa")).rejects.toThrowError();
+    await expect(transaction.query("error sql")).rejects.toThrowError();
     const callCount = conn.mockConn.query.mock.calls.length;
     await transaction.rollback(); // rollback()
     expect(conn.mockConn.query.mock.calls.length, "rollback() 被忽略").toBe(callCount);
+
+    expect(conn.rollback).not.toBeCalled();
+    expect(conn.commit).not.toBeCalled();
   });
+});
+test("errorRollback 为 true, 事务第1条执行出错，应释放连接, 并发送回滚", async function () {
+  const conn = new MockDbPoolConnection();
+  const transaction = new DbPoolTransaction(async () => conn, { errorRollback: true });
+
+  await expect(transaction.query("error sql")).rejects.toThrowError();
+  expect(conn.onRelease).toBeCalledTimes(1);
+
+  expect(conn.rollback).toBeCalledTimes(1);
+  expect(conn.commit).not.toBeCalled();
+});
+
+test("errorRollback 为 true, 事务第2条执行出错，应释放连接, 并发送回滚", async function () {
+  const conn = new MockDbPoolConnection();
+  const transaction = new DbPoolTransaction(async () => conn, { errorRollback: true });
+
+  await transaction.query("abc");
+  await expect(transaction.query("error sql")).rejects.toThrowError();
+  expect(conn.onRelease).toBeCalledTimes(1);
+
+  expect(conn.rollback).toBeCalledTimes(1);
+  expect(conn.commit).not.toBeCalled();
 });

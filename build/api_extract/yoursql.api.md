@@ -98,6 +98,7 @@ declare namespace client {
         DbCursorOption,
         DbCursor,
         DbPoolConnection,
+        DbPoolTransactionOption,
         DbPoolTransaction
     }
 }
@@ -260,11 +261,11 @@ class DbPoolConnection extends DbQuery {
 class DbPoolTransaction extends DbQuery implements DbTransaction {
     // (undocumented)
     [Symbol.asyncDispose](): Promise<void>;
-    constructor(connect: () => Promise<DbPoolConnection>, mode?: TransactionMode | undefined);
+    constructor(connect: () => Promise<DbPoolConnection>, option?: TransactionMode | DbPoolTransactionOption);
     // (undocumented)
     commit(): Promise<void>;
     // (undocumented)
-    readonly mode?: TransactionMode | undefined;
+    readonly mode?: TransactionMode;
     // (undocumented)
     multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
     // (undocumented)
@@ -286,6 +287,12 @@ class DbPoolTransaction extends DbQuery implements DbTransaction {
     // (undocumented)
     savePoint(savePoint: string): Promise<void>;
 }
+
+// @public (undocumented)
+type DbPoolTransactionOption = {
+    errorRollback?: boolean;
+    mode?: TransactionMode;
+};
 
 // @public
 abstract class DbQuery {
@@ -343,10 +350,14 @@ class DbTable<T extends TableType> {
     // (undocumented)
     readonly name: string;
     select(columns: "*", as?: string): ChainSelect<T>;
-    select(columns: Constructable<Record<string, boolean | string> | string>, as?: string): ChainSelect<Record<string, any>>;
+    select(columns: Constructable<{
+        [key in keyof T]?: string | boolean;
+    } & {
+        [key: string]: string | boolean;
+    }>, as?: string): ChainSelect<Record<string, any>>;
     select<R extends {}>(columns: Constructable<{
         [key in keyof R]: boolean | string;
-    } | string>, as?: string): ChainSelect<R>;
+    } | string | string[]>, as?: string): ChainSelect<R>;
     // (undocumented)
     toSelect(): string;
     update(values: Constructable<{
