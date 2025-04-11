@@ -44,6 +44,15 @@ export abstract class DbQuery {
   queryRows<T = any>(sql: SqlStatementDataset<T> | string | StringLike): Promise<T[]> {
     return this.query<T>(sql.toString()).then((res) => res.rows);
   }
+  /** 单语句查询，只返回第一行。如果查询没有返回行，则抛出异常。 */
+  queryFirstRow<T = any>(sql: SqlStatementDataset<T>): Promise<T>;
+  queryFirstRow<T = any>(sql: StringLike): Promise<T>;
+  queryFirstRow<T = any>(sql: SqlStatementDataset<T> | string | StringLike): Promise<T> {
+    return this.query<T>(sql.toString()).then(({ rows, rowCount }) => {
+      if (rows.length === 0) throw new Error("Query did not return any rows");
+      return rows[0];
+    });
+  }
   /**
    * 查询行
    * 不应查询单条语句，否则返回错误值
