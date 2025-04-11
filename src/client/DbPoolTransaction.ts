@@ -1,6 +1,6 @@
 import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { DbQuery } from "./DbQuery.ts";
-import type { MultipleQueryResult, QueryRowsResult } from "./DbQuery.ts";
+import type { MultipleQueryResult, QueryRowsResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
 import type { DbTransaction, StringLike, TransactionMode } from "./interfaces.ts";

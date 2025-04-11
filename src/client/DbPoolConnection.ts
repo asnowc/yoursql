@@ -1,8 +1,8 @@
 import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { DbQuery } from "./DbQuery.ts";
-import type { MultipleQueryResult, QueryRowsResult } from "./DbQuery.ts";
+import type { MultipleQueryResult, QueryRowsResult, DbQueryBase } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError } from "./errors.ts";
-import type { DbConnection, StringLike, TransactionMode } from "./interfaces.ts";
+import type { StringLike, TransactionMode } from "./interfaces.ts";
 
 /**
 
@@ -11,17 +11,17 @@ import type { DbConnection, StringLike, TransactionMode } from "./interfaces.ts"
  * @public
  */
 export class DbPoolConnection extends DbQuery {
-  constructor(conn: DbConnection, onRelease: () => void) {
+  constructor(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void) {
     super();
     this.#conn = conn;
     this.#onRelease = onRelease;
   }
-  #onRelease: () => void;
+  #onRelease: (conn: DbQueryBase) => void;
   //implement
   async begin(mode?: TransactionMode): Promise<void> {
     await this.query("BEGIN" + (mode ? " TRANSACTION ISOLATION LEVEL " + mode : ""));
   }
-  #conn?: DbConnection;
+  #conn?: DbQueryBase;
 
   override query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
   override query<T = any>(sql: StringLike): Promise<QueryRowsResult<T>>;
@@ -46,9 +46,10 @@ export class DbPoolConnection extends DbQuery {
   }
   /** 调用 release() 时，如果事务未提交，则抛出异常 */
   release() {
-    if (this.#conn) {
+    const conn = this.#conn;
+    if (conn) {
       this.#conn = undefined;
-      this.#onRelease();
+      this.#onRelease(conn);
     }
   }
   //implement

@@ -1,33 +1,13 @@
 import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { StringLike } from "./interfaces.ts";
-/** @public */
-export interface SingleQueryResult {
-  rowCount: number;
-  rows?: any[];
-}
-/** @public */
-export interface QueryRowsResult<T = any> extends SingleQueryResult {
-  rowCount: number;
-  rows: T[];
-}
-/** @public */
-export type MultipleQueryResult = SingleQueryResult[];
-
-/** @public */
-export type QueryResult = MultipleQueryResult | SingleQueryResult;
+import { MultipleQueryResult, DbQueryBase, QueryRowsResult } from "./DbQueryBase.ts";
 
 /**
  * SQL 查询相关操作
  * @public
  */
-export abstract class DbQuery {
-  /** 单语句查询，不应查询多语句，否则返回错误值  */
-  abstract query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  /** 单语句查询，不应查询多语句，否则返回错误值  */
+export abstract class DbQuery implements DbQueryBase {
   abstract query<T = any>(sql: StringLike): Promise<QueryRowsResult<T>>;
-  /** 多语句查询  */
-  abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-  /** 多语句查询 */
   abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: StringLike): Promise<T>;
   /** 单语句查询受影响的行 */
   queryCount(sql: string | StringLike): Promise<number> {
