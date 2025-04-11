@@ -5,45 +5,67 @@ class MockDbCursor extends DbCursor<any> {
   close = vi.fn();
   read = vi.fn<(maxSize?: number) => Promise<any[]>>();
 }
-
-test("迭代器", async function () {
+test("read method", async function () {
   const cursor = new MockDbCursor();
 
-  let times = 2;
-  cursor.read.mockImplementation(async (maxSize = 4) => {
-    if (times-- === 0) return [];
-    const rows = new Array(maxSize);
-    for (let i = 0; i < maxSize; i++) {
-      rows[i] = i;
-    }
-    return rows;
+  cursor.read.mockImplementationOnce(async (maxSize = 3) => {
+    return [1, 2, 3].slice(0, maxSize);
   });
 
-  await expect(Array.fromAsync(cursor)).resolves.toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
+  const result = await cursor.read(2);
+  expect(result).toEqual([1, 2]);
+  expect(cursor.read).toBeCalledWith(2);
 });
-test("asyncDispose", async function () {
-  function createCursor() {
-    const cursor = new MockDbCursor();
-    cursor.read.mockImplementationOnce(async () => {
-      return [1, 2, 3, 4];
-    });
-    return cursor;
+
+test("close method", async function () {
+  const cursor = new MockDbCursor();
+
+  await cursor.close();
+  expect(cursor.close).toBeCalledTimes(1);
+
+  // Calling close again should not throw or have any effect
+  await cursor.close();
+  expect(cursor.close).toBeCalledTimes(2);
+});
+
+test("asyncIterator with empty data", async function () {
+  const cursor = new MockDbCursor();
+
+  cursor.read.mockImplementation(async () => []);
+  const result: any[] = [];
+  for await (const item of cursor) {
+    result.push(item);
   }
 
-  async function get() {
-    await using cursor = createCursor();
-    const list = await cursor.read();
-    return cursor;
-  }
-  const cursor = await get();
+  expect(result).toEqual([]);
+  expect(cursor.read).toBeCalled();
   expect(cursor.close).toBeCalled();
+});
 
-  async function getAndClose() {
-    await using cursor = createCursor();
-    const list = await cursor.read();
-    await cursor.close();
-    return cursor;
+test("asyncIterator with multiple reads", async function () {
+  const cursor = new MockDbCursor();
+
+  let callCount = 0;
+  cursor.read.mockImplementation(async () => {
+    if (callCount++ < 2) {
+      return [1, 2];
+    }
+    return [];
+  });
+
+  const result: any[] = [];
+  for await (const item of cursor) {
+    result.push(item);
   }
-  const cursor2 = await getAndClose();
-  expect(cursor2.close).toBeCalled();
+
+  expect(result).toEqual([1, 2, 1, 2]);
+  expect(cursor.read).toBeCalledTimes(3);
+  expect(cursor.close).toBeCalled();
+});
+
+test("Symbol.asyncDispose is called", async function () {
+  const cursor = new MockDbCursor();
+
+  await cursor[Symbol.asyncDispose]();
+  expect(cursor.close).toBeCalledTimes(1);
 });
