@@ -3,7 +3,7 @@ import { DbQuery } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult } from "./DbQuery.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
-import type { DbTransaction, TransactionMode } from "./interfaces.ts";
+import type { DbTransaction, StringLike, TransactionMode } from "./interfaces.ts";
 
 /** @public */
 export type DbPoolTransactionOption = {
@@ -26,7 +26,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
         this.#errorRollback = option.errorRollback;
       }
     }
-    this.#query = (sql: { toString(): string }) => {
+    this.#query = (sql: StringLike) => {
       return new Promise<QueryRowsResult<any>>((resolve, reject) => {
         this.#pending = connect()
           .then((conn) => {
@@ -90,7 +90,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   }
 
   /** 拿到连接后执行这个 */
-  #queryAfter(sql: { toString(): string }) {
+  #queryAfter(sql: StringLike) {
     const conn = this.#conn!;
     return conn.query(sql).then(
       (res) => {
@@ -112,16 +112,16 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
       }
     );
   }
-  #query: (sql: { toString(): string }) => Promise<QueryRowsResult<any>>;
+  #query: (sql: StringLike) => Promise<QueryRowsResult<any>>;
   override query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  override query<T extends object = any>(sql: { toString(): string }): Promise<QueryRowsResult<T>>;
-  override query(sql: { toString(): string }): Promise<QueryRowsResult<any>> {
+  override query<T extends object = any>(sql: StringLike): Promise<QueryRowsResult<T>>;
+  override query(sql: StringLike): Promise<QueryRowsResult<any>> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
     return this.#query(sql);
   }
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: { toString(): string }): Promise<T>;
-  override multipleQuery(sql: { toString(): string }): Promise<MultipleQueryResult> {
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: StringLike): Promise<T>;
+  override multipleQuery(sql: StringLike): Promise<MultipleQueryResult> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
     return this.#query(sql) as any;
   }
