@@ -103,7 +103,7 @@ export class SqlValuesCreator {
       case "string":
         return SqlValuesCreator.string(value);
       case "boolean":
-        return value.toString();
+        return value ? "TRUE" : "FALSE";
       case "object": {
         if (value instanceof String) return value.toString();
         const Class = this.getClassType(value);
@@ -142,6 +142,7 @@ export class SqlValuesCreator {
    * 将对象列表转为 SQL 的 VALUES。
    * @example 返回示例： " (...),(...) "
    * @param keys - 选择的键。如果指定了 keys, 值为 undefined 的属性将自动填充为 null; 如果未指定 keys，将选择 objectList 所有不是 undefined 项的键的并集
+   * @param keepUndefinedKey - 是否保留 undefined 的键。默认值为 false，如果为 true , 数组的某一个字段均为 undefined时，将忽略字段,
    */
   objectListToValuesList<T extends object>(
     objectList: T[],
@@ -241,13 +242,15 @@ export class SqlValuesCreator {
       let message = error instanceof Error ? error.message : String(error);
       throw new Error("字段 '" + key! + "' 异常，" + message);
     }
+    if (values.length === 0) throw new Error("object 不能为空");
     return values.join(",");
   }
   /**
    * 将数组列表转为 SQL 的一个 value
-   * @example 返回示例： " 'abc', '6', 'now()' "
+   * @example v.toValues([1, "abc", null, undefined, { key: "value" }]) // `1,'abc',NULL,DEFAULT,'{"key":"value"}'`
    */
   toValues(values: readonly any[]): string {
+    if (values.length === 0) throw new Error("values 不能为空");
     return values.map((v) => this.toSqlStr(v)).join(",");
   }
 

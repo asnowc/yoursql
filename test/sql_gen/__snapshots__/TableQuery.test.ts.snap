@@ -27,20 +27,6 @@ exports[`insert > insert 2`] = `
 VALUES('张三')"
 `;
 
-exports[`insert > insert-conflict > m 1`] = `
-"INSERT INTO user(name)
-VALUES('张三')
-ON CONFLICT (id,level)
-DO UPDATE SET
-level= 89,name= 11"
-`;
-
-exports[`insert > insert-conflict > m 2`] = `
-"INSERT INTO user(name)
-VALUES('张三')
-ON CONFLICT (id,level)DO UPDATE SET level=89, name='11'"
-`;
-
 exports[`insert > insert-returning 1`] = `
 "INSERT INTO user (name)
 VALUES
