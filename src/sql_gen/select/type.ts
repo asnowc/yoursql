@@ -1,5 +1,3 @@
-import { SqlRaw } from "../sql_value/sql_value.ts";
-
 /**
  * @public
  * @param T - 表格查询类型
@@ -9,7 +7,7 @@ import { SqlRaw } from "../sql_value/sql_value.ts";
 export type PickColumn<
   T extends { [key: string]: any },
   Rq extends keyof T = keyof T,
-  Pa extends Exclude<keyof T, Rq> = never
+  Pa extends Exclude<keyof T, Rq> = never,
 > = {
   [key in Rq as null extends T[key] ? key : never]?: T[key];
 } & {
@@ -20,7 +18,7 @@ export type PickColumn<
 
 /** @public */
 export type UpdateRowValue<T extends object> = {
-  [key in keyof T]?: T[key] | SqlRaw;
+  [key in keyof T]?: T[key] | String;
 };
 
 /** @public */
