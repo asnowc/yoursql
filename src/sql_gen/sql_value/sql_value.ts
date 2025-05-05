@@ -2,16 +2,6 @@ import { getObjectListKeys } from "../util.ts";
 import type { TableType } from "../select/type.ts";
 import { SqlStatementDataset } from "../select/chain_base.ts";
 
-declare const SQL_RAW: unique symbol;
-/**
- * SQL 原始字符类。可以使用 String 类代替，这只是为了推断类型
- * @public
- */
-export class SqlRaw<T = any> extends String {
-  /** 保留以推断类型 */
-  declare protected [SQL_RAW]: T;
-}
-
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 /** @public 将 js 值转为 SQl 字符串的函数*/
@@ -247,7 +237,10 @@ export class SqlValuesCreator {
   }
   /**
    * 将数组列表转为 SQL 的一个 value
-   * @example v.toValues([1, "abc", null, undefined, { key: "value" }]) // `1,'abc',NULL,DEFAULT,'{"key":"value"}'`
+   * @example
+   * ```ts
+   *  v.toValues([1, "abc", null, undefined, { key: "value" }]) // `1,'abc',NULL,DEFAULT,'{"key":"value"}'`
+   * ```
    */
   toValues(values: readonly any[]): string {
     if (values.length === 0) throw new Error("values 不能为空");

@@ -142,7 +142,6 @@ declare namespace core {
     export {
         v,
         pgSqlTransformer,
-        SqlRaw,
         JsObjectMapSql,
         SqlValueEncoder,
         AssertJsType,
@@ -490,11 +489,6 @@ interface SingleQueryResult {
 }
 
 // @public
-class SqlRaw<T = any> extends String {
-    protected [SQL_RAW]: T;
-}
-
-// @public
 interface SqlSelectable {
     toSelect(): string;
 }
@@ -600,7 +594,7 @@ class TypeChecker<T> {
 
 // @public (undocumented)
 type UpdateRowValue<T extends object> = {
-    [key in keyof T]?: T[key] | SqlRaw;
+    [key in keyof T]?: T[key] | String;
 };
 
 // @public

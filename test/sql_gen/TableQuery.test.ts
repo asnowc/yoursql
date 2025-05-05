@@ -81,6 +81,11 @@ describe("insert", function () {
       .toString();
     expect(sql).toMatchSnapshot();
     expect(table.insert("name", "VALUES('张三')").toString(), "字符串值").toMatchSnapshot();
+
+    {
+      const sql = table.insert([{ name: new String("'ab'||'cd'") }]).toString();
+      expect(sql).toBe("INSERT INTO user (name)\nVALUES\n('ab'||'cd')");
+    }
   });
   test("insert-conflict", function () {
     const insert = table.insert("name", "VALUES('张三')");
