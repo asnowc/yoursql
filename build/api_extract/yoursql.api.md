@@ -149,6 +149,7 @@ declare namespace core {
         SqlValuesCreator,
         ColumnToValueConfig,
         PickColumn,
+        ToInsertType,
         UpdateRowValue,
         OrderValue,
         TableType,
@@ -424,7 +425,7 @@ class ParallelQueryError extends Error {
 // @public
 const pgSqlTransformer: JsObjectMapSql;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 type PickColumn<T extends {
     [key: string]: any;
 }, Rq extends keyof T = keyof T, Pa extends Exclude<keyof T, Rq> = never> = {
@@ -576,6 +577,15 @@ type TableDefined = {
 // @public (undocumented)
 type TableType = {
     [key: string]: any;
+};
+
+// @public
+type ToInsertType<T extends {
+    [key: string]: any;
+}, Pa extends keyof T = never> = {
+    [key in keyof T as key extends Pa ? never : null extends T[key] ? never : key]: T[key];
+} & {
+    [key in keyof T as null extends T[key] ? key : key extends Pa ? key : never]?: T[key];
 };
 
 // @public (undocumented)
