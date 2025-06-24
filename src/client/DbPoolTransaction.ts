@@ -3,7 +3,7 @@ import { DbQuery } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult, SingleQueryResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
-import type { DbTransaction, StringLike, TransactionMode } from "./interfaces.ts";
+import type { DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
 
 /** @public */
 export type DbPoolTransactionOption = {
@@ -26,14 +26,13 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
         this.#errorRollback = option.errorRollback;
       }
     }
-    this.#query = ((sql: StringLike, multiple?: boolean) => {
+    this.#query = ((sql: SqlLike, multiple?: boolean) => {
       return new Promise<SingleQueryResult[] | SingleQueryResult>((resolve, reject) => {
         this.#pending = connect()
           .then((conn) => {
             this.#conn = conn;
-            const promise = conn.multipleQuery(
-              "BEGIN" + (this.mode ? " TRANSACTION ISOLATION LEVEL " + this.mode : "") + ";\n" + sql
-            );
+            const begin = "BEGIN" + (this.mode ? " TRANSACTION ISOLATION LEVEL " + this.mode : "");
+            const promise = conn.multipleQuery([begin, sql]);
             this.#pending = promise;
             this.#query = this.#queryAfter;
             return promise;
@@ -90,9 +89,12 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   }
 
   /** 拿到连接后执行这个 */
-  #queryAfter(sql: StringLike): Promise<SingleQueryResult>;
-  #queryAfter(sql: StringLike, multiple: true): Promise<SingleQueryResult[]>;
-  #queryAfter(sql: StringLike, multiple?: boolean): Promise<SingleQueryResult[] | SingleQueryResult> {
+  #queryAfter(sql: SqlLike): Promise<SingleQueryResult>;
+  #queryAfter(sql: SqlLike | SqlLike[], multiple: true): Promise<SingleQueryResult[]>;
+  #queryAfter(
+    sql: SqlLike | SqlLike[],
+    multiple?: boolean
+  ): Promise<SingleQueryResult[] | SingleQueryResult> {
     const conn = this.#conn!;
     const onFinish = <T>(res: T) => {
       this.#query = this.#queryAfter;
@@ -113,18 +115,20 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
       }
     };
     if (multiple) return conn.multipleQuery(sql).then(onFinish, onError);
-    else return conn.query(sql).then(onFinish, onError);
+    else return conn.query(sql as SqlLike).then(onFinish, onError);
   }
   #query: FirstQuery;
   override query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  override query<T extends object = any>(sql: StringLike): Promise<QueryRowsResult<T>>;
-  override query(sql: StringLike): Promise<SingleQueryResult> {
+  override query<T extends object = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
+  override query(sql: SqlLike): Promise<SingleQueryResult> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
     return this.#query(sql);
   }
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: StringLike): Promise<T>;
-  override multipleQuery(sql: StringLike): Promise<MultipleQueryResult> {
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(
+    sql: SqlLike | SqlLike[]
+  ): Promise<T>;
+  override multipleQuery(sql: SqlLike | SqlLike[]): Promise<MultipleQueryResult> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
     return this.#query(sql, true);
   }
@@ -143,6 +147,6 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   }
 }
 interface FirstQuery {
-  (sql: StringLike): Promise<SingleQueryResult>;
-  (sql: StringLike, multiple: true): Promise<SingleQueryResult[]>;
+  (sql: SqlLike): Promise<SingleQueryResult>;
+  (sql: SqlLike | SqlLike[], multiple: true): Promise<SingleQueryResult[]>;
 }

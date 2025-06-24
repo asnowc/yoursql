@@ -2,7 +2,7 @@ import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { DbQuery } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult, DbQueryBase } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError } from "./errors.ts";
-import type { StringLike, TransactionMode } from "./interfaces.ts";
+import type { SqlLike, TransactionMode } from "./interfaces.ts";
 
 /**
 
@@ -24,12 +24,14 @@ export class DbPoolConnection extends DbQuery {
   #conn?: DbQueryBase;
 
   override query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  override query<T = any>(sql: StringLike): Promise<QueryRowsResult<T>>;
-  override query(sql: StringLike): Promise<QueryRowsResult> {
+  override query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
+  override query(sql: SqlLike): Promise<QueryRowsResult> {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
     return this.#conn.query(sql);
   }
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: StringLike): Promise<T> {
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(
+    sql: SqlLike | SqlLike[]
+  ): Promise<T> {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
     return this.#conn.multipleQuery(sql);
   }

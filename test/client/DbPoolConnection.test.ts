@@ -82,9 +82,11 @@ describe("DbPoolConnection", () => {
     mockMultipleQuery.mockResolvedValueOnce({ results: [] });
 
     const result = await poolConnection.multipleQuery("SELECT * FROM users; SELECT * FROM orders;");
-
     expect(mockMultipleQuery).toHaveBeenCalledWith("SELECT * FROM users; SELECT * FROM orders;");
     expect(result).toEqual({ results: [] });
+
+    await poolConnection.multipleQuery(["SELECT * FROM users", "SELECT * FROM orders"]);
+    expect(mockMultipleQuery).toHaveBeenCalledWith(["SELECT * FROM users", "SELECT * FROM orders"]);
   });
 
   it("should call [Symbol.dispose] to release the connection", () => {

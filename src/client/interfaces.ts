@@ -63,8 +63,8 @@ export interface DbQueryPool extends DbQuery {
   totalCount: number;
   begin(mode?: TransactionMode): DbTransaction;
   cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
-  cursor<T>(sql: StringLike, option?: DbCursorOption): Promise<DbCursor<T>>;
+  cursor<T>(sql: SqlLike, option?: DbCursorOption): Promise<DbCursor<T>>;
 }
 
 /** @public */
-export type StringLike = { toString(): string } | string;
+export type SqlLike = { genSql(): string } | string;
