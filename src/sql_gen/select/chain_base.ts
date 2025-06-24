@@ -1,7 +1,11 @@
 /** @public */
 export abstract class SqlStatement {
   /** 获取 SQL 语句 */
-  abstract toString(): string;
+  toString(): string {
+    return this.genSql();
+  }
+  /** 获取 SQL 语句 */
+  abstract genSql(): string;
 }
 /**
  * 可选择项。可以是 table、查询结果等，它能被 select 语句选择
@@ -39,7 +43,7 @@ export class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
   constructor(readonly sql: string) {
     super();
   }
-  toString(): string {
+  genSql(): string {
     return this.sql;
   }
 }

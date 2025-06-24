@@ -327,7 +327,7 @@ class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
   override toSelect(): string {
     return this.#sql;
   }
-  toString(): string {
+  genSql(): string {
     return this.#sql;
   }
 }

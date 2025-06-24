@@ -34,7 +34,7 @@ export class SqlChainModify<T extends TableType = {}>
     const sql = createWhere(where);
     return new SqlChainModify(this.toString() + sql);
   }
-  toString(): string {
+  genSql(): string {
     return this.sql;
   }
 }

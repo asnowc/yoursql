@@ -1,4 +1,11 @@
-import { DbQuery, DbConnection, DbPoolConnection, StringLike, MultipleQueryResult } from "@asla/yoursql/client";
+import {
+  DbQuery,
+  DbConnection,
+  DbPoolConnection,
+  SqlLike,
+  MultipleQueryResult,
+  QueryRowsResult,
+} from "@asla/yoursql/client";
 import { Mock, vi } from "vitest";
 function wait(ms: number) {
   //@ts-ignore
@@ -16,13 +23,13 @@ export class MockDbConnection extends DbQuery implements DbConnection {
   [Symbol.asyncDispose]() {
     return this.close();
   }
-  query = vi.fn(async function (sql: StringLike) {
+  query = vi.fn(async function (sql: SqlLike): Promise<QueryRowsResult> {
     const text = sql.toString();
     await wait(10);
     if (text === "error sql") throw new Error("error sql");
     return { rowCount: 0, rows: [] };
   });
-  multipleQuery = vi.fn(async function (sql: StringLike): Promise<any> {
+  multipleQuery = vi.fn(async function (sql: SqlLike | SqlLike[]): Promise<any> {
     const text = sql.toString();
     await wait(10);
     if (text.endsWith("error sql")) throw new Error("error sql");
