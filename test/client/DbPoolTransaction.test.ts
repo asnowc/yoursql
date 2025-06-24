@@ -123,3 +123,47 @@ test("errorRollback 为 true, 事务第2条执行出错，应释放连接, 并�
   expect(conn.mockConn.query).toBeCalledTimes(2);
   expect(conn.mockConn.query.mock.calls[1][0]).toBe("ROLLBACK");
 });
+
+test("query() 事务中查询单条语句", async function () {
+  const conn = new MockDbPoolConnection();
+  const connect = vi.fn(async () => conn);
+  const transaction = new DbPoolTransaction(connect);
+
+  conn.mockConn.multipleQuery.mockResolvedValueOnce([
+    { rowCount: 1, rows: null }, //begin
+    { rowCount: 1, rows: [{ count: 1 }] },
+  ]);
+
+  {
+    const result = await transaction.queryRows("SELECT count(*) FROM test");
+    expect(result).toEqual([{ count: 1 }]);
+  }
+
+  conn.mockConn.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ count: 2 }] });
+  {
+    const result = await transaction.queryRows("SELECT count(*) FROM test2");
+    expect(result).toEqual([{ count: 2 }]);
+  }
+});
+test("multipleQueryRows() 事务中查询多条语句", async function () {
+  const conn = new MockDbPoolConnection();
+  const connect = vi.fn(async () => conn);
+  const transaction = new DbPoolTransaction(connect);
+
+  conn.mockConn.multipleQuery.mockResolvedValueOnce([
+    { rowCount: 1, rows: null }, //begin
+    { rowCount: 1, rows: [{ count: 1 }] },
+    { rowCount: 1, rows: [{ count: 2 }] },
+  ]);
+
+  {
+    const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; SELECT count(*) FROM test2");
+    expect(result).toEqual([[{ count: 1 }], [{ count: 2 }]]);
+  }
+
+  conn.mockConn.multipleQuery.mockResolvedValueOnce([{ rowCount: 1, rows: [{ count: 1 }] }]);
+  {
+    const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; ");
+    expect(result).toEqual([[{ count: 1 }]]);
+  }
+});
