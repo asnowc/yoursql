@@ -293,8 +293,7 @@ type DbPoolTransactionOption = {
 abstract class DbQuery implements DbQueryBase {
     // (undocumented)
     abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
-    multipleQueryRows<T extends any[] = any[]>(sql: SqlStatementDataset<T>): Promise<T[]>;
-    multipleQueryRows<T extends any[] = any[]>(sql: SqlLike): Promise<T[]>;
+    multipleQueryRows<T extends any[] = any[]>(sql: SqlLike | SqlLike[]): Promise<T[]>;
     // (undocumented)
     abstract query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
     queryCount(sql: SqlLike): Promise<number>;

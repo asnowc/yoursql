@@ -145,25 +145,70 @@ test("query() 事务中查询单条语句", async function () {
     expect(result).toEqual([{ count: 2 }]);
   }
 });
-test("multipleQueryRows() 事务中查询多条语句", async function () {
-  const conn = new MockDbPoolConnection();
-  const connect = vi.fn(async () => conn);
-  const transaction = new DbPoolTransaction(connect);
+describe("queryRows", function () {
+  test("第一条语句与 begin 合并发生", async function () {
+    const conn = new MockDbPoolConnection();
+    const connect = vi.fn(async () => conn);
+    const transaction = new DbPoolTransaction(connect);
 
-  conn.mockConn.multipleQuery.mockResolvedValueOnce([
-    { rowCount: 1, rows: null }, //begin
-    { rowCount: 1, rows: [{ count: 1 }] },
-    { rowCount: 1, rows: [{ count: 2 }] },
-  ]);
+    await transaction.queryRows("SELECT count(*) FROM test");
+    expect(conn.mockConn.multipleQuery.mock.calls[0][0]).toEqual(["BEGIN", "SELECT count(*) FROM test"]);
+    await transaction.queryRows("SELECT count(*) FROM test2");
+    expect(conn.mockConn.query.mock.calls[0][0]).toBe("SELECT count(*) FROM test2");
+  });
+});
+describe("multipleQueryRows", function () {
+  test("multipleQueryRows() 事务中查询多条语句", async function () {
+    const conn = new MockDbPoolConnection();
+    const connect = vi.fn(async () => conn);
+    const transaction = new DbPoolTransaction(connect);
 
-  {
-    const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; SELECT count(*) FROM test2");
-    expect(result).toEqual([[{ count: 1 }], [{ count: 2 }]]);
-  }
+    conn.mockConn.multipleQuery.mockResolvedValueOnce([
+      { rowCount: 1, rows: null }, //begin
+      { rowCount: 1, rows: [{ count: 1 }] },
+      { rowCount: 1, rows: [{ count: 2 }] },
+    ]);
 
-  conn.mockConn.multipleQuery.mockResolvedValueOnce([{ rowCount: 1, rows: [{ count: 1 }] }]);
-  {
-    const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; ");
-    expect(result).toEqual([[{ count: 1 }]]);
-  }
+    {
+      const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; SELECT count(*) FROM test2");
+      expect(result).toEqual([[{ count: 1 }], [{ count: 2 }]]);
+    }
+
+    conn.mockConn.multipleQuery.mockResolvedValueOnce([{ rowCount: 1, rows: [{ count: 1 }] }]);
+    {
+      const result = await transaction.multipleQueryRows("SELECT count(*) FROM test; ");
+      expect(result).toEqual([[{ count: 1 }]]);
+    }
+  });
+
+  test("multipleQueryRows() 按原样传递文本 sql", async function () {
+    const conn = new MockDbPoolConnection();
+    const connect = vi.fn(async () => conn);
+    const transaction = new DbPoolTransaction(connect);
+
+    await transaction.multipleQueryRows("SELECT count(*) FROM test; SELECT count(*) FROM test2");
+    expect(conn.mockConn.multipleQuery.mock.calls[0][0]).toEqual([
+      "BEGIN",
+      "SELECT count(*) FROM test; SELECT count(*) FROM test2",
+    ]);
+    await transaction.multipleQueryRows("SELECT count(*) FROM test; SELECT count(*) FROM test2");
+    expect(conn.mockConn.multipleQuery.mock.calls[1][0]).toBe("SELECT count(*) FROM test; SELECT count(*) FROM test2");
+  });
+  test("multipleQueryRows() 按原样传递数组 sql", async function () {
+    const conn = new MockDbPoolConnection();
+    const connect = vi.fn(async () => conn);
+    const transaction = new DbPoolTransaction(connect);
+
+    await transaction.multipleQueryRows(["SELECT count(*) FROM test", "SELECT count(*) FROM test2"]);
+    expect(conn.mockConn.multipleQuery.mock.calls[0][0]).toEqual([
+      "BEGIN",
+      "SELECT count(*) FROM test",
+      "SELECT count(*) FROM test2",
+    ]);
+    await transaction.multipleQueryRows(["SELECT count(*) FROM test", "SELECT count(*) FROM test2"]);
+    expect(conn.mockConn.multipleQuery.mock.calls[1][0]).toEqual([
+      "SELECT count(*) FROM test",
+      "SELECT count(*) FROM test2",
+    ]);
+  });
 });

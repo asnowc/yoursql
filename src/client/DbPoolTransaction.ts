@@ -26,13 +26,13 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
         this.#errorRollback = option.errorRollback;
       }
     }
-    this.#query = ((sql: SqlLike, multiple?: boolean) => {
+    this.#query = ((sql: SqlLike | SqlLike[], multiple?: boolean) => {
       return new Promise<SingleQueryResult[] | SingleQueryResult>((resolve, reject) => {
         this.#pending = connect()
           .then((conn) => {
             this.#conn = conn;
             const begin = "BEGIN" + (this.mode ? " TRANSACTION ISOLATION LEVEL " + this.mode : "");
-            const promise = conn.multipleQuery([begin, sql]);
+            const promise = conn.multipleQuery(sql instanceof Array ? [begin, ...sql] : [begin, sql]);
             this.#pending = promise;
             this.#query = this.#queryAfter;
             return promise;
@@ -91,10 +91,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   /** 拿到连接后执行这个 */
   #queryAfter(sql: SqlLike): Promise<SingleQueryResult>;
   #queryAfter(sql: SqlLike | SqlLike[], multiple: true): Promise<SingleQueryResult[]>;
-  #queryAfter(
-    sql: SqlLike | SqlLike[],
-    multiple?: boolean
-  ): Promise<SingleQueryResult[] | SingleQueryResult> {
+  #queryAfter(sql: SqlLike | SqlLike[], multiple?: boolean): Promise<SingleQueryResult[] | SingleQueryResult> {
     const conn = this.#conn!;
     const onFinish = <T>(res: T) => {
       this.#query = this.#queryAfter;
@@ -125,9 +122,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
     return this.#query(sql);
   }
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(
-    sql: SqlLike | SqlLike[]
-  ): Promise<T>;
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
   override multipleQuery(sql: SqlLike | SqlLike[]): Promise<MultipleQueryResult> {
     if (this.#pending) return Promise.reject(new ParallelQueryError());
     return this.#query(sql, true);

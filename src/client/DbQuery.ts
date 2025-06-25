@@ -35,15 +35,9 @@ export abstract class DbQuery implements DbQueryBase {
   }
   /**
    * 查询行
-   * 不应查询单条语句，否则返回错误值
-   */
-  multipleQueryRows<T extends any[] = any[]>(sql: SqlStatementDataset<T>): Promise<T[]>;
-  /**
-   * 查询行
    * 不应查询单语句，否则返回错误值
    */
-  multipleQueryRows<T extends any[] = any[]>(sql: SqlLike): Promise<T[]>;
-  multipleQueryRows<T extends any[] = any[]>(sql: SqlStatementDataset<T> | SqlLike): Promise<T[]> {
+  multipleQueryRows<T extends any[] = any[]>(sql: SqlLike | SqlLike[]): Promise<T[]> {
     return this.multipleQuery(sql).then((res) => res.map((item) => item.rows ?? [])) as Promise<T[]>;
   }
   /**
