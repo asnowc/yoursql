@@ -19,20 +19,20 @@ export class SqlChainModify<T extends TableType = {}>
     } else {
       columnsStr = selectColumns(returns);
     }
-    let sql = this.toString() + "\nRETURNING " + columnsStr;
+    let sql = this.genSql() + "\nRETURNING " + columnsStr;
     return new SqlTextStatementDataset(sql);
   }
   onConflict(onConflict: Constructable<readonly string[] | string>): ChainAfterConflictDo<T> {
     if (typeof onConflict === "function") onConflict = onConflict();
 
     if (typeof onConflict !== "string") onConflict = onConflict.join(",");
-    let sql = this.toString() + `\nON CONFLICT (${onConflict})`;
+    let sql = this.genSql() + `\nON CONFLICT (${onConflict})`;
 
     return new SqlInsertConflictBranch<T>(sql);
   }
   where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T> {
     const sql = createWhere(where);
-    return new SqlChainModify(this.toString() + sql);
+    return new SqlChainModify(this.genSql() + sql);
   }
   genSql(): string {
     return this.sql;

@@ -25,22 +25,22 @@ import { condition } from "./_statement.ts";
  */
 export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelect<T> {
   where(param?: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T> {
-    return new SqlSelectChain(this.toString() + where(param));
+    return new SqlSelectChain(this.genSql() + where(param));
   }
   groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T> {
-    let sql: string = this.toString();
+    let sql: string = this.genSql();
     if (typeof columns === "string") sql += " GROUP BY " + columns;
     else sql += " GROUP BY " + columns.join(",");
     return new SqlSelectChain(sql);
   }
   having(param?: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T> {
-    return new SqlSelectChain(this.toString() + having(param));
+    return new SqlSelectChain(this.genSql() + having(param));
   }
   orderBy(param?: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T> {
-    return new SqlSelectChain(this.toString() + orderBy(param));
+    return new SqlSelectChain(this.genSql() + orderBy(param));
   }
   limit(limit?: number, offset?: number): ChainSelectAfterLimit<T> {
-    let sql = this.toString();
+    let sql = this.genSql();
     let type: string;
     if (limit) {
       type = typeof limit;
@@ -143,9 +143,7 @@ export class Selection {
    * selection.select({"age":true, c:"count(*)"}) // SELECT age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType>(
-    columns: Constructable<{ [key in keyof T]: string | boolean } | string>
-  ): ChainSelect<T>;
+  select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean } | string>): ChainSelect<T>;
   select(columnsIn: Constructable<SelectParam>): ChainSelect<TableType> {
     if (typeof columnsIn === "function") columnsIn = columnsIn();
 

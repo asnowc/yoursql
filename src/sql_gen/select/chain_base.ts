@@ -34,7 +34,7 @@ export abstract class SqlStatementDataset<T> extends SqlStatement implements Sql
    * 如果是 选择语句，则是 (xxx)
    */
   toSelect(): string {
-    return "(" + this.toString() + ")";
+    return "(" + this.genSql() + ")";
   }
 }
 
