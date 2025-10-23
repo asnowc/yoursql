@@ -20,14 +20,46 @@ export interface ChainAfterConflictDo<T extends TableType = {}> {
 }
 
 /** @public */
+export interface ChainUpdateWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+  where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+}
+/** @public */
+export interface ChainDeleteWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+  where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+}
+
+/** @public */
 export interface ChainInsert<T extends TableType = {}> extends ChainModifyReturning<T> {
   onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainAfterConflictDo<T>;
 }
+
 /** @public */
-export interface ChainUpdate<T extends TableType = {}> extends ChainModifyReturning<T> {
-  where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+export interface ChainUpdate<T extends TableType = {}> extends ChainUpdateWhere<T> {
+  /**
+   * @example
+   * ```ts
+   *
+   * table.update({age: "3", name: "'hi'", count:"b.count"}, "a").from("table1 AS b", "(SELECT k FROM table2) AS c").where(...)
+   * // UPDATE table AS a
+   * // FROM table1 AS b, (SELECT k FROM table2) AS c
+   * // SET a.age=3, a.name='hi', a.count=b.count
+   * // WHERE ...
+   * ```
+   */
+  from(...table: (Constructable<string> | { selectable: Constructable<string>; as: string })[]): ChainUpdateWhere<T>;
 }
+
 /** @public */
-export interface ChainDelete<T extends TableType = {}> extends ChainModifyReturning<T> {
-  where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+export interface ChainDelete<T extends TableType = {}> extends ChainDeleteWhere<T> {
+  /** 
+   * @example
+   * ```ts
+   *
+   * table.delete().using("table1 AS b", "(SELECT k FROM table2) AS c").where(...)
+   * // DELETE FROM table
+   * // USING table1 AS b, (SELECT k FROM table2) AS c
+   * // WHERE ...
+   * ```
+   */
+  using(...table: (Constructable<string> | { selectable: Constructable<string>; as: string })[]): ChainDeleteWhere<T>;
 }

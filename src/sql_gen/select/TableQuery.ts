@@ -57,7 +57,7 @@ export class DbTableQuery<
    * table.update({age:3, name:"hi"}, true) // "UPDATE table SET age=3, name='hi'"
    * ```
    */
-  updateFrom(values: Constructable<UpdateRowValue<T>>): ChainUpdate<T> {
+  updateFrom(values: Constructable<UpdateRowValue<T>>, asName?: string): ChainUpdate<T> {
     if (typeof values === "function") values = values();
     let setStr: string;
     if (typeof values === "string") setStr = values;
@@ -66,14 +66,17 @@ export class DbTableQuery<
       let setList: string[] = [];
       for (const [k, v] of updateKey) {
         if (v === undefined) continue;
-        setList.push(k + "= " + this.statement.toSqlStr(v));
+        if (asName) {
+          setList.push(`${asName}.${k}= ` + this.statement.toSqlStr(v));
+        } else setList.push(k + "= " + this.statement.toSqlStr(v));
       }
       setStr = setList.join(",\n");
     }
 
     if (!setStr) throw new Error("值不能为空");
 
-    let sql = `UPDATE ${this.name} SET\n${setStr}`;
+    const name = asName ? `${this.name} AS ${asName}` : this.name;
+    let sql = `UPDATE ${name} SET\n${setStr}`;
     return new SqlChainModify(sql);
   }
 }

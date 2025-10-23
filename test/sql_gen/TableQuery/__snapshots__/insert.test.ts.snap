@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`insert > insert 1`] = `
+"INSERT INTO user (name,level)
+VALUES
+('张三',8),
+('王五',9)"
+`;
+
+exports[`insert > insert 2`] = `
+"INSERT INTO user(name)
+VALUES('张三')"
+`;
+
+exports[`insert > insert-returning 1`] = `
+"INSERT INTO user (name)
+VALUES
+('hh')
+RETURNING rename AS level,name"
+`;

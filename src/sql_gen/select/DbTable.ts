@@ -3,7 +3,7 @@ import type { TableType } from "./type.ts";
 import { Selection } from "./query_chain_select.ts";
 import { SqlChainModify } from "./query_chain_insert.ts";
 import { createUpdateSetFromObject } from "./_statement.ts";
-import { ChainDelete, ChainInsert, ChainUpdate } from "./chain_modify.ts";
+import { ChainDelete, ChainInsert, ChainModifyReturning, ChainUpdate } from "./chain_modify.ts";
 import { ChainSelect } from "./chain_select.ts";
 
 /**
@@ -55,22 +55,34 @@ export class DbTable<T extends TableType> {
    * table.update({age: "3", name: "'hi'", k1: undefined, k2: ""}) // "UPDATE table SET age=3, name='hi'"
    * ```
    */
-  update(values: Constructable<{ [key in keyof T]?: string } | string>): ChainUpdate<T> {
+  update(values: Constructable<{ [key in keyof T]?: string } | string>, asName?: string): ChainUpdate<T> {
     if (typeof values === "function") values = values();
+    let name = asName ? `${this.name} AS ${asName}` : this.name;
     switch (typeof values) {
       case "object": {
-        let sql = createUpdateSetFromObject(values);
-        return new SqlChainModify("UPDATE " + this.name + " " + sql);
+        let sql = createUpdateSetFromObject(values, asName);
+        return new SqlChainModify("UPDATE " + name + " " + sql);
       }
       case "string":
-        return new SqlChainModify("UPDATE " + this.name + " SET\n" + values);
+        return new SqlChainModify("UPDATE " + name + " SET\n" + values);
       default:
         throw new TypeError("参数 values 错误");
     }
   }
-  delete(option: DeleteOption = {}): ChainDelete<T> {
+  /** @deprecated 改用 delete().where */
+  delete(option: { where?: Constructable<ConditionParam | void> }): ChainModifyReturning<T>;
+  delete(option?: DeleteOption): ChainDelete<T>;
+  delete(
+    option: DeleteOption & { where?: Constructable<ConditionParam | void> } = {}
+  ): ChainDelete<T> | ChainModifyReturning<T> {
     let sql = "DELETE FROM " + this.name;
-    sql += where(option.where);
+    if (option.where) {
+      sql += where(option.where);
+    } else {
+      if (option.asName) {
+        sql += ` AS ${option.asName}`;
+      }
+    }
     return new SqlChainModify<T>(sql);
   }
 
@@ -81,5 +93,5 @@ export class DbTable<T extends TableType> {
 
 /** @public */
 export interface DeleteOption {
-  where?: Constructable<ConditionParam | void>;
+  asName?: string;
 }

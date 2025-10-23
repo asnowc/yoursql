@@ -23,19 +23,21 @@ export function condition(
     return;
   }
 }
-export function createUpdateSetFromObject(set: Record<string, string | undefined>): string {
+export function createUpdateSetFromObject(set: Record<string, string | undefined>, prefix?: string): string {
   const updateKey = Object.keys(set);
   let i = 0;
   let key: string;
+  let sqlKey: string;
   let value: any;
   let sql: string | undefined;
   for (; i < updateKey.length; i++) {
     key = updateKey[i];
+    sqlKey = prefix ? `${prefix}.${key}` : key;
     value = set[key];
     if (value === undefined) continue;
     if (typeof value === "string") {
       if (value) {
-        sql = "SET\n" + key + "= " + value;
+        sql = "SET\n" + sqlKey + "= " + value;
         break;
       }
     } else throw new TypeError(`key ${key} 类型错误(${typeof value})`);
@@ -44,10 +46,11 @@ export function createUpdateSetFromObject(set: Record<string, string | undefined
     i++;
     for (; i < updateKey.length; i++) {
       key = updateKey[i];
+      sqlKey = prefix ? `${prefix}.${key}` : key;
       value = set[key];
       if (value === undefined) continue;
       if (typeof value === "string") {
-        if (value) sql += "," + key + "= " + value;
+        if (value) sql += "," + sqlKey + "= " + value;
       } else throw new TypeError(`key ${key} 类型错误(${typeof value})`);
     }
     return sql;

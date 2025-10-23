@@ -11,6 +11,22 @@ export class SqlChainModify<T extends TableType = {}>
   constructor(readonly sql: string) {
     super();
   }
+  from(...from: Constructable<string>[]): SqlChainModify<T> {
+    const textList = from.map((f, i) => {
+      if (typeof f === "function") return f();
+      return f;
+    });
+    const sql = this.genSql() + `\nFROM ${textList.join(", ")}`;
+    return new SqlChainModify<T>(sql);
+  }
+  using(...from: Constructable<string>[]): SqlChainModify<T> {
+    const textList = from.map((f, i) => {
+      if (typeof f === "function") return f();
+      return f;
+    });
+    const sql = this.genSql() + `\nUSING ${textList.join(", ")}`;
+    return new SqlChainModify<T>(sql);
+  }
   returning<R extends {}>(returns: Constructable<SelectParam | "*">): SqlStatementDataset<R> {
     if (typeof returns === "function") returns = returns();
     let columnsStr: string;
