@@ -19,7 +19,26 @@ interface ChainAfterConflictDo<T extends TableType = {}> {
 }
 
 // @public (undocumented)
-interface ChainDelete<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainCTE {
+    // (undocumented)
+    as(statement: Constructable<string>): ChainCTE;
+    // (undocumented)
+    as(name: string, statement: Constructable<string>): ChainCTE;
+    // (undocumented)
+    toString(): string;
+}
+
+// @public (undocumented)
+interface ChainDelete<T extends TableType = {}> extends ChainDeleteWhere<T> {
+    // (undocumented)
+    using(...table: (Constructable<string> | {
+        selectable: Constructable<string>;
+        as: string;
+    })[]): ChainDeleteWhere<T>;
+}
+
+// @public (undocumented)
+interface ChainDeleteWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
     // (undocumented)
     where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
 }
@@ -77,7 +96,16 @@ interface ChainSelectAfterWhere<T extends TableType> extends ChainSelectAfterHav
 }
 
 // @public (undocumented)
-interface ChainUpdate<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainUpdate<T extends TableType = {}> extends ChainUpdateWhere<T> {
+    // (undocumented)
+    from(...table: (Constructable<string> | {
+        selectable: Constructable<string>;
+        as: string;
+    })[]): ChainUpdateWhere<T>;
+}
+
+// @public (undocumented)
+interface ChainUpdateWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
     // (undocumented)
     where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
 }
@@ -165,6 +193,8 @@ declare namespace core {
         InferQueryResult,
         ChainModifyReturning,
         ChainAfterConflictDo,
+        ChainUpdateWhere,
+        ChainDeleteWhere,
         ChainInsert,
         ChainUpdate,
         ChainDelete,
@@ -175,6 +205,9 @@ declare namespace core {
         ChainSelectAfterOrderBy,
         ChainSelectAfterLimit,
         DbTableQuery,
+        withAs,
+        withRecursiveAs,
+        ChainCTE,
         getObjectListKeys,
         where,
         having,
@@ -332,6 +365,10 @@ interface DbQueryPool extends DbQuery {
 // @public
 class DbTable<T extends TableType> {
     constructor(name: string);
+    // @deprecated (undocumented)
+    delete(option: {
+        where?: Constructable<ConditionParam | void>;
+    }): ChainModifyReturning<T>;
     // (undocumented)
     delete(option?: DeleteOption): ChainDelete<T>;
     // (undocumented)
@@ -353,7 +390,7 @@ class DbTable<T extends TableType> {
     toSelect(): string;
     update(values: Constructable<{
         [key in keyof T]?: string;
-    } | string>): ChainUpdate<T>;
+    } | string>, asName?: string): ChainUpdate<T>;
 }
 
 // @public (undocumented)
@@ -363,7 +400,7 @@ class DbTableQuery<T extends TableType = Record<string, any>, C extends TableTyp
     insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainInsert<T>;
     // (undocumented)
     insert(columns: string, values: Constructable<string>): ChainInsert<T>;
-    updateFrom(values: Constructable<UpdateRowValue<T>>): ChainUpdate<T>;
+    updateFrom(values: Constructable<UpdateRowValue<T>>, asName?: string): ChainUpdate<T>;
 }
 
 // @public
@@ -378,7 +415,7 @@ interface DbTransaction extends DbQuery, AsyncDisposable {
 // @public (undocumented)
 interface DeleteOption {
     // (undocumented)
-    where?: Constructable<ConditionParam | void>;
+    asName?: string;
 }
 
 // @public
@@ -616,6 +653,18 @@ const v: SqlValueFn;
 
 // @public
 function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
+
+// @public (undocumented)
+function withAs(statement: Constructable<string>): ChainCTE;
+
+// @public (undocumented)
+function withAs(name: string, statement: Constructable<string>): ChainCTE;
+
+// @public (undocumented)
+function withRecursiveAs(statement: Constructable<string>): ChainCTE;
+
+// @public (undocumented)
+function withRecursiveAs(name: string, statement: Constructable<string>): ChainCTE;
 
 // @public
 class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
