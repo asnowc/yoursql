@@ -1,4 +1,5 @@
-import { Constructable } from "../util.ts";
+import { Constructable } from "./util.ts";
+import { SqlSelectable } from "./SqlStatement.ts";
 
 type ConditionParam = string | string[];
 /**
@@ -7,7 +8,7 @@ type ConditionParam = string | string[];
 export function condition(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 export function condition(
   conditions?: Constructable<ConditionParam | void>,
-  type: "AND" | "OR" = "AND"
+  type: "AND" | "OR" = "AND",
 ): string | undefined {
   if (typeof conditions === "function") conditions = conditions();
   if (!conditions) return;
@@ -55,4 +56,8 @@ export function createUpdateSetFromObject(set: Record<string, string | undefined
     }
     return sql;
   } else throw new Error("值不能为空");
+}
+export function selectableToString(selectable: Constructable<SqlSelectable | string>) {
+  if (typeof selectable === "function") selectable = selectable();
+  return typeof selectable === "string" ? selectable : selectable.toSelect();
 }

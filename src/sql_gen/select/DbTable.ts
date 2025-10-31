@@ -1,14 +1,13 @@
-import { where, ConditionParam, Constructable, SelectParam } from "../util.ts";
-import type { TableType } from "./type.ts";
+import { where, ConditionParam, Constructable, SelectParam, TableType } from "../util.ts";
 import { Selection } from "./query_chain_select.ts";
 import { SqlChainModify } from "./query_chain_insert.ts";
-import { createUpdateSetFromObject } from "./_statement.ts";
-import { ChainDelete, ChainInsert, ChainModifyReturning, ChainUpdate } from "./chain_modify.ts";
-import { ChainSelect } from "./chain_select.ts";
+import { createUpdateSetFromObject } from "../_statement.ts";
+import { ChainSelectAfterJoin, ChainDelete, ChainInsert, ChainModifyReturning, ChainUpdate } from "../statement/mod.ts";
 
 /**
  * 数据库表
  * @public
+ * @deprecated
  */
 export class DbTable<T extends TableType> {
   constructor(readonly name: string) {}
@@ -16,20 +15,23 @@ export class DbTable<T extends TableType> {
     return new Selection(this.name, as);
   }
   /** 选择单表全部列 */
-  select(columns: "*", as?: string): ChainSelect<T>;
+  select(columns: "*", as?: string): ChainSelectAfterJoin<T>;
   /** 选择单表，带提示  */
   select(
     columns: Constructable<{ [key in keyof T]?: string | boolean } & { [key: string]: string | boolean }>,
-    as?: string
-  ): ChainSelect<Record<string, any>>;
+    as?: string,
+  ): ChainSelectAfterJoin<Record<string, any>>;
   /** 选择单表  */
-  select<R extends {} = Record<string, any>>(columns: Constructable<string | string[]>, as?: string): ChainSelect<R>;
+  select<R extends {} = Record<string, any>>(
+    columns: Constructable<string | string[]>,
+    as?: string,
+  ): ChainSelectAfterJoin<R>;
   /** 选择单表  */
   select<R extends {}>(
     columns: Constructable<{ [key in keyof R]: boolean | string } | string | string[]>,
-    as?: string
-  ): ChainSelect<R>;
-  select(columns: Constructable<SelectParam>, as?: string): ChainSelect<Record<string, any>> {
+    as?: string,
+  ): ChainSelectAfterJoin<R>;
+  select(columns: Constructable<SelectParam>, as?: string): ChainSelectAfterJoin<Record<string, any>> {
     return this.fromAs(as).select(columns);
   }
   /**
@@ -73,7 +75,7 @@ export class DbTable<T extends TableType> {
   delete(option: { where?: Constructable<ConditionParam | void> }): ChainModifyReturning<T>;
   delete(option?: DeleteOption): ChainDelete<T>;
   delete(
-    option: DeleteOption & { where?: Constructable<ConditionParam | void> } = {}
+    option: DeleteOption & { where?: Constructable<ConditionParam | void> } = {},
   ): ChainDelete<T> | ChainModifyReturning<T> {
     let sql = "DELETE FROM " + this.name;
     if (option.where) {

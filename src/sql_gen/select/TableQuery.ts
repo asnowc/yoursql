@@ -1,9 +1,8 @@
 import { SqlValuesCreator } from "../sql_value/sql_value.ts";
-import { UpdateRowValue, TableType } from "./type.ts";
-import { getObjectListKeys, Constructable } from "../util.ts";
+import { getObjectListKeys, Constructable, UpdateRowValue, TableType } from "../util.ts";
 import { SqlChainModify } from "./query_chain_insert.ts";
 import { DbTable } from "./DbTable.ts";
-import { ChainInsert, ChainUpdate } from "./chain_modify.ts";
+import { ChainInsert, ChainUpdate } from "../statement/mod.ts";
 
 /** @public */
 export class DbTableQuery<
@@ -12,7 +11,7 @@ export class DbTableQuery<
 > extends DbTable<T> {
   constructor(
     name: string,
-    private statement: SqlValuesCreator
+    private statement: SqlValuesCreator,
   ) {
     super(name);
   }
@@ -27,7 +26,7 @@ export class DbTableQuery<
   override insert(columns: string, values: Constructable<string>): ChainInsert<T>;
   override insert(
     values_column: string | Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>,
-    _values?: Constructable<string>
+    _values?: Constructable<string>,
   ): ChainInsert<T> {
     if (_values) return super.insert(values_column as string, _values);
 

@@ -1,30 +1,13 @@
 import { ConditionParam, Constructable, where as createWhere, selectColumns, SelectParam, TableType } from "../util.ts";
 import { createUpdateSetFromObject } from "../_statement.ts";
 import { SqlStatementDataset, SqlStatement, SqlTextStatementDataset } from "../SqlStatement.ts";
-import { ChainAfterConflict, ChainDelete, ChainInsert, ChainModifyReturning, ChainUpdate } from "../statement/mod.ts";
+import { ChainAfterConflict, ChainInsert, ChainInsertReturning } from "./insert_chain.ts";
 
-export class SqlChainModify<T extends TableType = {}>
-  extends SqlStatement
-  implements ChainInsert<T>, ChainUpdate<T>, ChainDelete<T>
-{
+export function insertInto(): ChainInsert {}
+
+class InsertChain<T extends TableType = {}> extends SqlStatement implements ChainInsert<T> {
   constructor(readonly sql: string) {
     super();
-  }
-  from(...from: Constructable<string>[]): SqlChainModify<T> {
-    const textList = from.map((f, i) => {
-      if (typeof f === "function") return f();
-      return f;
-    });
-    const sql = this.genSql() + `\nFROM ${textList.join(", ")}`;
-    return new SqlChainModify<T>(sql);
-  }
-  using(...from: Constructable<string>[]): SqlChainModify<T> {
-    const textList = from.map((f, i) => {
-      if (typeof f === "function") return f();
-      return f;
-    });
-    const sql = this.genSql() + `\nUSING ${textList.join(", ")}`;
-    return new SqlChainModify<T>(sql);
   }
   returning<R extends {}>(returns: Constructable<SelectParam | "*">): SqlStatementDataset<R> {
     if (typeof returns === "function") returns = returns();
@@ -45,18 +28,18 @@ export class SqlChainModify<T extends TableType = {}>
 
     return new SqlInsertConflictBranch<T>(sql);
   }
-  where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T> {
+  where(where: Constructable<ConditionParam | void>): ChainInsertReturning<T> {
     const sql = createWhere(where);
-    return new SqlChainModify(this.genSql() + sql);
+    return new InsertChain(this.genSql() + sql);
   }
   genSql(): string {
     return this.sql;
   }
 }
 
-export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainAfterConflict<T> {
+class SqlInsertConflictBranch<T extends TableType = {}> implements ChainAfterConflict<T> {
   constructor(readonly sql: string) {}
-  doUpdate(set?: Constructable<string | { [key: string]: string | undefined }>): ChainModifyReturning<T> {
+  doUpdate(set?: Constructable<string | { [key: string]: string | undefined }>): ChainInsertReturning<T> {
     if (typeof set === "function") set = set();
 
     let sql = this.sql;
@@ -67,10 +50,10 @@ export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainA
     } else if (set) sql += "DO UPDATE\n" + set;
     else sql += "DO NOTHING";
 
-    return new SqlChainModify(sql);
+    return new InsertChain(sql);
   }
-  doNotThing(): ChainModifyReturning<T> {
-    return new SqlChainModify(this.sql + " DO NOTHING");
+  doNotThing(): ChainInsertReturning<T> {
+    return new InsertChain(this.sql + " DO NOTHING");
   }
   toString(): string {
     return this.sql;

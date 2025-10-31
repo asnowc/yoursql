@@ -1,6 +1,5 @@
-import { getObjectListKeys } from "../util.ts";
-import type { TableType } from "../select/type.ts";
-import { SqlStatementDataset } from "../select/chain_base.ts";
+import { getObjectListKeys, TableType } from "../util.ts";
+import { SqlStatementDataset } from "../SqlStatement.ts";
 
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -137,12 +136,12 @@ export class SqlValuesCreator {
   objectListToValuesList<T extends object>(
     objectList: T[],
     keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig },
-    keepUndefinedKey?: boolean
+    keepUndefinedKey?: boolean,
   ): string;
   objectListToValuesList(
     objectList: Record<string | number | symbol, any>[],
     keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined | ColumnToValueConfig>,
-    keepUndefinedKey?: boolean
+    keepUndefinedKey?: boolean,
   ): string {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
@@ -187,11 +186,11 @@ export class SqlValuesCreator {
    */
   objectToValues<T extends object>(
     object: T,
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig }
+    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig },
   ): string;
   objectToValues(
     object: Record<string | number, any>,
-    keys_types: readonly string[] | Record<string, string | undefined> | undefined
+    keys_types: readonly string[] | Record<string, string | undefined> | undefined,
   ): string {
     let type: (ColumnToValueConfig | undefined)[];
     let keys: readonly string[];
@@ -211,7 +210,7 @@ export class SqlValuesCreator {
   private _internalObjectToValues(
     object: Record<string, any>,
     keys: readonly string[],
-    type: (ColumnToValueConfig | undefined)[]
+    type: (ColumnToValueConfig | undefined)[],
   ) {
     const values: string[] = [];
     let i = 0;
@@ -262,12 +261,12 @@ export class SqlValuesCreator {
   createValues<T extends {}>(
     asName: string,
     values: T[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>,
   ): SqlStatementDataset<T>;
   createValues(
     asName: string,
     values: Record<string, any>[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>,
   ): SqlStatementDataset<any> {
     if (values.length === 0) throw new Error("values 不能为空");
     const insertKeys: string[] = Object.keys(valuesTypes);
@@ -336,7 +335,7 @@ export type ColumnToValueConfig = { sqlType?: string; assertJsType?: AssertJsTyp
 
 function initColumnAssert(
   keys: readonly string[],
-  keys_types: Record<string, string | undefined | ColumnToValueConfig>
+  keys_types: Record<string, string | undefined | ColumnToValueConfig>,
 ) {
   let key: string;
   let value: any;

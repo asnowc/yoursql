@@ -1,7 +1,8 @@
 import { ConditionParam, Constructable, where as createWhere, selectColumns, SelectParam, TableType } from "../util.ts";
-import { createUpdateSetFromObject } from "../_statement.ts";
 import { SqlStatementDataset, SqlStatement, SqlTextStatementDataset } from "../SqlStatement.ts";
-import { ChainAfterConflict, ChainDelete, ChainInsert, ChainModifyReturning, ChainUpdate } from "../statement/mod.ts";
+import { ChainInsert } from "./insert_chain.ts";
+import { ChainUpdate } from "./update_chain.ts";
+import { ChainDelete } from "./delete_chain.ts";
 
 export class SqlChainModify<T extends TableType = {}>
   extends SqlStatement
@@ -54,25 +55,8 @@ export class SqlChainModify<T extends TableType = {}>
   }
 }
 
-export class SqlInsertConflictBranch<T extends TableType = {}> implements ChainAfterConflict<T> {
-  constructor(readonly sql: string) {}
-  doUpdate(set?: Constructable<string | { [key: string]: string | undefined }>): ChainModifyReturning<T> {
-    if (typeof set === "function") set = set();
-
-    let sql = this.sql;
-
-    if (typeof set === "object") {
-      sql += "\nDO UPDATE ";
-      sql += createUpdateSetFromObject(set);
-    } else if (set) sql += "DO UPDATE\n" + set;
-    else sql += "DO NOTHING";
-
-    return new SqlChainModify(sql);
-  }
-  doNotThing(): ChainModifyReturning<T> {
-    return new SqlChainModify(this.sql + " DO NOTHING");
-  }
-  toString(): string {
-    return this.sql;
-  }
+export interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
+  returning(columns: "*"): SqlStatementDataset<T>;
+  returning(columns: Constructable<SelectParam>): SqlStatementDataset<Record<string, any>>;
+  returning<R extends TableType>(columns: Constructable<SelectParam>): SqlStatementDataset<R>;
 }

@@ -21,6 +21,7 @@ describe("select", function () {
     const sql = table.select("*").where("limit IS NULL").orderBy(["id ASC NULLS FIRST"]).limit(100, 23).toString();
     expect(sql).toMatchSnapshot();
   });
+
   test("limit", function () {
     expect(table.select("*").limit(12).toString()).toBe("SELECT *\nFROM user\nLIMIT 12");
     expect(table.select("*").limit(12n, 1n).toString()).toBe("SELECT *\nFROM user\nLIMIT 12\nOFFSET 1");

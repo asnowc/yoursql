@@ -1,12 +1,12 @@
-import { SqlSelectable, SqlTextStatementDataset } from "./chain_base.ts";
+import { SqlSelectable, SqlTextStatementDataset } from "../SqlStatement.ts";
 import {
-  ChainSelect,
   ChainSelectAfterHaving,
   ChainSelectAfterLimit,
   ChainSelectAfterOrderBy,
   ChainSelectAfterGroupBy,
   ChainSelectAfterWhere,
-} from "./chain_select.ts";
+  ChainSelectAfterJoin,
+} from "../statement/select_chain.ts";
 import {
   orderBy,
   OrderByParam,
@@ -16,14 +16,14 @@ import {
   having,
   SelectParam,
   Constructable,
+  TableType,
 } from "../util.ts";
-import type { TableType } from "./type.ts";
-import { condition } from "./_statement.ts";
+import { condition, selectableToString } from "../_statement.ts";
 
 /**
- * @public ChainSelectWhere 的默认实现
+ * @public ChainSelectAfterJoin 的默认实现
  */
-export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelect<T> {
+export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelectAfterJoin<T> {
   where(param?: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T> {
     return new SqlSelectChain(this.genSql() + where(param));
   }
@@ -56,8 +56,7 @@ export class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset
   }
 }
 function fromAs(selectable: Constructable<SqlSelectable | string>, as?: string) {
-  if (typeof selectable === "function") selectable = selectable();
-  let sql = typeof selectable === "string" ? selectable : selectable.toSelect();
+  let sql = selectableToString(selectable);
   if (as) sql += " AS " + as;
   return sql;
 }
@@ -79,7 +78,7 @@ export class Selection {
     type: string,
     selectable: Constructable<SqlSelectable | string>,
     as?: string,
-    on?: Constructable<ConditionParam>
+    on?: Constructable<ConditionParam>,
   ): Selection {
     let sql = this.#sql + "\n" + type + " " + fromAs(selectable, as);
     if (on) {
@@ -91,28 +90,28 @@ export class Selection {
   fullJoin(
     selectable: Constructable<SqlSelectable | string>,
     as: string | undefined,
-    on: Constructable<ConditionParam>
+    on: Constructable<ConditionParam>,
   ): Selection {
     return this.#join("FULL JOIN", selectable, as, on);
   }
   innerJoin(
     selectable: Constructable<SqlSelectable | string>,
     as: string | undefined,
-    on: Constructable<ConditionParam>
+    on: Constructable<ConditionParam>,
   ): Selection {
     return this.#join("INNER JOIN", selectable, as, on);
   }
   leftJoin(
     selectable: Constructable<SqlSelectable | string>,
     as: string | undefined,
-    on: Constructable<ConditionParam>
+    on: Constructable<ConditionParam>,
   ): Selection {
     return this.#join("LEFT JOIN", selectable, as, on);
   }
   rightJoin(
     selectable: Constructable<SqlSelectable | string>,
     as: string | undefined,
-    on: Constructable<ConditionParam>
+    on: Constructable<ConditionParam>,
   ): Selection {
     return this.#join("RIGHT JOIN", selectable, as, on);
   }
@@ -127,7 +126,7 @@ export class Selection {
     return new Selection(this.#sql + "," + fromAs(selectable, as));
   }
   /** 选择全部列 */
-  select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelect<T>;
+  select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelectAfterJoin<T>;
   /**
    * 自定义SQL选择语句
    * @example
@@ -135,7 +134,7 @@ export class Selection {
    * selection.select("t.age, count(*) AS c") // SELECT t.age,count(*) AS c FROM ...
    * ```
    */
-  select(columns: Constructable<SelectParam>): ChainSelect<Record<string, any>>;
+  select(columns: Constructable<SelectParam>): ChainSelectAfterJoin<Record<string, any>>;
   /**
    * 通过 object 选择 列
    * @example
@@ -143,8 +142,10 @@ export class Selection {
    * selection.select({"age":true, c:"count(*)"}) // SELECT age,count(*) AS c FROM ...
    * ```
    */
-  select<T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean } | string>): ChainSelect<T>;
-  select(columnsIn: Constructable<SelectParam>): ChainSelect<TableType> {
+  select<T extends TableType>(
+    columns: Constructable<{ [key in keyof T]: string | boolean } | string>,
+  ): ChainSelectAfterJoin<T>;
+  select(columnsIn: Constructable<SelectParam>): ChainSelectAfterJoin<TableType> {
     if (typeof columnsIn === "function") columnsIn = columnsIn();
 
     let sql = "SELECT " + selectColumns(columnsIn);
