@@ -20,14 +20,11 @@ export function update<T extends TableType>(table: string, options?: UpdateOptio
   if (options?.asName) {
     sql += ` AS ${options.asName}`;
   }
-  return new UpdateChain(sql, { ...options });
+  return new UpdateChain(sql);
 }
 
 class UpdateChain extends SqlStatement implements ChainUpdate {
-  constructor(
-    private sql: string,
-    private readonly options: Readonly<UpdateOption> = {},
-  ) {
+  constructor(private sql: string) {
     super();
   }
   from(...from: Constructable<string>[]): ChainUpdateAfterForm {
@@ -57,7 +54,7 @@ class UpdateChain extends SqlStatement implements ChainUpdate {
           let sql = values.join(", ");
           return new UpdateChain(this.sql + " " + sql);
         } else {
-          let sql = createUpdateSetFromObject(values, this.options?.asName ? this.options.asName : undefined);
+          let sql = createUpdateSetFromObject(values);
           return new UpdateChain(this.sql + " " + sql);
         }
       }

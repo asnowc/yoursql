@@ -26,14 +26,14 @@ WHERE id IS NULL`);
     ).toThrowError(TypeError);
   });
   test("update-from", function () {
-    const expectSql = "UPDATE user AS u SET\nu.level= ub.level\nFROM user_backup AS ub\nWHERE u.id = ub.id";
+    const expectSql = "UPDATE user AS u SET\nlevel= ub.level\nFROM user_backup AS ub\nWHERE u.id = ub.id";
     const base = update<Table>("user", { asName: "u" }).set({ level: "ub.level" });
     const sql = base.from("user_backup AS ub").where("u.id = ub.id").toString();
     expect(sql, "使用 from 语句更新").toBe(expectSql);
   });
   test("update-from-multiple", function () {
     const expectSql = `UPDATE user AS a SET
-a.level= b.level,a.name= c.name
+level= b.level,name= c.name
 FROM bbb AS b, ccc AS c
 WHERE a.id = b.id AND a.name = c.name`;
 
