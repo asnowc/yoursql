@@ -1,15 +1,15 @@
-import { DbTableQuery } from "../select/TableQuery.ts";
-import type { TableType } from "../select/type.ts";
-import type { SqlValuesCreator } from "../sql_value/sql_value.ts";
 import type { ColumnMeta, TableDefined } from "./infer_db_type.ts";
 import { TypeChecker } from "./checker.ts";
+import { TableType } from "../util.ts";
 /**
  * 完整数据库表数据
  * @public
  */
-export class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
-  constructor(name: string, private define: TableDefined, sqlValue: SqlValuesCreator) {
-    super(name, sqlValue);
+export class YourTable<T extends TableType = TableType> {
+  constructor(
+    readonly name: string,
+    private define: TableDefined,
+  ) {
     this.columns = Object.keys(define);
   }
   readonly columns: readonly string[];

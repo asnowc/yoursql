@@ -1,6 +1,6 @@
-import { getObjectListKeys } from "../util.ts";
-import type { TableType } from "../select/type.ts";
-import { SqlStatementDataset } from "../select/chain_base.ts";
+import { TableType } from "../util.ts";
+import { SqlStatementDataset } from "../SqlStatement.ts";
+import { getObjectListKeys } from "../_statement.ts";
 
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -108,16 +108,7 @@ export class SqlValuesCreator {
         throw new Error("不支持 " + type + " 类型");
     }
   }
-  /**
-   * @deprecated 已废弃
-   * 获取值对应的 SqlValueEncoder
-   */
-  getObjectType(value: object): SqlValueEncoder {
-    for (const Class of this._map.keys()) {
-      if (value instanceof Class) return this._map.get(Class)!;
-    }
-    return this.defaultObject;
-  }
+
   /** 获取值对应已定义的类 */
   getClassType(value: object): undefined | (new (...args: unknown[]) => unknown) {
     for (const Class of this._map.keys()) {
@@ -128,22 +119,30 @@ export class SqlValuesCreator {
     return SqlValuesCreator.string(JSON.stringify(value));
   }
 
+  /** @deprecated 改用 objectListToValues */
+  objectListToValuesList<T extends object>(
+    objectList: T[],
+    keys?: ObjectToValueKeys<T>,
+    keepUndefinedKey?: boolean,
+  ): string {
+    return this.objectListToValues(objectList, keys, keepUndefinedKey).text;
+  }
   /**
-   * 将对象列表转为 SQL 的 VALUES。
-   * @example 返回示例： " (...),(...) "
+   * 将对象列表转为 SQL 的 VALUES。与 objectToValues类似。如果设定了 keys 的类型，只会转换第一行的数据。
+   * @example 返回的文本示例： " (...),(...) "
    * @param keys - 选择的键。如果指定了 keys, 值为 undefined 的属性将自动填充为 null; 如果未指定 keys，将选择 objectList 所有不是 undefined 项的键的并集
    * @param keepUndefinedKey - 是否保留 undefined 的键。默认值为 false，如果为 true , 数组的某一个字段均为 undefined时，将忽略字段,
    */
-  objectListToValuesList<T extends object>(
+  objectListToValues<T extends object>(
     objectList: T[],
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig },
-    keepUndefinedKey?: boolean
-  ): string;
-  objectListToValuesList(
+    keys?: ObjectToValueKeys<T>,
+    keepUndefinedKey?: boolean,
+  ): SqlValueData;
+  objectListToValues(
     objectList: Record<string | number | symbol, any>[],
     keys_types?: readonly (string | number | symbol)[] | Record<string, string | undefined | ColumnToValueConfig>,
-    keepUndefinedKey?: boolean
-  ): string {
+    keepUndefinedKey?: boolean,
+  ): SqlValueData {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
     let keys: string[];
     let asserts: (ColumnToValueConfig | undefined)[];
@@ -178,21 +177,32 @@ export class SqlValuesCreator {
       throw new Error("第 " + i + " 项，字段 '" + (keys[j!] as string) + "' 异常，" + message);
     }
 
-    return str;
+    return { columns: keys, text: str };
+  }
+  /**
+   * @deprecated 请使用 objectToValue 代替
+   */
+  objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string {
+    return this.objectToValue(object, keys).text;
   }
   /**
    * 将对象转为 SQL 的 value
-   * @example 返回示例： " 'abc', '6', 'now()' "
+   * @example
+   * ```ts
+   *  v.objectToValues({ a: 1, b: "2", c: null, d: undefined }).text // " '1', '2', NULL, DEFAULT "
+   *  v.objectToValues({ a: 1, b: "2", c: null, d: undefined }, ["a", "b"]).text // " '1', '2' "
+   *  v.objectToValues(
+   *    { a: 1, b: "2", c: null, d: undefined },
+   *    { a: "INT", b: "TEXT", c: "JSONB", d: "TEXT" }
+   *  ).text // " '1'::INT, '2'::TEXT, NULL::JSONB, DEFAULT::TEXT "
+   * ```
    * @param keys - 如果指定了key, object undefined 的属性值将填充为 null，如果不指定，将自获取 object 所有非 undefined 的属性的key
    */
-  objectToValues<T extends object>(
-    object: T,
-    keys?: readonly (keyof T)[] | { [key in keyof T]?: string | undefined | ColumnToValueConfig }
-  ): string;
-  objectToValues(
+  objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValueData;
+  objectToValue(
     object: Record<string | number, any>,
-    keys_types: readonly string[] | Record<string, string | undefined> | undefined
-  ): string {
+    keys_types: readonly string[] | Record<string, string | undefined> | undefined,
+  ): SqlValueData {
     let type: (ColumnToValueConfig | undefined)[];
     let keys: readonly string[];
 
@@ -206,12 +216,13 @@ export class SqlValuesCreator {
       keys = Object.keys(object);
       type = [];
     }
-    return this._internalObjectToValues(object, keys, type);
+    const text = this._internalObjectToValues(object, keys, type);
+    return { columns: keys, text };
   }
   private _internalObjectToValues(
     object: Record<string, any>,
     keys: readonly string[],
-    type: (ColumnToValueConfig | undefined)[]
+    type: (ColumnToValueConfig | undefined)[],
   ) {
     const values: string[] = [];
     let i = 0;
@@ -262,12 +273,12 @@ export class SqlValuesCreator {
   createValues<T extends {}>(
     asName: string,
     values: T[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>,
   ): SqlStatementDataset<T>;
   createValues(
     asName: string,
     values: Record<string, any>[],
-    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>
+    valuesTypes: Record<string, string | { sqlType: string; sqlDefault?: string; assertJsType?: AssertJsType }>,
   ): SqlStatementDataset<any> {
     if (values.length === 0) throw new Error("values 不能为空");
     const insertKeys: string[] = Object.keys(valuesTypes);
@@ -314,6 +325,13 @@ export class SqlValuesCreator {
     return new YourValuesAs(insertKeys, asName, valuesStr.join(",\n"));
   }
 }
+
+/** @public */
+export type SqlValueData = {
+  columns: readonly string[];
+  text: string;
+};
+
 class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
   constructor(columns: readonly string[], asName: string, valuesStr: string) {
     super();
@@ -332,11 +350,20 @@ class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
   }
 }
 /** @public */
-export type ColumnToValueConfig = { sqlType?: string; assertJsType?: AssertJsType };
+export type ColumnToValueConfig = {
+  /** 设置显式 SQL 类型，设置后会显示转换 SQL 值 */
+  sqlType?: string;
+  /** 设置 JS 转换器类型，引导转换器如何将 JS 值转换为 SQL 值 */
+  assertJsType?: AssertJsType;
+};
+/** @public */
+export type ObjectToValueKeys<T extends {}> =
+  | readonly (keyof T)[]
+  | { [key in keyof T]?: string | undefined | ColumnToValueConfig };
 
 function initColumnAssert(
   keys: readonly string[],
-  keys_types: Record<string, string | undefined | ColumnToValueConfig>
+  keys_types: Record<string, string | undefined | ColumnToValueConfig>,
 ) {
   let key: string;
   let value: any;

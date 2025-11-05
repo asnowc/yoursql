@@ -8,12 +8,11 @@
 type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 // @public (undocumented)
-interface ChainAfterConflictDo<T extends TableType = {}> {
+interface ChainAfterConflict {
     // (undocumented)
-    doNotThing(): ChainModifyReturning<T>;
-    doUpdate(set: Constructable<string | {
-        [key in keyof T]?: string;
-    }>): ChainModifyReturning<T>;
+    doNotThing(): ChainInsertReturning;
+    // (undocumented)
+    doUpdate(set: Constructable<string | string[] | Record<string, string>>): ChainInsertReturning;
     // (undocumented)
     toString(): string;
 }
@@ -29,54 +28,88 @@ interface ChainCTE {
 }
 
 // @public (undocumented)
-interface ChainDelete<T extends TableType = {}> extends ChainDeleteWhere<T> {
+interface ChainDelete extends ChainDeleteAfterUsing {
     // (undocumented)
     using(...table: (Constructable<string> | {
         selectable: Constructable<string>;
         as: string;
-    })[]): ChainDeleteWhere<T>;
+    })[]): ChainDeleteAfterUsing;
 }
 
 // @public (undocumented)
-interface ChainDeleteWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainDeleteAfterUsing extends ChainDeleteReturning {
     // (undocumented)
-    where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+    where(where: Constructable<ConditionParam | void>): ChainDeleteReturning;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ChainModifyReturning" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+interface ChainDeleteReturning extends ChainModifyReturning {
 }
 
 // @public (undocumented)
-interface ChainInsert<T extends TableType = {}> extends ChainModifyReturning<T> {
+interface ChainInsert extends ChainInsertAfterValues {
     // (undocumented)
-    onConflict(option: Constructable<readonly (keyof T)[] | string>): ChainAfterConflictDo<T>;
+    select(statement: Constructable<string>): ChainInsertAfterValues;
+    // (undocumented)
+    values(statement: Constructable<string | string[]>): ChainInsertAfterValues;
 }
 
 // @public (undocumented)
-interface ChainModifyReturning<T extends TableType = {}> extends SqlStatement {
+interface ChainInsertAfterValues extends ChainInsertReturning {
     // (undocumented)
-    returning(columns: "*"): SqlStatementDataset<T>;
-    // (undocumented)
-    returning(columns: Constructable<SelectParam>): SqlStatementDataset<Record<string, any>>;
-    // (undocumented)
-    returning<R extends TableType>(columns: Constructable<SelectParam>): SqlStatementDataset<R>;
+    onConflict(columns: string | string[]): ChainAfterConflict;
 }
 
 // @public (undocumented)
-interface ChainSelect<T extends TableType> extends ChainSelectAfterWhere<T> {
+interface ChainInsertReturning extends ChainModifyReturning {
+}
+
+// @public (undocumented)
+interface ChainSelect<T extends TableType> {
     // (undocumented)
-    where(param: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T>;
+    from(selectable: Constructable<SqlSelectable | string>, option?: SelectAsNameOption): ChainSelectAfterFirstFrom<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterFirstFrom<T extends TableType> extends ChainSelectAfterFrom<T> {
+    // (undocumented)
+    from(selectable: Constructable<SqlSelectable | string>, option?: SelectAsNameOption): ChainSelectAfterFirstFrom<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterFrom<T extends TableType> extends ChainSelectAfterJoin<T> {
+    // (undocumented)
+    crossJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectAsNameOption): ChainSelectAfterFrom<T>;
+    // (undocumented)
+    fullJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectJoinOption): ChainSelectAfterFrom<T>;
+    // (undocumented)
+    innerJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectJoinOption): ChainSelectAfterFrom<T>;
+    // (undocumented)
+    leftJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectJoinOption): ChainSelectAfterFrom<T>;
+    // (undocumented)
+    naturalJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectAsNameOption): ChainSelectAfterFrom<T>;
+    // (undocumented)
+    rightJoin(selectable: Constructable<SqlSelectable | string>, options?: SelectJoinOption): ChainSelectAfterFrom<T>;
 }
 
 // @public (undocumented)
 interface ChainSelectAfterGroupBy<T extends TableType> extends ChainSelectAfterHaving<T> {
     // (undocumented)
     having(param: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T>;
-    // (undocumented)
-    orderBy(param: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
 }
 
 // @public (undocumented)
 interface ChainSelectAfterHaving<T extends TableType> extends ChainSelectAfterOrderBy<T> {
     // (undocumented)
     orderBy(param: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
+}
+
+// @public (undocumented)
+interface ChainSelectAfterJoin<T extends TableType> extends ChainSelectAfterWhere<T> {
+    // (undocumented)
+    where(param: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T>;
 }
 
 // @public (undocumented)
@@ -92,22 +125,34 @@ interface ChainSelectAfterOrderBy<T extends TableType> extends SqlStatementDatas
 // @public (undocumented)
 interface ChainSelectAfterWhere<T extends TableType> extends ChainSelectAfterHaving<T> {
     // (undocumented)
-    groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T>;
+    groupBy(columns?: string | string[]): ChainSelectAfterGroupBy<T>;
 }
 
 // @public (undocumented)
-interface ChainUpdate<T extends TableType = {}> extends ChainUpdateWhere<T> {
+interface ChainUpdate<T extends TableType = TableType> {
+    // (undocumented)
+    set(value: Constructable<{
+        [key in keyof T]?: string;
+    } | string>): ChainUpdateAfterSet;
+}
+
+// @public (undocumented)
+interface ChainUpdateAfterForm extends ChainUpdateReturning {
+    // (undocumented)
+    where(where: Constructable<ConditionParam | void>): ChainUpdateReturning;
+}
+
+// @public (undocumented)
+interface ChainUpdateAfterSet extends ChainUpdateAfterForm {
     // (undocumented)
     from(...table: (Constructable<string> | {
         selectable: Constructable<string>;
         as: string;
-    })[]): ChainUpdateWhere<T>;
+    })[]): ChainUpdateAfterForm;
 }
 
 // @public (undocumented)
-interface ChainUpdateWhere<T extends TableType = {}> extends ChainModifyReturning<T> {
-    // (undocumented)
-    where(where: Constructable<ConditionParam | void>): ChainModifyReturning<T>;
+interface ChainUpdateReturning extends ChainModifyReturning {
 }
 
 declare namespace client {
@@ -176,48 +221,56 @@ declare namespace core {
         AssertJsType,
         SqlValueFn,
         SqlValuesCreator,
+        SqlValueData,
         ColumnToValueConfig,
-        PickColumn,
-        ToInsertType,
-        UpdateRowValue,
-        OrderValue,
-        TableType,
-        DbTable,
-        DeleteOption,
-        SqlSelectChain,
-        Selection_2 as Selection,
+        ObjectToValueKeys,
         SqlStatement,
         SqlSelectable,
         SqlStatementDataset,
         SqlTextStatementDataset,
         InferQueryResult,
-        ChainModifyReturning,
-        ChainAfterConflictDo,
-        ChainUpdateWhere,
-        ChainDeleteWhere,
-        ChainInsert,
-        ChainUpdate,
-        ChainDelete,
+        select,
+        orderBy,
+        SelectAsNameOption,
         ChainSelect,
+        ChainSelectAfterFirstFrom,
+        SelectJoinOption,
+        ChainSelectAfterFrom,
+        ChainSelectAfterJoin,
         ChainSelectAfterWhere,
         ChainSelectAfterGroupBy,
         ChainSelectAfterHaving,
         ChainSelectAfterOrderBy,
         ChainSelectAfterLimit,
-        DbTableQuery,
+        OrderValue,
+        OrderBehavior,
+        OrderByParam,
+        insertInto,
+        ChainAfterConflict,
+        ChainInsert,
+        ChainInsertAfterValues,
+        ChainInsertReturning,
+        update,
+        UpdateOption,
+        ChainUpdate,
+        ChainUpdateAfterSet,
+        ChainUpdateAfterForm,
+        ChainUpdateReturning,
+        deleteFrom,
+        DeleteOption,
+        ChainDelete,
+        ChainDeleteAfterUsing,
+        ChainDeleteReturning,
         withAs,
         withRecursiveAs,
         ChainCTE,
-        getObjectListKeys,
-        where,
-        having,
         selectColumns,
-        orderBy,
-        Constructable,
         ConditionParam,
+        Constructable,
         SelectParam,
-        OrderBehavior,
-        OrderByParam,
+        ToInsertType,
+        UpdateRowValue,
+        TableType,
         TypeChecker,
         ColumnMeta,
         YourTypeMap,
@@ -363,47 +416,6 @@ interface DbQueryPool extends DbQuery {
 }
 
 // @public
-class DbTable<T extends TableType> {
-    constructor(name: string);
-    // @deprecated (undocumented)
-    delete(option: {
-        where?: Constructable<ConditionParam | void>;
-    }): ChainModifyReturning<T>;
-    // (undocumented)
-    delete(option?: DeleteOption): ChainDelete<T>;
-    // (undocumented)
-    fromAs(as?: string): Selection_2;
-    insert(columns: string, values: Constructable<string>): ChainInsert<T>;
-    // (undocumented)
-    readonly name: string;
-    select(columns: "*", as?: string): ChainSelect<T>;
-    select(columns: Constructable<{
-        [key in keyof T]?: string | boolean;
-    } & {
-        [key: string]: string | boolean;
-    }>, as?: string): ChainSelect<Record<string, any>>;
-    select<R extends {} = Record<string, any>>(columns: Constructable<string | string[]>, as?: string): ChainSelect<R>;
-    select<R extends {}>(columns: Constructable<{
-        [key in keyof R]: boolean | string;
-    } | string | string[]>, as?: string): ChainSelect<R>;
-    // (undocumented)
-    toSelect(): string;
-    update(values: Constructable<{
-        [key in keyof T]?: string;
-    } | string>, asName?: string): ChainUpdate<T>;
-}
-
-// @public (undocumented)
-class DbTableQuery<T extends TableType = Record<string, any>, C extends TableType = Partial<T>> extends DbTable<T> {
-    constructor(name: string, statement: SqlValuesCreator);
-    // (undocumented)
-    insert(values: Constructable<UpdateRowValue<C> | UpdateRowValue<C>[]>): ChainInsert<T>;
-    // (undocumented)
-    insert(columns: string, values: Constructable<string>): ChainInsert<T>;
-    updateFrom(values: Constructable<UpdateRowValue<T>>, asName?: string): ChainUpdate<T>;
-}
-
-// @public
 interface DbTransaction extends DbQuery, AsyncDisposable {
     commit(): Promise<void>;
     rollback(): Promise<void>;
@@ -413,16 +425,13 @@ interface DbTransaction extends DbQuery, AsyncDisposable {
 }
 
 // @public (undocumented)
+function deleteFrom(table: string, option?: DeleteOption): ChainDelete;
+
+// @public (undocumented)
 interface DeleteOption {
     // (undocumented)
     asName?: string;
 }
-
-// @public
-function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string>;
-
-// @public
-function having(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public
 type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
@@ -432,6 +441,12 @@ type InferTableDefined<T extends TableDefined> = {
     [key in keyof T]: T[key] extends ColumnMeta<infer P> ? P : unknown;
 };
 
+// @public (undocumented)
+function insertInto(target: string): ChainInsert;
+
+// @public (undocumented)
+function insertInto(table: string, columns: string[]): ChainInsert;
+
 // @public
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
@@ -439,17 +454,26 @@ type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 type MultipleQueryResult = SingleQueryResult[];
 
 // @public (undocumented)
+type ObjectToValueKeys<T extends {}> = readonly (keyof T)[] | {
+    [key in keyof T]?: string | undefined | ColumnToValueConfig;
+};
+
+// @public (undocumented)
 type OrderBehavior = {
     key: string;
     asc: boolean;
     nullLast?: boolean;
+    target?: undefined;
+} | {
+    key: string;
+    target: OrderByValue;
 };
 
 // @public
 function orderBy(by?: Constructable<OrderByParam | void>): string;
 
 // @public (undocumented)
-type OrderByParam = string | (string | OrderBehavior)[] | Record<string, boolean | `${OrderValue} ${"NULLS FIRST" | "NULLS LAST"}`>;
+type OrderByParam = string | OrderBehavior | (string | OrderBehavior)[];
 
 // @public (undocumented)
 type OrderValue = "ASC" | "DESC";
@@ -461,17 +485,6 @@ class ParallelQueryError extends Error {
 
 // @public
 const pgSqlTransformer: JsObjectMapSql;
-
-// @public @deprecated (undocumented)
-type PickColumn<T extends {
-    [key: string]: any;
-}, Rq extends keyof T = keyof T, Pa extends Exclude<keyof T, Rq> = never> = {
-    [key in Rq as null extends T[key] ? key : never]?: T[key];
-} & {
-    [key in Rq as null extends T[key] ? never : key]: T[key];
-} & {
-    [key in Pa]?: T[key];
-};
 
 // @public (undocumented)
 type QueryResult = MultipleQueryResult | SingleQueryResult;
@@ -485,35 +498,36 @@ interface QueryRowsResult<T = any> extends SingleQueryResult {
 }
 
 // @public (undocumented)
+function select(columns?: undefined | ""): ChainSelect<{}>;
+
+// @public (undocumented)
+function select<T extends TableType>(columns: "*"): ChainSelect<T>;
+
+// @public (undocumented)
+function select<T extends TableType>(columns: Constructable<{
+    [key in keyof T]: string | boolean;
+}>): ChainSelect<T>;
+
+// @public (undocumented)
+function select<T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
+
+// @public (undocumented)
+function select<T extends TableType>(columns: Constructable<string | string[] | {
+    [key in keyof T]: string | boolean;
+}>): ChainSelect<T>;
+
+// @public (undocumented)
+type SelectAsNameOption = {
+    as?: string;
+};
+
+// @public (undocumented)
 function selectColumns(columns: Constructable<SelectParam>): string;
 
 // @public (undocumented)
-class Selection_2 {
-    constructor(selectable: Constructable<SqlSelectable | string>, as?: string);
-    // (undocumented)
-    crossJoin(selectable: Constructable<SqlSelectable | string>, as?: string | undefined): Selection_2;
-    // (undocumented)
-    static from(selectable: Constructable<SqlSelectable | string>, as?: string): Selection_2;
-    // (undocumented)
-    from(selectable: Constructable<SqlSelectable | string>, as?: string): Selection_2;
-    // (undocumented)
-    fullJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    // (undocumented)
-    innerJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    // (undocumented)
-    leftJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    // (undocumented)
-    naturalJoin(selectable: Constructable<SqlSelectable | string>, as?: string | undefined): Selection_2;
-    // (undocumented)
-    rightJoin(selectable: Constructable<SqlSelectable | string>, as: string | undefined, on: Constructable<ConditionParam>): Selection_2;
-    select<T extends TableType = Record<string, any>>(columns: "*"): ChainSelect<T>;
-    select(columns: Constructable<SelectParam>): ChainSelect<Record<string, any>>;
-    select<T extends TableType>(columns: Constructable<{
-        [key in keyof T]: string | boolean;
-    } | string>): ChainSelect<T>;
-    // (undocumented)
-    toString(): string;
-}
+type SelectJoinOption = SelectAsNameOption & {
+    on?: Constructable<ConditionParam>;
+};
 
 // @public (undocumented)
 type SelectParam = string | string[] | Record<string, string | boolean>;
@@ -536,21 +550,7 @@ function sqlLikeToString(sqlLike: SqlLike): string;
 
 // @public
 interface SqlSelectable {
-    toSelect(): string;
-}
-
-// @public
-class SqlSelectChain<T extends TableType> extends SqlTextStatementDataset<T> implements ChainSelect<T> {
-    // (undocumented)
-    groupBy(columns: string | string[]): ChainSelectAfterGroupBy<T>;
-    // (undocumented)
-    having(param?: Constructable<ConditionParam | void>): ChainSelectAfterHaving<T>;
-    // (undocumented)
-    limit(limit?: number, offset?: number): ChainSelectAfterLimit<T>;
-    // (undocumented)
-    orderBy(param?: Constructable<OrderByParam | void>): ChainSelectAfterOrderBy<T>;
-    // (undocumented)
-    where(param?: Constructable<ConditionParam | void>): ChainSelectAfterWhere<T>;
+    toSelect(asName?: string): string;
 }
 
 // @public (undocumented)
@@ -561,7 +561,7 @@ abstract class SqlStatement {
 
 // @public (undocumented)
 abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelectable {
-    toSelect(): string;
+    toSelect(asName?: string): string;
 }
 
 // @public (undocumented)
@@ -572,6 +572,12 @@ class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
     // (undocumented)
     readonly sql: string;
 }
+
+// @public (undocumented)
+type SqlValueData = {
+    columns: readonly string[];
+    text: string;
+};
 
 // @public
 type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
@@ -594,14 +600,12 @@ class SqlValuesCreator {
     // (undocumented)
     protected defaultObject(value: object): string;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
+    objectListToValues<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): SqlValueData;
     // @deprecated (undocumented)
-    getObjectType(value: object): SqlValueEncoder;
-    objectListToValuesList<T extends object>(objectList: T[], keys?: readonly (keyof T)[] | {
-        [key in keyof T]?: string | undefined | ColumnToValueConfig;
-    }, keepUndefinedKey?: boolean): string;
-    objectToValues<T extends object>(object: T, keys?: readonly (keyof T)[] | {
-        [key in keyof T]?: string | undefined | ColumnToValueConfig;
-    }): string;
+    objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): string;
+    objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValueData;
+    // @deprecated (undocumented)
+    objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string;
     setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
     // (undocumented)
     setTransformer(map: JsObjectMapSql): void;
@@ -644,15 +648,21 @@ class TypeChecker<T> {
 }
 
 // @public (undocumented)
+function update<T extends TableType>(table: string, options?: UpdateOption): ChainUpdate<T>;
+
+// @public (undocumented)
+interface UpdateOption {
+    // (undocumented)
+    asName?: string;
+}
+
+// @public (undocumented)
 type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | String;
 };
 
 // @public
 const v: SqlValueFn;
-
-// @public
-function where(conditions?: Constructable<ConditionParam | void>, type?: "AND" | "OR"): string;
 
 // @public (undocumented)
 function withAs(statement: Constructable<string>): ChainCTE;
@@ -667,14 +677,16 @@ function withRecursiveAs(statement: Constructable<string>): ChainCTE;
 function withRecursiveAs(name: string, statement: Constructable<string>): ChainCTE;
 
 // @public
-class YourTable<T extends TableType = TableType, C extends TableType = T> extends DbTableQuery<T, C> {
-    constructor(name: string, define: TableDefined, sqlValue: SqlValuesCreator);
+class YourTable<T extends TableType = TableType> {
+    constructor(name: string, define: TableDefined);
     // (undocumented)
     readonly columns: readonly string[];
     // (undocumented)
     createTypeChecker<T>(keys: readonly string[]): TypeChecker<T>;
     // (undocumented)
     getColumnMeta(name: keyof T): ColumnMeta<unknown>;
+    // (undocumented)
+    readonly name: string;
 }
 
 // Warning: (ae-forgotten-export) The symbol "TypeMapDefined" needs to be exported by the entry point index.d.ts
@@ -705,6 +717,10 @@ class YourTypeMap<M extends TypeMapDefined> {
     // (undocumented)
     genColumn<T>(type: keyof M, noNull?: boolean, defaultValue?: string): ColumnMeta<T | null>;
 }
+
+// Warnings were encountered during analysis:
+//
+// src/sql_gen/statement/select_chain.ts:99:20 - (ae-forgotten-export) The symbol "OrderByValue" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

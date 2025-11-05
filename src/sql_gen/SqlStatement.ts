@@ -23,7 +23,7 @@ export interface SqlSelectable {
    * 如果是 table 则是 table name
    * 如果是 选择语句，则是 (xxx)
    */
-  toSelect(): string;
+  toSelect(asName?: string): string;
 }
 
 /** @public */
@@ -33,8 +33,10 @@ export abstract class SqlStatementDataset<T> extends SqlStatement implements Sql
    * 如果是 table 则是 table name
    * 如果是 选择语句，则是 (xxx)
    */
-  toSelect(): string {
-    return "(" + this.genSql() + ")";
+  toSelect(asName?: string): string {
+    let result = "(" + this.genSql() + ")";
+    if (asName) result += " AS " + asName;
+    return result;
   }
 }
 
