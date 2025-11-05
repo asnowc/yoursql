@@ -1,4 +1,5 @@
-import { SqlValuesCreator, JsObjectMapSql, SqlValueEncoder, AssertJsType } from "./sql_value.ts";
+import { SqlValuesCreator, JsObjectMapSql, SqlValueEncoder } from "./sql_value.ts";
+import { AssertJsType } from "./type.ts";
 
 /** @public PgSql 转换器 */
 export const pgSqlTransformer: JsObjectMapSql = new Map<new (...args: any[]) => any, SqlValueEncoder>([

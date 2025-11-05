@@ -1,15 +1,13 @@
-import { TableType } from "../util.ts";
-import { SqlStatementDataset } from "../SqlStatement.ts";
+import { SqlStatementDataset, SqlTemplate } from "../SqlStatement.ts";
 import { getObjectListKeys } from "../_statement.ts";
+import { ValueSqlTemplate } from "./ValueSqlTemplate.ts";
+import { initColumnAssert, YourValuesAs } from "./_utils.ts";
+import { AssertJsType, ColumnToValueConfig, ObjectToValueKeys, SqlValueData } from "./type.ts";
 
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 /** @public 将 js 值转为 SQl 字符串的函数*/
 export type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
-
-/** @public 断言类型 */
-export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
-
 /** @public */
 export type SqlValueFn = SqlValuesCreator & {
   /**
@@ -107,6 +105,16 @@ export class SqlValuesCreator {
         let type = typeof value;
         throw new Error("不支持 " + type + " 类型");
     }
+  }
+
+  /** @alpha */
+  gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate {
+    let sql = split[0];
+    for (let i = 0; i < values.length; i++) {
+      sql += this.toSqlStr(values[i]);
+      sql += split[i + 1];
+    }
+    return new ValueSqlTemplate(this.toSqlStr.bind(this), split, values);
   }
 
   /** 获取值对应已定义的类 */
@@ -326,59 +334,6 @@ export class SqlValuesCreator {
   }
 }
 
-/** @public */
-export type SqlValueData = {
-  columns: readonly string[];
-  text: string;
-};
-
-class YourValuesAs<T extends TableType> extends SqlStatementDataset<T> {
-  constructor(columns: readonly string[], asName: string, valuesStr: string) {
-    super();
-    this.#asName = asName;
-    this.#valuesStr = valuesStr;
-    this.#sql = `(VALUES\n${this.#valuesStr})\nAS ${this.#asName}(${columns.join(",")})`;
-  }
-  #asName: string;
-  #valuesStr: string;
-  #sql: string;
-  override toSelect(): string {
-    return this.#sql;
-  }
-  genSql(): string {
-    return this.#sql;
-  }
-}
-/** @public */
-export type ColumnToValueConfig = {
-  /** 设置显式 SQL 类型，设置后会显示转换 SQL 值 */
-  sqlType?: string;
-  /** 设置 JS 转换器类型，引导转换器如何将 JS 值转换为 SQL 值 */
-  assertJsType?: AssertJsType;
-};
-/** @public */
-export type ObjectToValueKeys<T extends {}> =
-  | readonly (keyof T)[]
-  | { [key in keyof T]?: string | undefined | ColumnToValueConfig };
-
-function initColumnAssert(
-  keys: readonly string[],
-  keys_types: Record<string, string | undefined | ColumnToValueConfig>,
-) {
-  let key: string;
-  let value: any;
-  let type = new Array(keys.length);
-  for (let i = 0; i < keys.length; i++) {
-    key = keys[i];
-    value = keys_types[key];
-    if (typeof value === "string") {
-      type[i] = { sqlType: value };
-    } else {
-      type[i] = value;
-    }
-  }
-  return type;
-}
 class AssertError extends TypeError {
   constructor(assertType: string, actual: string) {
     super(`Assert ${assertType} type, Actual ${actual} type`);

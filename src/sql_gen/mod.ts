@@ -1,5 +1,6 @@
 export * from "./sql_value/db_type.ts";
 export * from "./sql_value/sql_value.ts";
+export * from "./sql_value/type.ts";
 
 export * from "./SqlStatement.ts";
 

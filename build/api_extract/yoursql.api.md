@@ -218,9 +218,9 @@ declare namespace core {
         pgSqlTransformer,
         JsObjectMapSql,
         SqlValueEncoder,
-        AssertJsType,
         SqlValueFn,
         SqlValuesCreator,
+        AssertJsType,
         SqlValueData,
         ColumnToValueConfig,
         ObjectToValueKeys,
@@ -229,6 +229,7 @@ declare namespace core {
         SqlStatementDataset,
         SqlTextStatementDataset,
         InferQueryResult,
+        SqlTemplate,
         select,
         orderBy,
         SelectAsNameOption,
@@ -565,6 +566,21 @@ abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelecta
 }
 
 // @public (undocumented)
+interface SqlTemplate {
+    // (undocumented)
+    genSql(): string;
+    // (undocumented)
+    readonly templates: readonly string[];
+    // (undocumented)
+    toTextTemplate(): {
+        text: string;
+        values: string[];
+    };
+    // (undocumented)
+    readonly values: readonly unknown[];
+}
+
+// @public (undocumented)
 class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
     constructor(sql: string);
     // (undocumented)
@@ -599,6 +615,8 @@ class SqlValuesCreator {
     }>): SqlStatementDataset<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
+    // @alpha (undocumented)
+    gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
     objectListToValues<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): SqlValueData;
     // @deprecated (undocumented)

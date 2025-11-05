@@ -54,3 +54,12 @@ export class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
  * @public
  */
 export type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
+
+/** @public */
+export interface SqlTemplate {
+  readonly templates: readonly string[];
+  readonly values: readonly unknown[];
+
+  toTextTemplate(): { text: string; values: string[] };
+  genSql(): string;
+}
