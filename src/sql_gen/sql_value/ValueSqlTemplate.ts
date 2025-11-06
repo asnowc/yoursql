@@ -2,33 +2,33 @@ import { SqlTemplate } from "../SqlStatement.ts";
 
 export class ValueSqlTemplate implements SqlTemplate {
   readonly templates: readonly string[];
-  readonly values: readonly unknown[];
+  readonly args: readonly unknown[];
   constructor(
     private v: (value: unknown) => string,
     templates: readonly string[],
     values: readonly unknown[],
   ) {
     this.templates = templates;
-    this.values = values;
+    this.args = values;
   }
 
-  toTextTemplate(): { text: string; values: string[] } {
-    let text = "";
-    for (let i = 0; i < this.values.length; i++) {
-      text += this.templates[i];
-      text += "$" + (i + 1);
+  toTextTemplate(): { text: string; args: string[] } {
+    const { templates, args } = this;
+    let text = templates[0];
+    for (let i = 1; i < templates.length; i++) {
+      text += "$" + i;
+      text += templates[i];
     }
-    const values = this.values.map((value) => this.v(value));
-    return { text, values };
+    const values = args.map((value) => this.v(value));
+    return { text, args: values };
   }
 
   genSql(): string {
-    let sql = "";
-    for (let i = 0; i < this.values.length; i++) {
-      sql += this.templates[i];
-      sql += this.v(this.values[i]);
+    const { templates, args } = this;
+    let sql = this.templates[0];
+    for (let i = 1; i < templates.length; i++) {
+      sql += this.v(args[i - 1]) + templates[i];
     }
-    sql += this.templates[this.values.length];
     return sql;
   }
 }

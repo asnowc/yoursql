@@ -568,16 +568,16 @@ abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelecta
 // @public (undocumented)
 interface SqlTemplate {
     // (undocumented)
+    readonly args: readonly unknown[];
+    // (undocumented)
     genSql(): string;
     // (undocumented)
     readonly templates: readonly string[];
     // (undocumented)
     toTextTemplate(): {
         text: string;
-        values: string[];
+        args: string[];
     };
-    // (undocumented)
-    readonly values: readonly unknown[];
 }
 
 // @public (undocumented)

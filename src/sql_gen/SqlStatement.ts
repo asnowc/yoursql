@@ -58,8 +58,8 @@ export type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : n
 /** @public */
 export interface SqlTemplate {
   readonly templates: readonly string[];
-  readonly values: readonly unknown[];
+  readonly args: readonly unknown[];
 
-  toTextTemplate(): { text: string; values: string[] };
+  toTextTemplate(): { text: string; args: string[] };
   genSql(): string;
 }
