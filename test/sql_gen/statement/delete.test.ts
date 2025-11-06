@@ -16,11 +16,11 @@ test("deleteWithResult 不能为空", function () {
 
 test("delete from as using", function () {
   expect(
-    deleteFrom("user", { asName: "a" }).using("user_table AS u").where("u.id > 10 AND u.id= a.id").toString(),
+    deleteFrom("user", { as: "a" }).using("user_table AS u").where("u.id > 10 AND u.id= a.id").toString(),
   ).toBe("DELETE FROM user AS a\nUSING user_table AS u\nWHERE u.id > 10 AND u.id= a.id");
 });
 test("delete from as using multiple", function () {
-  const s = deleteFrom("user", { asName: "a" })
+  const s = deleteFrom("user", { as: "a" })
     .using("user_table AS b", "another_table AS c")
     .where("a.id =b.id OR a.id=c.id");
 

@@ -70,19 +70,19 @@ import { v } from "@asla/yoursql";
 v.toValues([1, "abc", null, undefined, { key: "value" }]); // `1,'abc',NULL,DEFAULT,'{"key":"value"}'`
 ```
 
-#### v.objectToValues()
+#### v.objectToValue()
 
 转换对象为 values 的单个值
 
 ```ts
 import { v } from "@asla/yoursql";
 const obj = { a: "a1", b: "b1", c: undefined, d: "d1" };
-v.objectToValues(obj); // "'a1','b1',DEFAULT,'d1'"
-v.objectToValues(obj, ["b", "a"]); // "'b1','a1'"
-v.objectToValues(obj, [{ a: "TEXT", b: {} }]); // 'a1'::TEXT,'b1'"
+v.objectToValue(obj); // "'a1','b1',DEFAULT,'d1'"
+v.objectToValue(obj, ["b", "a"]); // "'b1','a1'"
+v.objectToValue(obj, [{ a: "TEXT", b: {} }]); // 'a1'::TEXT,'b1'"
 ```
 
-#### v.objectListToValuesList()
+#### v.objectListToValues()
 
 转换对象数组为 values
 
@@ -92,10 +92,10 @@ import { v } from "@asla/yoursql";
 const values = [{ a: 1, b: 2 }, { c: 3 }];
 
 // 这将自动选择数组中所有键的并集
-v.objectListToValuesList(values); // "(1,2,null),(null,null,3)"
+v.objectListToValues(values); // "(1,2,null),(null,null,3)"
 
 // 或者你可以指定选择键并指定顺序
-const valueStr = v.objectListToValuesList(values, ["c", "b"]); // "(null,2),(3,3)"
+const valueStr = v.objectListToValues(values, ["c", "b"]); // "(null,2),(3,3)"
 
 const sql = `INSERT INTO user(name, role) VALUES ${valueStr}`;
 ```
@@ -121,12 +121,12 @@ v.createValues("customName", objectList, {
 ### 生成 SQL 语句
 
 ```ts
-import { Selection, v } from "@asla/yoursql";
+import { select, v } from "@asla/yoursql";
 
 const searchName = "Bob";
-const s = Selection.from("user", "u")
-  .innerJoin("role", "r", "u.id=r.user_id")
-  .select({ uid: "u.id", rid: "r.id", example: "u.id||r.id" }) // SELECT u.id AS uid, r.id AS rid u.id||u.id AS example
+const s = select({ uid: "u.id", rid: "r.id", example: "u.id||r.id" })
+  .from("user AS u")
+  .innerJoin("role", { as: "r", on: "u.id=r.user_id" })
   .where(`u.name LIKE %${v(searchName)}%`)
   .toString();
 ```

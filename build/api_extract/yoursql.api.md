@@ -431,7 +431,7 @@ function deleteFrom(table: string, option?: DeleteOption): ChainDelete;
 // @public (undocumented)
 interface DeleteOption {
     // (undocumented)
-    asName?: string;
+    as?: string;
 }
 
 // @public
@@ -671,7 +671,7 @@ function update<T extends TableType>(table: string, options?: UpdateOption): Cha
 // @public (undocumented)
 interface UpdateOption {
     // (undocumented)
-    asName?: string;
+    as?: string;
 }
 
 // @public (undocumented)

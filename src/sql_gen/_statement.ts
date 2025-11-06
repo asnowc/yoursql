@@ -95,11 +95,11 @@ export function createUpdateSetFromObject(set: Record<string, string | undefined
     return sql;
   } else throw new Error("值不能为空");
 }
-export function selectableToString(selectable: Constructable<SqlSelectable | string>, asName?: string): string {
+export function selectableToString(selectable: Constructable<SqlSelectable | string>, as?: string): string {
   if (typeof selectable === "function") selectable = selectable();
   let sql = typeof selectable === "string" ? selectable : selectable.toSelect();
   if (!sql) throw new Error("selectable can not be empty");
-  if (asName) sql += " AS " + asName;
+  if (as) sql += " AS " + as;
   return sql;
 }
 

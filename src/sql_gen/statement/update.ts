@@ -4,21 +4,21 @@ import { ChainUpdate, ChainUpdateAfterForm, ChainUpdateAfterSet, ChainUpdateRetu
 import { createUpdateSetFromObject, whereToString } from "../_statement.ts";
 /** @public */
 export interface UpdateOption {
-  asName?: string;
+  as?: string;
 }
 /**
  * @public
  * @example
  * ```ts
  *  update("table1 AS t").where("t.id = b.id") // UPDATE table1 AS t WHERE t.id = b.id
- *  update("table1",{ asName: "t" }).set({ k:"'v'"}) // UPDATE table1 AS t SET t.k = 'v'
+ *  update("table1",{ as: "t" }).set({ k:"'v'"}) // UPDATE table1 AS t SET t.k = 'v'
  *  update("table1").where("id = 1") // UPDATE table1 AS t WHERE id = 1
  * ```
  */
 export function update<T extends TableType>(table: string, options?: UpdateOption): ChainUpdate<T> {
   let sql = `UPDATE ${table}`;
-  if (options?.asName) {
-    sql += ` AS ${options.asName}`;
+  if (options?.as) {
+    sql += ` AS ${options.as}`;
   }
   return new UpdateChain(sql);
 }

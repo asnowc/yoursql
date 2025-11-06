@@ -27,7 +27,7 @@ WHERE id IS NULL`);
   });
   test("update-from", function () {
     const expectSql = "UPDATE user AS u SET\nlevel= ub.level\nFROM user_backup AS ub\nWHERE u.id = ub.id";
-    const base = update<Table>("user", { asName: "u" }).set({ level: "ub.level" });
+    const base = update<Table>("user", { as: "u" }).set({ level: "ub.level" });
     const sql = base.from("user_backup AS ub").where("u.id = ub.id").toString();
     expect(sql, "使用 from 语句更新").toBe(expectSql);
   });
@@ -37,7 +37,7 @@ level= b.level,name= c.name
 FROM bbb AS b, ccc AS c
 WHERE a.id = b.id AND a.name = c.name`;
 
-    const base = update<Table>("user", { asName: "a" }).set({ level: "b.level", name: "c.name" });
+    const base = update<Table>("user", { as: "a" }).set({ level: "b.level", name: "c.name" });
     const q1 = base.from("bbb AS b", "ccc AS c").where("a.id = b.id AND a.name = c.name").toString();
     expect(q1).toBe(expectSql);
   });

@@ -5,10 +5,10 @@
 ### 单表 select
 
 ```ts
-Selection.from("user").select("*"); // SELECT * FROM user
-Selection.from("user", "u").select("*"); // SELECT * FROM user AS u
-Selection.from("user").select(["name AS n", "age"]); // SELECT name AS n,age FROM user
-Selection.from("user").select({ n: "name", age: true }); // SELECT name AS n,age FROM user
+select("*").from("user"); // SELECT * FROM user
+select("*").from("user", { as: "u" }); // SELECT * FROM user AS u
+select(["name AS n", "age"]).from("user"); // SELECT name AS n,age FROM user
+select({ n: "name", age: true }).from("user"); // SELECT name AS n,age FROM user
 ```
 
 ### join
@@ -18,9 +18,9 @@ Selection.from("user").select({ n: "name", age: true }); // SELECT name AS n,age
 ```ts
 // SELECT u.name AS name,class_id AS c.id FROM user AS u
 // INNER JOIN class AS c ON u.id=c.user_id AND u.type=c.type
-Selection.from("user", "u")
-  .innerJoin("class", "c", ["u.id=c.user_id", "u.type=c.type"])
-  .select({ name: "u.name", class_id: "c.id" });
+select({ name: "u.name", class_id: "c.id" })
+  .from("user", { as: "u" })
+  .innerJoin("class", "c", ["u.id=c.user_id", "u.type=c.type"]);
 ```
 
 ### where
@@ -38,7 +38,7 @@ todo
 ### limit offset
 
 ```ts
-Selection.from("user").select("*").limit(10, 2); // SELECT * FROM user LIMIT 10 OFFSET 2
+select("*").from("user").limit(10, 2); // SELECT * FROM user LIMIT 10 OFFSET 2
 ```
 
 ### 子选择语句

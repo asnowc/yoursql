@@ -4,7 +4,7 @@ import { ChainDelete, ChainDeleteAfterUsing, ChainDeleteReturning } from "./dele
 import { returningToString, whereToString } from "../_statement.ts";
 /** @public */
 export interface DeleteOption {
-  asName?: string;
+  as?: string;
 }
 /**
  * @public
@@ -16,8 +16,8 @@ export interface DeleteOption {
  */
 export function deleteFrom(table: string, option?: DeleteOption): ChainDelete {
   let sql = `DELETE FROM ${table}`;
-  if (option?.asName) {
-    sql += ` AS ${option.asName}`;
+  if (option?.as) {
+    sql += ` AS ${option.as}`;
   }
   return new DeleteChain(sql);
 }
