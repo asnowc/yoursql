@@ -5,7 +5,7 @@ import { SqlSelectable } from "./SqlStatement.ts";
  * 获取对象数组中的 key 的集合
  * @param keepUndefinedKey - 是否保留值为 undefined 的 key
  */
-export function getObjectListKeys(objectList: any[], keepUndefinedKey?: boolean): Set<string> {
+export function getObjectListKeys(objectList: readonly any[], keepUndefinedKey?: boolean): Set<string> {
   let keys = new Set<string>();
   for (let i = 0; i < objectList.length; i++) {
     let obj = objectList[i];

@@ -199,6 +199,7 @@ class ColumnMeta<T> {
 type ColumnToValueConfig = {
     sqlType?: string;
     assertJsType?: AssertJsType;
+    sqlDefault?: string;
 };
 
 // @public (undocumented)
@@ -220,8 +221,9 @@ declare namespace core {
         SqlValueEncoder,
         SqlValueFn,
         SqlValuesCreator,
-        AssertJsType,
         SqlValuesTextData,
+        SqlExplicitValuesStatement,
+        AssertJsType,
         ColumnToValueConfig,
         ObjectToValueKeys,
         SqlStatement,
@@ -455,9 +457,11 @@ type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 type MultipleQueryResult = SingleQueryResult[];
 
 // @public (undocumented)
-type ObjectToValueKeys<T extends {}> = readonly (keyof T)[] | {
-    [key in keyof T]?: string | undefined | ColumnToValueConfig;
-};
+type ObjectToValueKeys<T extends {}> = readonly string[] | ({
+    [key in keyof T as key extends string ? key : never]?: string | ColumnToValueConfig;
+} & {
+    [key: string]: string | undefined | ColumnToValueConfig;
+});
 
 // @public (undocumented)
 type OrderBehavior = {
@@ -542,6 +546,17 @@ interface SingleQueryResult {
 }
 
 // @public (undocumented)
+class SqlExplicitValuesStatement {
+    constructor(columns: readonly string[], text: string);
+    // (undocumented)
+    columns: readonly string[];
+    // (undocumented)
+    readonly text: string;
+    // (undocumented)
+    toSelect(name: string): string;
+}
+
+// @public (undocumented)
 type SqlLike = {
     genSql(): string;
 } | string;
@@ -602,19 +617,26 @@ class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     static create(map?: JsObjectMapSql): SqlValueFn;
-    createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | {
+    createExplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
+    // (undocumented)
+    createExplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
+    createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesTextData;
+    // (undocumented)
+    createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
+    // @deprecated (undocumented)
+    createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | ({
         sqlType: string;
-        sqlDefault?: string;
-        assertJsType?: AssertJsType;
-    }>): SqlStatementDataset<T>;
+    } & Pick<ColumnToValueConfig, "assertJsType" | "sqlDefault">)>): SqlStatementDataset<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
     // @alpha (undocumented)
     gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
-    objectListToValues<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): SqlValuesTextData;
     // @deprecated (undocumented)
-    objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): string;
+    objectListToValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
+    // @deprecated (undocumented)
+    objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>): string;
+    // @deprecated (undocumented)
     objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValuesTextData;
     // @deprecated (undocumented)
     objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string;
