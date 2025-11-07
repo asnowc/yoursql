@@ -2,8 +2,8 @@
 export type AssertJsType = "bigint" | "number" | "string" | "boolean" | "object" | (new (...args: any[]) => any);
 
 /** @public */
-export type SqlValueData = {
-  columns: readonly string[];
+export type SqlValuesTextData = {
+  columns: string[];
   text: string;
 };
 

@@ -6,8 +6,8 @@ import { ChainAfterConflict, ChainInsert, ChainInsertAfterValues, ChainInsertRet
 /** @public */
 export function insertInto(target: string): ChainInsert;
 /** @public */
-export function insertInto(table: string, columns: string[]): ChainInsert;
-export function insertInto(table: string, columns?: string[]): ChainInsert {
+export function insertInto(table: string, columns: readonly string[]): ChainInsert;
+export function insertInto(table: string, columns?: readonly string[]): ChainInsert {
   if (columns) {
     return new InsertChain(`INSERT INTO ${table}(${columns.join(",")})`);
   } else {
@@ -19,7 +19,7 @@ class InsertChain extends SqlStatement implements ChainInsert {
   constructor(private sql: string) {
     super();
   }
-  values(statement: Constructable<string | string[]>): ChainInsertAfterValues {
+  values(statement: Constructable<string | readonly string[]>): ChainInsertAfterValues {
     if (typeof statement === "function") statement = statement();
     switch (typeof statement) {
       case "object":

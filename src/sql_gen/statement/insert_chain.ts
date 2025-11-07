@@ -4,7 +4,7 @@ import { ChainModifyReturning } from "./_modify.ts";
 /** @public */
 export interface ChainAfterConflict {
   doNotThing(): ChainInsertReturning;
-  doUpdate(set: Constructable<string | string[] | Record<string, string>>): ChainInsertReturning;
+  doUpdate(set: Constructable<string | readonly string[] | Record<string, string>>): ChainInsertReturning;
   toString(): string;
 }
 
@@ -17,7 +17,7 @@ export interface ChainInsert extends ChainInsertAfterValues {
    *  values(["(18, 'hi')", "(17, 'hh')"]) // " VALUES(18, 'hi'), (17, 'hh')"
    * ```
    */
-  values(statement: Constructable<string | string[]>): ChainInsertAfterValues;
+  values(statement: Constructable<string | readonly string[]>): ChainInsertAfterValues;
   select(statement: Constructable<string>): ChainInsertAfterValues;
 }
 /** @public */

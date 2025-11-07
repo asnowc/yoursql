@@ -1,11 +1,11 @@
 /** @public */
-export type ConditionParam = string | string[];
+export type ConditionParam = string | readonly string[];
 
 /** @public */
 export type Constructable<T> = T | (() => T);
 
 /** @public */
-export type SelectParam = string | string[] | Record<string, string | boolean>;
+export type SelectParam = string | readonly string[] | Record<string, string | boolean>;
 /**
  * @public
  * @example

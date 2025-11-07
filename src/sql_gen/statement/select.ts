@@ -28,7 +28,7 @@ export function select<T extends TableType>(
 export function select<T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
 /** @public */
 export function select<T extends TableType>(
-  columns: Constructable<string | string[] | { [key in keyof T]: string | boolean }>,
+  columns: Constructable<string | readonly string[] | { readonly [key in keyof T]: string | boolean }>,
 ): ChainSelect<T>;
 export function select<T extends TableType>(columns?: Constructable<SelectParam>): ChainSelect<T> {
   if (!columns) return new SelectChainAfterSelect("SELECT ");

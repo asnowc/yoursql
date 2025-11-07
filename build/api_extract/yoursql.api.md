@@ -12,7 +12,7 @@ interface ChainAfterConflict {
     // (undocumented)
     doNotThing(): ChainInsertReturning;
     // (undocumented)
-    doUpdate(set: Constructable<string | string[] | Record<string, string>>): ChainInsertReturning;
+    doUpdate(set: Constructable<string | readonly string[] | Record<string, string>>): ChainInsertReturning;
     // (undocumented)
     toString(): string;
 }
@@ -53,7 +53,7 @@ interface ChainInsert extends ChainInsertAfterValues {
     // (undocumented)
     select(statement: Constructable<string>): ChainInsertAfterValues;
     // (undocumented)
-    values(statement: Constructable<string | string[]>): ChainInsertAfterValues;
+    values(statement: Constructable<string | readonly string[]>): ChainInsertAfterValues;
 }
 
 // @public (undocumented)
@@ -202,7 +202,7 @@ type ColumnToValueConfig = {
 };
 
 // @public (undocumented)
-type ConditionParam = string | string[];
+type ConditionParam = string | readonly string[];
 
 // @public (undocumented)
 class ConnectionNotAvailableError extends Error {
@@ -221,7 +221,7 @@ declare namespace core {
         SqlValueFn,
         SqlValuesCreator,
         AssertJsType,
-        SqlValueData,
+        SqlValuesTextData,
         ColumnToValueConfig,
         ObjectToValueKeys,
         SqlStatement,
@@ -446,7 +446,7 @@ type InferTableDefined<T extends TableDefined> = {
 function insertInto(target: string): ChainInsert;
 
 // @public (undocumented)
-function insertInto(table: string, columns: string[]): ChainInsert;
+function insertInto(table: string, columns: readonly string[]): ChainInsert;
 
 // @public
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -513,8 +513,8 @@ function select<T extends TableType>(columns: Constructable<{
 function select<T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
 
 // @public (undocumented)
-function select<T extends TableType>(columns: Constructable<string | string[] | {
-    [key in keyof T]: string | boolean;
+function select<T extends TableType>(columns: Constructable<string | readonly string[] | {
+    readonly [key in keyof T]: string | boolean;
 }>): ChainSelect<T>;
 
 // @public (undocumented)
@@ -531,7 +531,7 @@ type SelectJoinOption = SelectAsNameOption & {
 };
 
 // @public (undocumented)
-type SelectParam = string | string[] | Record<string, string | boolean>;
+type SelectParam = string | readonly string[] | Record<string, string | boolean>;
 
 // @public (undocumented)
 interface SingleQueryResult {
@@ -589,12 +589,6 @@ class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
     readonly sql: string;
 }
 
-// @public (undocumented)
-type SqlValueData = {
-    columns: readonly string[];
-    text: string;
-};
-
 // @public
 type SqlValueEncoder<T = any> = (this: SqlValuesCreator, value: T) => string;
 
@@ -618,10 +612,10 @@ class SqlValuesCreator {
     // @alpha (undocumented)
     gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
-    objectListToValues<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): SqlValueData;
+    objectListToValues<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): SqlValuesTextData;
     // @deprecated (undocumented)
     objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>, keepUndefinedKey?: boolean): string;
-    objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValueData;
+    objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValuesTextData;
     // @deprecated (undocumented)
     objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string;
     setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
@@ -631,6 +625,12 @@ class SqlValuesCreator {
     toSqlStr(value: any, assertJsType?: AssertJsType): string;
     toValues(values: readonly any[]): string;
 }
+
+// @public (undocumented)
+type SqlValuesTextData = {
+    columns: string[];
+    text: string;
+};
 
 // @public (undocumented)
 type TableDefined = {
