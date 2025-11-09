@@ -1,6 +1,6 @@
-import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { SqlLike } from "./interfaces.ts";
 import { MultipleQueryResult, DbQueryBase, QueryRowsResult } from "./DbQueryBase.ts";
+import { SqlStatementDataset } from "./_type.ts";
 
 /**
  * SQL 查询相关操作
@@ -46,7 +46,7 @@ export abstract class DbQuery implements DbQueryBase {
    */
   queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(
     sql: SqlStatementDataset<T>,
-    key: K
+    key: K,
   ): Promise<Map<T[K], T>>;
   /**
    * 指定某一列为key，返回 key 到 row 的映射
@@ -54,7 +54,7 @@ export abstract class DbQuery implements DbQueryBase {
    */
   queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(
     sql: SqlLike,
-    key: K
+    key: K,
   ): Promise<Map<T[K], T>>;
   async queryMap(sql: SqlLike, key: string): Promise<Map<any, any>> {
     const { rows } = await this.query(sql);

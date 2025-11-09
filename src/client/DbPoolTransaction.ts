@@ -1,9 +1,9 @@
-import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { DbQuery } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult, SingleQueryResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
 import type { DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
+import { SqlStatementDataset } from "./_type.ts";
 
 /** @public */
 export type DbPoolTransactionOption = {
@@ -57,7 +57,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
               if (this.#errorRollback) {
                 return conn.rollback().then(onFinally, onFinally);
               } else onFinally();
-            }
+            },
           );
       });
     }) as FirstQuery;

@@ -1,4 +1,4 @@
-import type { SqlStatementDataset } from "../sql_gen/mod.ts";
+import { SqlStatementDataset } from "./_type.ts";
 import { SqlLike } from "./interfaces.ts";
 /** @public */
 export interface SingleQueryResult {

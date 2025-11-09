@@ -1,7 +1,7 @@
-import type { SqlStatementDataset } from "../sql_gen/mod.ts";
 import { DbQuery } from "./DbQuery.ts";
 import { DbPoolConnection } from "./DbPoolConnection.ts";
 import { DbCursor, DbCursorOption } from "./DbCursor.ts";
+import { SqlStatementDataset } from "./_type.ts";
 
 /**
  * 数据库连接

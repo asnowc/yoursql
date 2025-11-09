@@ -1,4 +1,4 @@
-import type { SqlStatementDataset } from "../sql_gen/mod.ts";
+import { SqlStatementDataset } from "./_type.ts";
 import { DbQuery } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult, DbQueryBase } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError } from "./errors.ts";
@@ -29,9 +29,7 @@ export class DbPoolConnection extends DbQuery {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
     return this.#conn.query(sql);
   }
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(
-    sql: SqlLike | SqlLike[]
-  ): Promise<T> {
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T> {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
     return this.#conn.multipleQuery(sql);
   }
