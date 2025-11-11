@@ -1,4 +1,4 @@
-import { SqlStatementDataset, SqlTemplate, SqlTextStatementDataset } from "../SqlStatement.ts";
+import { SqlTemplate } from "../SqlStatement.ts";
 import { getObjectListKeys } from "../_statement.ts";
 import { ValueSqlTemplate } from "./ValueSqlTemplate.ts";
 import { AssertJsType, ColumnToValueConfig, ObjectToValueKeys } from "./type.ts";
@@ -126,14 +126,6 @@ export class SqlValuesCreator {
     return SqlValuesCreator.string(JSON.stringify(value));
   }
 
-  /** @deprecated 改用 createImplicitValues */
-  objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>): string {
-    return this.objectListToValues(objectList, keys).text;
-  }
-  /** @deprecated 请使用 objectListToValues 代替 */
-  objectListToValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData {
-    return this.createImplicitValues(objectList, columns);
-  }
   /**
    * 将对象列表转为 SQL 的 VALUES。如果 objectList 中有某个对象的属性值为 undefined，则会被转换为 "DEFAULT"
    * @example 返回的文本示例： " (...),(...) "
@@ -233,35 +225,6 @@ export class SqlValuesCreator {
     return new SqlExplicitValuesStatement(keys, `(${text})`);
   }
 
-  /**
-   * @deprecated 请使用 objectToValue 代替
-   */
-  objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string;
-  objectToValues<T extends object>(
-    object: T,
-    keys_types?: readonly string[] | Record<string, string | undefined> | undefined,
-  ): string {
-    const { keys, type } = this._getObjectValueInfo(object, keys_types);
-    return this._internalObjectToValues(object, keys, type, "DEFAULT");
-  }
-  /**
-   * @deprecated 请使用 createImplicitValues 代替
-   * 将对象转为 SQL 的 value
-   * @example
-   * ```ts
-   *  v.objectToValue({ a: 1, b: "2", c: null, d: undefined }).text // "('1', '2', NULL, DEFAULT)"
-   *  v.objectToValue({ a: 1, b: "2", c: null, d: undefined }, ["a", "b"]).text // "('1', '2')"
-   *  v.objectToValue(
-   *    { a: 1, b: "2", c: null, d: undefined },
-   *    { a: "INT", b: "TEXT", c: "JSONB", d: "TEXT" }
-   *  ).text // "('1'::INT, '2'::TEXT, NULL::JSONB, DEFAULT::TEXT)"
-   * ```
-   * @param keys - 如果指定了key, object undefined 的属性值将填充为 null，如果不指定，将自获取 object 所有非 undefined 的属性的key
-   */
-  objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValuesTextData {
-    return this.createImplicitValues(object, keys);
-  }
-
   private _getObjectValueInfo(
     object: Record<string | number, any>,
     keys_types: readonly string[] | Record<string, string | undefined> | undefined,
@@ -322,42 +285,6 @@ export class SqlValuesCreator {
   toValues(values: readonly any[]): string {
     if (values.length === 0) throw new Error("values 不能为空");
     return values.map((v) => this.toSqlStr(v)).join(",");
-  }
-
-  /**
-   * @deprecated 请使用 objectListToValues 代替
-   * @public 创建 VALUES AS  语句
-   * @example
-   * ```ts
-   *  sqlValue.createValues(
-   *    "customName",
-   *    [{age:8, name:"hhh"}, {age:9, name:"row2"}],
-   *    {age:"INT", name:"TEXT"}
-   *  )
-   * // (VALUES (8:INT,'hhh':TEXT),(9,'row2')) AS customName(age, name)
-   * ```
-   */
-  createValues<T extends {}>(
-    asName: string,
-    values: T[],
-    valuesTypes: Record<
-      string,
-      string | ({ sqlType: string } & Pick<ColumnToValueConfig, "assertJsType" | "sqlDefault">)
-    >,
-  ): SqlStatementDataset<T>;
-  createValues(
-    asName: string,
-    values: Record<string, any>[],
-    valuesTypes: Record<
-      string,
-      string | ({ sqlType: string } & Pick<ColumnToValueConfig, "assertJsType" | "sqlDefault">)
-    >,
-  ): SqlStatementDataset<any> {
-    if (values.length === 0) throw new Error("values 不能为空");
-
-    const res = this.createExplicitValues<any>(values, valuesTypes); // 预检数据
-
-    return new SqlTextStatementDataset(res.toSelect(asName));
   }
 }
 type ObjectToValueOption = {

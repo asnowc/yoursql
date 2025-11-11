@@ -2,6 +2,12 @@ import { Constructable } from "../util.ts";
 import { ChainModifyReturning } from "./_modify.ts";
 
 /** @public */
+export interface InsertIntoSqlGenerator {
+  (target: string): ChainInsert;
+  (table: string, columns: readonly string[]): ChainInsert;
+}
+
+/** @public */
 export interface ChainAfterConflict {
   doNotThing(): ChainInsertReturning;
   doUpdate(set: Constructable<string | readonly string[] | Record<string, string>>): ChainInsertReturning;

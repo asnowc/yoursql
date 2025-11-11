@@ -4,14 +4,12 @@ const v = SqlValuesCreator.create(pgSqlTransformer);
 
 describe("insert", function () {
   test("insert", function () {
-    let sql = insertInto("user", ["name", "level"])
-      .values(
-        v.objectListToValuesList([
-          { name: "张三", level: 8 },
-          { name: "王五", level: 9 },
-        ]),
-      )
-      .genSql();
+    const q = v.createImplicitValues([
+      { name: "张三", level: 8 },
+      { name: "王五", level: 9 },
+    ]);
+
+    let sql = insertInto("user", q.columns).values(q.text).genSql();
     expect(sql).toBe(`INSERT INTO user(name,level)
 VALUES
 ('张三',8),
@@ -41,8 +39,8 @@ VALUES
     expect(() => base.values({} as any)).toThrowError();
   });
   test("insert-returning", function () {
-    const values = [{ name: "hh" }];
-    const base = insertInto("user(name)").values(v.objectListToValuesList(values));
+    const value = v.createImplicitValues([{ name: "hh" }]);
+    const base = insertInto("user", value.columns).values(value.text);
     expect(base.returning({ level: "rename", name: true }).toString(), "返回结果重命名").toBe(`INSERT INTO user(name)
 VALUES
 ('hh')

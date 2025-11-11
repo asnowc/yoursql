@@ -1,5 +1,15 @@
 import { ConditionParam, Constructable, TableType } from "../util.ts";
 import { SqlSelectable, SqlStatementDataset } from "../SqlStatement.ts";
+/** @public */
+export interface SelectSqlGenerator {
+  (columns?: undefined | ""): ChainSelect<{}>;
+  <T extends TableType>(columns: "*"): ChainSelect<T>;
+  <T extends TableType>(columns: Constructable<{ [key in keyof T]: string | boolean }>): ChainSelect<T>;
+  <T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
+  <T extends TableType>(
+    columns: Constructable<string | readonly string[] | { readonly [key in keyof T]: string | boolean }>,
+  ): ChainSelect<T>;
+}
 
 /** @public */
 export type SelectAsNameOption = { as?: string };

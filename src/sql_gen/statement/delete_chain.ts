@@ -1,6 +1,20 @@
 import { ConditionParam, Constructable } from "../util.ts";
 import { ChainModifyReturning } from "./_modify.ts";
-
+/** @public */
+export interface DeleteOption {
+  as?: string;
+}
+/**
+ * @public
+ * @example
+ * ```ts
+ * deleteFrom("table1").where("id = 1") // DELETE FROM table1 WHERE id = 1
+ * deleteFrom("table1 AS t").where("t.id = 1") // DELETE FROM table1 AS t WHERE t.id = 1
+ * ```
+ */
+export interface DeleteFromSqlGenerator {
+  (table: string, option?: DeleteOption): ChainDelete;
+}
 /** @public */
 export interface ChainDelete extends ChainDeleteAfterUsing {
   /**
