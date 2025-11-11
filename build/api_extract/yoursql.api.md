@@ -24,7 +24,15 @@ interface ChainCTE {
     // (undocumented)
     as(name: string, statement: Constructable<string>): ChainCTE;
     // (undocumented)
+    deleteFrom: DeleteFromSqlGenerator;
+    // (undocumented)
+    insertInto: InsertIntoSqlGenerator;
+    // (undocumented)
+    select: SelectSqlGenerator;
+    // (undocumented)
     toString(): string;
+    // (undocumented)
+    update: UpdateSqlGenerator;
 }
 
 // @public (undocumented)
@@ -234,6 +242,7 @@ declare namespace core {
         SqlTemplate,
         select,
         orderBy,
+        SelectSqlGenerator,
         SelectAsNameOption,
         ChainSelect,
         ChainSelectAfterFirstFrom,
@@ -249,18 +258,21 @@ declare namespace core {
         OrderBehavior,
         OrderByParam,
         insertInto,
+        InsertIntoSqlGenerator,
         ChainAfterConflict,
         ChainInsert,
         ChainInsertAfterValues,
         ChainInsertReturning,
         update,
         UpdateOption,
+        UpdateSqlGenerator,
         ChainUpdate,
         ChainUpdateAfterSet,
         ChainUpdateAfterForm,
         ChainUpdateReturning,
         deleteFrom,
         DeleteOption,
+        DeleteFromSqlGenerator,
         ChainDelete,
         ChainDeleteAfterUsing,
         ChainDeleteReturning,
@@ -428,7 +440,13 @@ interface DbTransaction extends DbQuery, AsyncDisposable {
 }
 
 // @public (undocumented)
-function deleteFrom(table: string, option?: DeleteOption): ChainDelete;
+const deleteFrom: DeleteFromSqlGenerator;
+
+// @public (undocumented)
+interface DeleteFromSqlGenerator {
+    // (undocumented)
+    (table: string, option?: DeleteOption): ChainDelete;
+}
 
 // @public (undocumented)
 interface DeleteOption {
@@ -445,10 +463,15 @@ type InferTableDefined<T extends TableDefined> = {
 };
 
 // @public (undocumented)
-function insertInto(target: string): ChainInsert;
+const insertInto: InsertIntoSqlGenerator;
 
 // @public (undocumented)
-function insertInto(table: string, columns: readonly string[]): ChainInsert;
+interface InsertIntoSqlGenerator {
+    // (undocumented)
+    (target: string): ChainInsert;
+    // (undocumented)
+    (table: string, columns: readonly string[]): ChainInsert;
+}
 
 // @public
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -503,23 +526,7 @@ interface QueryRowsResult<T = any> extends SingleQueryResult {
 }
 
 // @public (undocumented)
-function select(columns?: undefined | ""): ChainSelect<{}>;
-
-// @public (undocumented)
-function select<T extends TableType>(columns: "*"): ChainSelect<T>;
-
-// @public (undocumented)
-function select<T extends TableType>(columns: Constructable<{
-    [key in keyof T]: string | boolean;
-}>): ChainSelect<T>;
-
-// @public (undocumented)
-function select<T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
-
-// @public (undocumented)
-function select<T extends TableType>(columns: Constructable<string | readonly string[] | {
-    readonly [key in keyof T]: string | boolean;
-}>): ChainSelect<T>;
+const select: SelectSqlGenerator;
 
 // @public (undocumented)
 type SelectAsNameOption = {
@@ -536,6 +543,24 @@ type SelectJoinOption = SelectAsNameOption & {
 
 // @public (undocumented)
 type SelectParam = string | readonly string[] | Record<string, string | boolean>;
+
+// @public (undocumented)
+interface SelectSqlGenerator {
+    // (undocumented)
+    (columns?: undefined | ""): ChainSelect<{}>;
+    // (undocumented)
+    <T extends TableType>(columns: "*"): ChainSelect<T>;
+    // (undocumented)
+    <T extends TableType>(columns: Constructable<{
+        [key in keyof T]: string | boolean;
+    }>): ChainSelect<T>;
+    // (undocumented)
+    <T extends TableType>(columns: Constructable<string | string[]>): ChainSelect<T>;
+    // (undocumented)
+    <T extends TableType>(columns: Constructable<string | readonly string[] | {
+        readonly [key in keyof T]: string | boolean;
+    }>): ChainSelect<T>;
+}
 
 // @public (undocumented)
 interface SingleQueryResult {
@@ -623,23 +648,11 @@ class SqlValuesCreator {
     createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesTextData;
     // (undocumented)
     createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
-    // @deprecated (undocumented)
-    createValues<T extends {}>(asName: string, values: T[], valuesTypes: Record<string, string | ({
-        sqlType: string;
-    } & Pick<ColumnToValueConfig, "assertJsType" | "sqlDefault">)>): SqlStatementDataset<T>;
     // (undocumented)
     protected defaultObject(value: object): string;
     // @alpha (undocumented)
     gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
-    // @deprecated (undocumented)
-    objectListToValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
-    // @deprecated (undocumented)
-    objectListToValuesList<T extends object>(objectList: T[], keys?: ObjectToValueKeys<T>): string;
-    // @deprecated (undocumented)
-    objectToValue<T extends object>(object: T, keys?: ObjectToValueKeys<T>): SqlValuesTextData;
-    // @deprecated (undocumented)
-    objectToValues<T extends object>(object: T, keys?: ObjectToValueKeys<T>): string;
     setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
     // (undocumented)
     setTransformer(map: JsObjectMapSql): void;
@@ -688,7 +701,7 @@ class TypeChecker<T> {
 }
 
 // @public (undocumented)
-function update<T extends TableType>(table: string, options?: UpdateOption): ChainUpdate<T>;
+const update: UpdateSqlGenerator;
 
 // @public (undocumented)
 interface UpdateOption {
@@ -700,6 +713,12 @@ interface UpdateOption {
 type UpdateRowValue<T extends object> = {
     [key in keyof T]?: T[key] | String;
 };
+
+// @public (undocumented)
+interface UpdateSqlGenerator {
+    // (undocumented)
+    <T extends TableType>(table: string, options?: UpdateOption): ChainUpdate<T>;
+}
 
 // @public
 const v: SqlValueFn;
@@ -760,7 +779,7 @@ class YourTypeMap<M extends TypeMapDefined> {
 
 // Warnings were encountered during analysis:
 //
-// src/sql_gen/statement/select_chain.ts:99:20 - (ae-forgotten-export) The symbol "OrderByValue" needs to be exported by the entry point index.d.ts
+// src/sql_gen/statement/select_chain.ts:109:20 - (ae-forgotten-export) The symbol "OrderByValue" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

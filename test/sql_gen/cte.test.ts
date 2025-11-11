@@ -16,7 +16,7 @@ describe("cte", function () {
       .as("cte3", "SELECT * FROM table3");
 
     expect(cte.toString()).toBe(
-      "WITH \ncte1 AS(SELECT * FROM table1)\ncte2 AS(SELECT * FROM table2)\ncte3 AS(SELECT * FROM table3)"
+      "WITH \ncte1 AS(SELECT * FROM table1),\ncte2 AS(SELECT * FROM table2),\ncte3 AS(SELECT * FROM table3)",
     );
   });
 });
@@ -35,7 +35,7 @@ describe("withRecursiveAs", function () {
       .as("cte3", "SELECT * FROM table3");
 
     expect(cte.toString()).toBe(
-      "WITH RECURSIVE \ncte1 AS(SELECT * FROM table1)\ncte2 AS(SELECT * FROM table2)\ncte3 AS(SELECT * FROM table3)"
+      "WITH RECURSIVE \ncte1 AS(SELECT * FROM table1),\ncte2 AS(SELECT * FROM table2),\ncte3 AS(SELECT * FROM table3)",
     );
   });
 });

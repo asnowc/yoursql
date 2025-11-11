@@ -2,6 +2,22 @@ import { ConditionParam, Constructable, TableType } from "../util.ts";
 import { ChainModifyReturning } from "./_modify.ts";
 
 /** @public */
+export interface UpdateOption {
+  as?: string;
+}
+/**
+ * @public
+ * @example
+ * ```ts
+ *  update("table1 AS t").where("t.id = b.id") // UPDATE table1 AS t WHERE t.id = b.id
+ *  update("table1",{ as: "t" }).set({ k:"'v'"}) // UPDATE table1 AS t SET t.k = 'v'
+ *  update("table1").where("id = 1") // UPDATE table1 AS t WHERE id = 1
+ * ```
+ */
+export interface UpdateSqlGenerator {
+  <T extends TableType>(table: string, options?: UpdateOption): ChainUpdate<T>;
+}
+/** @public */
 export interface ChainUpdate<T extends TableType = TableType> {
   set(value: Constructable<{ [key in keyof T]?: string } | string>): ChainUpdateAfterSet;
 }

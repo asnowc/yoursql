@@ -1,11 +1,22 @@
-import { Constructable } from "../util.ts";
-
+import { Constructable, selectColumns, SelectParam } from "../util.ts";
+import { SelectSqlGenerator } from "./select_chain.ts";
+import { UpdateSqlGenerator } from "./update_chain.ts";
+import { DeleteFromSqlGenerator } from "./delete_chain.ts";
+import { InsertIntoSqlGenerator } from "./insert_chain.ts";
+import { SelectChainAfterSelect } from "./select_impl.ts";
+import { DeleteChain } from "./delete_impl.ts";
+import { UpdateChain } from "./update_impl.ts";
+import { InsertChain } from "./insert_impl.ts";
 /**
  * @public
  */
 export interface ChainCTE {
   as(statement: Constructable<string>): ChainCTE;
   as(name: string, statement: Constructable<string>): ChainCTE;
+  select: SelectSqlGenerator;
+  update: UpdateSqlGenerator;
+  deleteFrom: DeleteFromSqlGenerator;
+  insertInto: InsertIntoSqlGenerator;
   toString(): string;
 }
 
@@ -56,10 +67,33 @@ class ChainCETImpl implements ChainCTE {
   as(statement: Constructable<string>): ChainCTE;
   as(name: string, statement: Constructable<string>): ChainCTE;
   as(nameOrStatement: Constructable<string>, statement?: Constructable<string>): ChainCTE {
-    if (statement) {
-      return new ChainCETImpl(`${this.sql}\n${concat(nameOrStatement, statement)}`);
+    return new ChainCETImpl(`${this.sql},\n${concat(nameOrStatement, statement)}`);
+  }
+  select<T extends {}>(columns?: Constructable<SelectParam>): SelectChainAfterSelect<T> {
+    if (!columns) return new SelectChainAfterSelect("SELECT ");
+    if (typeof columns === "function") columns = columns();
+
+    return new SelectChainAfterSelect("SELECT " + selectColumns(columns));
+  }
+  update(table: string, options?: any): UpdateChain {
+    let sql = `${this.sql}\nUPDATE ${table}`;
+    if (options?.as) {
+      sql += ` AS ${options.as}`;
+    }
+    return new UpdateChain(sql);
+  }
+  deleteFrom(table: string, option?: any): DeleteChain {
+    let sql = `${this.sql}\nDELETE FROM ${table}`;
+    if (option?.as) {
+      sql += ` AS ${option.as}`;
+    }
+    return new DeleteChain(sql);
+  }
+  insertInto(table: string, columns?: readonly string[]): any {
+    if (columns) {
+      return new InsertChain(`INSERT INTO ${table}(${columns.join(",")})`);
     } else {
-      return new ChainCETImpl(concat(nameOrStatement, statement));
+      return new InsertChain(`INSERT INTO ${table}`);
     }
   }
   toString(): string {
