@@ -239,7 +239,7 @@ export class SqlValuesCreator {
       keys = Object.keys(keys_types);
       type = initColumnAssert(keys, keys_types);
     } else {
-      keys = Object.keys(object);
+      keys = Object.keys(object).filter((k) => object[k] !== undefined);
       type = [];
     }
     return { keys, type };

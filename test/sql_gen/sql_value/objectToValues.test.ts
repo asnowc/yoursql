@@ -31,6 +31,11 @@ describe("auto-columns", function () {
     expect(s2.columns, "mya 不会被忽略, 结果列为 ab,cd,maa").toEqual(["ab", "cd"]);
     expect(s2.text, "空列被移除").toBe("(1,3),\n(2,4)");
   });
+  test("objectValue", function () {
+    const s1 = v.createImplicitValues({ f1: 1, f2: undefined });
+    expect(s1.columns, "f2会被忽略").toEqual(["f1"]);
+    expect(s1.text).toBe("(1)");
+  });
 });
 
 describe("指定建", function () {
