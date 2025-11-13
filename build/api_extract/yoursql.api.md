@@ -173,6 +173,7 @@ declare namespace client {
         DbQueryPool,
         SqlLike,
         sqlLikeToString,
+        isSqlTemplate,
         SingleQueryResult,
         QueryRowsResult,
         MultipleQueryResult,
@@ -225,6 +226,7 @@ declare namespace core {
     export {
         v,
         pgSqlTransformer,
+        TemplateSqlStatement as ValueSqlTemplate,
         JsObjectMapSql,
         SqlValueEncoder,
         SqlValueFn,
@@ -240,6 +242,7 @@ declare namespace core {
         SqlTextStatementDataset,
         InferQueryResult,
         SqlTemplate,
+        SqlTextTemplate,
         select,
         orderBy,
         SelectSqlGenerator,
@@ -391,10 +394,12 @@ type DbPoolTransactionOption = {
 };
 
 // @public
-abstract class DbQuery implements DbQueryBase {
+abstract class DbQuery {
     // (undocumented)
     abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
     multipleQueryRows<T extends any[] = any[]>(sql: SqlLike | SqlLike[]): Promise<T[]>;
+    // (undocumented)
+    abstract query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
     // (undocumented)
     abstract query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
     queryCount(sql: SqlLike): Promise<number>;
@@ -407,10 +412,9 @@ abstract class DbQuery implements DbQueryBase {
     queryRows<T = any>(sql: SqlLike): Promise<T[]>;
 }
 
-// @public (undocumented)
+// @public
 interface DbQueryBase {
     multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
-    query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
     query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
 }
 
@@ -473,6 +477,9 @@ interface InsertIntoSqlGenerator {
     (table: string, columns: readonly string[]): ChainInsert;
 }
 
+// @public (undocumented)
+function isSqlTemplate(obj: any): obj is SqlTemplate;
+
 // @public
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
 
@@ -514,7 +521,7 @@ class ParallelQueryError extends Error {
 // @public
 const pgSqlTransformer: JsObjectMapSql;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 type QueryResult = MultipleQueryResult | SingleQueryResult;
 
 // @public (undocumented)
@@ -584,9 +591,9 @@ class SqlExplicitValuesStatement {
 // @public (undocumented)
 type SqlLike = {
     genSql(): string;
-} | string;
+} | SqlTemplate | string;
 
-// @public (undocumented)
+// @public
 function sqlLikeToString(sqlLike: SqlLike): string;
 
 // @public
@@ -606,18 +613,13 @@ abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelecta
 }
 
 // @public (undocumented)
-interface SqlTemplate {
+interface SqlTemplate<T extends readonly any[] = readonly unknown[]> {
     // (undocumented)
-    readonly args: readonly unknown[];
-    // (undocumented)
-    genSql(): string;
+    readonly args: T;
     // (undocumented)
     readonly templates: readonly string[];
     // (undocumented)
-    toTextTemplate(): {
-        text: string;
-        args: string[];
-    };
+    toTextArgs(): string[];
 }
 
 // @public (undocumented)
@@ -627,6 +629,14 @@ class SqlTextStatementDataset<T> extends SqlStatementDataset<T> {
     genSql(): string;
     // (undocumented)
     readonly sql: string;
+}
+
+// @public (undocumented)
+interface SqlTextTemplate {
+    // (undocumented)
+    readonly textArgs: readonly string[];
+    // (undocumented)
+    readonly textTemplate: string;
 }
 
 // @public
@@ -651,7 +661,7 @@ class SqlValuesCreator {
     // (undocumented)
     protected defaultObject(value: object): string;
     // @alpha (undocumented)
-    gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate;
+    gen(split: TemplateStringsArray, ...values: any[]): TemplateSqlStatement;
     getClassType(value: object): undefined | (new (...args: unknown[]) => unknown);
     setTransformer(type: new (...args: any[]) => any, encoder?: SqlValueEncoder): void;
     // (undocumented)
@@ -676,6 +686,23 @@ type TableDefined = {
 type TableType = {
     [key: string]: any;
 };
+
+// @alpha (undocumented)
+class TemplateSqlStatement extends SqlStatement implements SqlTemplate, SqlTextTemplate {
+    constructor(v: (value: unknown) => string, templates: readonly string[], values: readonly unknown[]);
+    // (undocumented)
+    readonly args: readonly unknown[];
+    // (undocumented)
+    genSql(): string;
+    // (undocumented)
+    readonly templates: readonly string[];
+    // (undocumented)
+    get textArgs(): readonly string[];
+    // (undocumented)
+    get textTemplate(): string;
+    // (undocumented)
+    toTextArgs(): string[];
+}
 
 // @public
 type ToInsertType<T extends {

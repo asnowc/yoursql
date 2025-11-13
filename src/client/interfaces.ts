@@ -1,7 +1,7 @@
 import { DbQuery } from "./DbQuery.ts";
 import { DbPoolConnection } from "./DbPoolConnection.ts";
 import { DbCursor, DbCursorOption } from "./DbCursor.ts";
-import { SqlStatementDataset } from "./_type.ts";
+import { SqlStatementDataset, SqlTemplate } from "./_type.ts";
 
 /**
  * 数据库连接
@@ -67,4 +67,4 @@ export interface DbQueryPool extends DbQuery {
 }
 
 /** @public */
-export type SqlLike = { genSql(): string } | string;
+export type SqlLike = { genSql(): string } | SqlTemplate | string;

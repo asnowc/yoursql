@@ -1,6 +1,7 @@
-import { SqlTemplate } from "../SqlStatement.ts";
+import { SqlTemplate, SqlTextTemplate, SqlStatement } from "../SqlStatement.ts";
 
-export class ValueSqlTemplate implements SqlTemplate {
+/** @alpha */
+export class TemplateSqlStatement extends SqlStatement implements SqlTemplate, SqlTextTemplate {
   readonly templates: readonly string[];
   readonly args: readonly unknown[];
   constructor(
@@ -8,26 +9,40 @@ export class ValueSqlTemplate implements SqlTemplate {
     templates: readonly string[],
     values: readonly unknown[],
   ) {
+    super();
     this.templates = templates;
     this.args = values;
   }
-
-  toTextTemplate(): { text: string; args: string[] } {
-    const { templates, args } = this;
-    let text = templates[0];
-    for (let i = 1; i < templates.length; i++) {
-      text += "$" + i;
-      text += templates[i];
+  #textArgs?: readonly string[];
+  get textArgs(): readonly string[] {
+    if (!this.#textArgs) {
+      const textArgs = this.args.map((value) => this.v(value));
+      this.#textArgs = textArgs;
     }
-    const values = args.map((value) => this.v(value));
-    return { text, args: values };
+    return this.#textArgs;
   }
-
+  #textTemplate?: string;
+  get textTemplate(): string {
+    if (this.#textTemplate === undefined) {
+      const { templates } = this;
+      let text = templates[0];
+      for (let i = 1; i < templates.length; i++) {
+        text += "$" + i;
+        text += templates[i];
+      }
+      this.#textTemplate = text;
+    }
+    return this.#textTemplate;
+  }
+  toTextArgs(): string[] {
+    return [...this.textArgs];
+  }
   genSql(): string {
-    const { templates, args } = this;
+    const { templates } = this;
+    const textArgs = this.textArgs;
     let sql = this.templates[0];
     for (let i = 1; i < templates.length; i++) {
-      sql += this.v(args[i - 1]) + templates[i];
+      sql += textArgs[i - 1] + templates[i];
     }
     return sql;
   }

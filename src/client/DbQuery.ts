@@ -1,12 +1,13 @@
 import { SqlLike } from "./interfaces.ts";
-import { MultipleQueryResult, DbQueryBase, QueryRowsResult } from "./DbQueryBase.ts";
+import { MultipleQueryResult, QueryRowsResult } from "./DbQueryBase.ts";
 import { SqlStatementDataset } from "./_type.ts";
 
 /**
  * SQL 查询相关操作
  * @public
  */
-export abstract class DbQuery implements DbQueryBase {
+export abstract class DbQuery {
+  abstract query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
   abstract query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
   abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
   /** 单语句查询受影响的行 */

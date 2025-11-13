@@ -1,1 +1,1 @@
-export type { SqlStatementDataset } from "../sql_gen/mod.ts";
+export type { SqlStatementDataset, SqlTemplate, SqlTextTemplate } from "../sql_gen/mod.ts";

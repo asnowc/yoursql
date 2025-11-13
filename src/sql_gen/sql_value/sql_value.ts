@@ -1,7 +1,7 @@
-import { SqlTemplate } from "../SqlStatement.ts";
 import { getObjectListKeys } from "../_statement.ts";
-import { ValueSqlTemplate } from "./ValueSqlTemplate.ts";
+import { TemplateSqlStatement } from "./ValueSqlTemplate.ts";
 import { AssertJsType, ColumnToValueConfig, ObjectToValueKeys } from "./type.ts";
+export { TemplateSqlStatement as ValueSqlTemplate } from "./ValueSqlTemplate.ts";
 
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -107,13 +107,13 @@ export class SqlValuesCreator {
   }
 
   /** @alpha */
-  gen(split: TemplateStringsArray, ...values: any[]): SqlTemplate {
+  gen(split: TemplateStringsArray, ...values: any[]): TemplateSqlStatement {
     let sql = split[0];
     for (let i = 0; i < values.length; i++) {
       sql += this.toSqlStr(values[i]);
       sql += split[i + 1];
     }
-    return new ValueSqlTemplate(this.toSqlStr.bind(this), split, values);
+    return new TemplateSqlStatement(this.toSqlStr.bind(this), split, values);
   }
 
   /** 获取值对应已定义的类 */
