@@ -6,3 +6,4 @@ export * from "./DbQuery.ts";
 export * from "./DbCursor.ts";
 export * from "./DbPoolConnection.ts";
 export * from "./DbPoolTransaction.ts";
+export * from "./DbQueryPool.ts";

@@ -1,14 +1,15 @@
 import { DbPoolConnection, ConnectionNotAvailableError, DbQueryBase } from "@asla/yoursql/client";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, test } from "vitest";
 
 describe("DbPoolConnection", () => {
   const mockQuery = vi.fn();
-  const mockMultipleQuery = vi.fn();
+  const mockExecute = vi.fn(async () => {});
   const mockOnRelease = vi.fn();
 
   const mockConnection: DbQueryBase = {
     query: mockQuery,
-    multipleQuery: mockMultipleQuery,
+    execute: mockExecute,
+    multipleQuery: vi.fn(),
   };
 
   afterEach(() => {
@@ -17,12 +18,26 @@ describe("DbPoolConnection", () => {
 
   it("should execute a query", async () => {
     const poolConnection = new DbPoolConnection(mockConnection, mockOnRelease);
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValue({ rows: [] });
 
-    const result = await poolConnection.query("SELECT * FROM users");
+    {
+      const result = await poolConnection.query("SELECT * FROM users");
 
-    expect(mockQuery).toHaveBeenCalledWith("SELECT * FROM users");
-    expect(result).toEqual({ rows: [] });
+      expect(mockQuery).toHaveBeenCalledWith("SELECT * FROM users");
+      expect(result).toEqual({ rows: [] });
+    }
+    {
+      const result = await poolConnection.query(() => "SELECT * FROM users");
+
+      expect(mockQuery).toHaveBeenCalledWith("SELECT * FROM users");
+      expect(result).toEqual({ rows: [] });
+    }
+  });
+  test("execute sql", async () => {
+    const poolConnection = new DbPoolConnection(mockConnection, mockOnRelease);
+    await poolConnection.execute("UPDATE users SET name = 'test'");
+
+    expect(mockExecute).toHaveBeenCalledWith("UPDATE users SET name = 'test'");
   });
 
   it("should throw an error if query is called after release", async () => {
@@ -66,27 +81,6 @@ describe("DbPoolConnection", () => {
 
     expect(poolConnection.released).toBe(true);
     expect(mockOnRelease).toHaveBeenCalled();
-  });
-
-  it("should throw an error if multipleQuery is called after release", async () => {
-    const poolConnection = new DbPoolConnection(mockConnection, mockOnRelease);
-    poolConnection.release();
-
-    await expect(poolConnection.multipleQuery("SELECT * FROM users; SELECT * FROM orders;")).rejects.toThrow(
-      ConnectionNotAvailableError
-    );
-  });
-
-  it("should call multipleQuery on the connection", async () => {
-    const poolConnection = new DbPoolConnection(mockConnection, mockOnRelease);
-    mockMultipleQuery.mockResolvedValueOnce({ results: [] });
-
-    const result = await poolConnection.multipleQuery("SELECT * FROM users; SELECT * FROM orders;");
-    expect(mockMultipleQuery).toHaveBeenCalledWith("SELECT * FROM users; SELECT * FROM orders;");
-    expect(result).toEqual({ results: [] });
-
-    await poolConnection.multipleQuery(["SELECT * FROM users", "SELECT * FROM orders"]);
-    expect(mockMultipleQuery).toHaveBeenCalledWith(["SELECT * FROM users", "SELECT * FROM orders"]);
   });
 
   it("should call [Symbol.dispose] to release the connection", () => {
