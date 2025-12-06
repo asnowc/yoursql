@@ -1,6 +1,5 @@
-import { SqlStatementDataset } from "./_type.ts";
-import { DbQuery } from "./DbQuery.ts";
-import { type MultipleQueryResult, type QueryRowsResult, type DbQueryBase, sqlLikeToString } from "./DbQueryBase.ts";
+import { DbQuery, MultipleQueryInput, QueryDataInput, QueryInput } from "./DbQuery.ts";
+import { type QueryRowsResult, type DbQueryBase, MultipleQueryResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError } from "./errors.ts";
 import type { SqlLike, TransactionMode } from "./interfaces.ts";
 
@@ -23,16 +22,25 @@ export class DbPoolConnection extends DbQuery {
   }
   #conn?: DbQueryBase;
 
-  override query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  override query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
-  override query(sql: SqlLike): Promise<QueryRowsResult> {
+  override query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
+  override query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
+  override query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
+  override query(sql: QueryInput | MultipleQueryInput): Promise<any> {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
+    if (typeof sql === "function") sql = sql();
     return this.#conn.query(sql);
   }
+  override execute(sql: QueryInput | MultipleQueryInput): Promise<void> {
+    if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
+    if (typeof sql === "function") sql = sql();
+    return this.#conn.execute(sql);
+  }
+  /** @deprecated 不建议使用 */
   override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T> {
     if (!this.#conn) return Promise.reject(new ConnectionNotAvailableError("Connection already release"));
     return this.#conn.multipleQuery(sql);
   }
+
   //implement
   async rollback() {
     await this.query("ROLLBACK");

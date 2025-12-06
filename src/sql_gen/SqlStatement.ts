@@ -38,6 +38,12 @@ export abstract class SqlStatementDataset<T> extends SqlStatement implements Sql
     if (asName) result += " AS " + asName;
     return result;
   }
+  /**
+   * 仅用于类型推断，不应被调用
+   */
+  __infer(v: T): never {
+    throw new Error("cannot call test on SqlStatementDataset");
+  }
 }
 
 /** @public */

@@ -170,21 +170,26 @@ declare namespace client {
         DbConnection,
         TransactionMode,
         DbTransaction,
-        DbQueryPool,
+        DbPool,
         SqlLike,
         sqlLikeToString,
         isSqlTemplate,
         SingleQueryResult,
         QueryRowsResult,
         MultipleQueryResult,
-        QueryResult,
         DbQueryBase,
+        QueryInput,
+        QueryDataInput,
+        MultipleQueryInput,
         DbQuery,
         DbCursorOption,
         DbCursor,
         DbPoolConnection,
         DbPoolTransactionOption,
-        DbPoolTransaction
+        DbPoolTransaction,
+        ExecutableSQL,
+        QueryableDataSQL,
+        DbQueryPool
     }
 }
 
@@ -339,6 +344,22 @@ interface DbCursorOption {
 }
 
 // @public
+interface DbPool {
+    // (undocumented)
+    begin(mode?: TransactionMode): DbTransaction;
+    // (undocumented)
+    connect(): Promise<DbPoolConnection>;
+    // (undocumented)
+    cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
+    // (undocumented)
+    cursor<T>(sql: SqlLike, option?: DbCursorOption): Promise<DbCursor<T>>;
+    // (undocumented)
+    idleCount: number;
+    // (undocumented)
+    totalCount: number;
+}
+
+// @public
 class DbPoolConnection extends DbQuery {
     // (undocumented)
     [Symbol.dispose](): void;
@@ -348,11 +369,15 @@ class DbPoolConnection extends DbQuery {
     // (undocumented)
     commit(): Promise<void>;
     // (undocumented)
+    execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
+    // @deprecated (undocumented)
     multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
     // (undocumented)
-    query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
     // (undocumented)
-    query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
+    query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
+    // (undocumented)
+    query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
     release(): void;
     // (undocumented)
     get released(): boolean;
@@ -368,15 +393,17 @@ class DbPoolTransaction extends DbQuery implements DbTransaction {
     // (undocumented)
     commit(): Promise<void>;
     // (undocumented)
+    execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
+    // (undocumented)
     readonly mode?: TransactionMode;
-    // (undocumented)
-    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-    // (undocumented)
+    // @deprecated (undocumented)
     multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
     // (undocumented)
-    query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
     // (undocumented)
-    query<T extends object = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
+    query<T extends object = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
+    // (undocumented)
+    query<T extends object = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
     // (undocumented)
     get released(): boolean;
     // (undocumented)
@@ -396,42 +423,59 @@ type DbPoolTransactionOption = {
 // @public
 abstract class DbQuery {
     // (undocumented)
+    abstract execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
+    // @deprecated (undocumented)
     abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
+    // @deprecated
     multipleQueryRows<T extends any[] = any[]>(sql: SqlLike | SqlLike[]): Promise<T[]>;
     // (undocumented)
-    abstract query<T = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
+    abstract query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
     // (undocumented)
-    abstract query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
-    queryCount(sql: SqlLike): Promise<number>;
-    queryFirstRow<T = any>(sql: SqlStatementDataset<T>): Promise<T>;
+    abstract query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
     // (undocumented)
-    queryFirstRow<T = any>(sql: SqlLike): Promise<T>;
-    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: SqlStatementDataset<T>, key: K): Promise<Map<T[K], T>>;
-    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: SqlLike, key: K): Promise<Map<T[K], T>>;
-    queryRows<T = any>(sql: SqlStatementDataset<T>): Promise<T[]>;
-    queryRows<T = any>(sql: SqlLike): Promise<T[]>;
+    abstract query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
+    queryCount(sql: QueryInput): Promise<number>;
+    queryFirstRow<T = any>(sql: QueryDataInput<T>): Promise<T>;
+    // (undocumented)
+    queryFirstRow<T = any>(sql: QueryInput): Promise<T>;
+    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: QueryDataInput<T>, key: K): Promise<Map<T[K], T>>;
+    queryMap<T extends Record<string, any> = Record<string, any>, K extends keyof T = string>(sql: QueryInput, key: K): Promise<Map<T[K], T>>;
+    queryRows<T = any>(sql: QueryDataInput<T>): Promise<T[]>;
+    queryRows<T = any>(sql: QueryInput): Promise<T[]>;
 }
 
 // @public
 interface DbQueryBase {
+    execute(sql: SqlLike | SqlLike[]): Promise<void>;
     multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
     query<T = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
+    query<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike[]): Promise<T>;
+    // (undocumented)
+    query(sql: SqlLike[] | SqlLike): Promise<unknown[] | unknown>;
 }
 
 // @public
-interface DbQueryPool extends DbQuery {
+abstract class DbQueryPool extends DbQuery implements DbPool {
     // (undocumented)
-    begin(mode?: TransactionMode): DbTransaction;
+    abstract begin(mode?: TransactionMode): DbTransaction;
     // (undocumented)
-    connect(): Promise<DbPoolConnection>;
+    abstract connect(): Promise<DbPoolConnection>;
     // (undocumented)
-    cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
+    createExecutableSQL(statement: SqlLike): ExecutableSQL<void>;
     // (undocumented)
-    cursor<T>(sql: SqlLike, option?: DbCursorOption): Promise<DbCursor<T>>;
+    createQueryableSQL<Raw>(statement: SqlStatementDataset<Raw>): QueryableDataSQL<Raw, void>;
     // (undocumented)
-    idleCount: number;
+    createQueryableSQL<Raw>(statement: SqlLike): QueryableDataSQL<Raw, void>;
     // (undocumented)
-    totalCount: number;
+    createQueryableSQL<T extends SqlStatementDataset<any>, Res>(statement: T, transform: (queryable: DbQueryPool, statement: T) => Promise<Res>): QueryableDataSQL<InferQueryResult<T>, Awaited<Res>>;
+    // (undocumented)
+    createQueryableSQL<Raw, Res>(statement: SqlLike, transform: (queryable: DbQueryPool, statement: SqlLike) => Promise<Res>): QueryableDataSQL<Raw, Res>;
+    // (undocumented)
+    abstract cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
+    // (undocumented)
+    abstract cursor<T>(sql: SqlLike, option?: DbCursorOption): Promise<DbCursor<T>>;
+    abstract idleCount: number;
+    abstract totalCount: number;
 }
 
 // @public
@@ -458,6 +502,14 @@ interface DeleteOption {
     as?: string;
 }
 
+// @public (undocumented)
+interface ExecutableSQL<T = unknown> {
+    // (undocumented)
+    genSql(): string;
+    // (undocumented)
+    then(resolve: (data: T) => void, reject: () => void): void;
+}
+
 // @public
 type InferQueryResult<T> = T extends SqlStatementDataset<infer P> ? P : never;
 
@@ -482,6 +534,9 @@ function isSqlTemplate(obj: any): obj is SqlTemplate;
 
 // @public
 type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
+
+// @public (undocumented)
+type MultipleQueryInput = SqlLike[] | (() => SqlLike[]);
 
 // @public (undocumented)
 type MultipleQueryResult = SingleQueryResult[];
@@ -521,8 +576,27 @@ class ParallelQueryError extends Error {
 // @public
 const pgSqlTransformer: JsObjectMapSql;
 
-// @public @deprecated (undocumented)
-type QueryResult = MultipleQueryResult | SingleQueryResult;
+// @public (undocumented)
+interface QueryableDataSQL<Raw, Res = QueryRowsResult<Raw>> extends ExecutableSQL<Res> {
+    // (undocumented)
+    cursor(): Promise<DbCursor<Raw>>;
+    // (undocumented)
+    query(): Promise<QueryRowsResult<Raw>>;
+    // (undocumented)
+    queryCount(): Promise<number>;
+    // (undocumented)
+    queryFirstRow(): Promise<Raw>;
+    // (undocumented)
+    queryMap<K>(key: string): Promise<Map<K, Raw>>;
+    // (undocumented)
+    queryRows(): Promise<Raw[]>;
+}
+
+// @public (undocumented)
+type QueryDataInput<T> = SqlStatementDataset<T> | (() => SqlStatementDataset<T>);
+
+// @public (undocumented)
+type QueryInput = SqlLike | (() => SqlLike);
 
 // @public (undocumented)
 interface QueryRowsResult<T = any> extends SingleQueryResult {
@@ -609,6 +683,7 @@ abstract class SqlStatement {
 
 // @public (undocumented)
 abstract class SqlStatementDataset<T> extends SqlStatement implements SqlSelectable {
+    __infer(v: T): never;
     toSelect(asName?: string): string;
 }
 

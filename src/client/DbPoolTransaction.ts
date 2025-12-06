@@ -1,9 +1,8 @@
-import { DbQuery } from "./DbQuery.ts";
+import { DbQuery, MultipleQueryInput, QueryDataInput, QueryInput } from "./DbQuery.ts";
 import type { MultipleQueryResult, QueryRowsResult, SingleQueryResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
 import type { DbPoolConnection } from "./DbPoolConnection.ts";
 import type { DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
-import { SqlStatementDataset } from "./_type.ts";
 
 /** @public */
 export type DbPoolTransactionOption = {
@@ -17,6 +16,7 @@ export type DbPoolTransactionOption = {
 export class DbPoolTransaction extends DbQuery implements DbTransaction {
   #errorRollback?: boolean;
   readonly mode?: TransactionMode;
+  readonly #begin: string;
   constructor(connect: () => Promise<DbPoolConnection>, option?: TransactionMode | DbPoolTransactionOption) {
     super();
     if (option) {
@@ -26,113 +26,152 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
         this.#errorRollback = option.errorRollback;
       }
     }
-    this.#query = ((sql: SqlLike | SqlLike[], multiple?: boolean) => {
-      return new Promise<SingleQueryResult[] | SingleQueryResult>((resolve, reject) => {
-        this.#pending = connect()
-          .then((conn) => {
-            this.#conn = conn;
-            const begin = "BEGIN" + (this.mode ? " TRANSACTION ISOLATION LEVEL " + this.mode : "");
-            const promise = conn.multipleQuery(sql instanceof Array ? [begin, ...sql] : [begin, sql]);
-            this.#pending = promise;
-            this.#query = this.#queryAfter;
-            return promise;
-          })
-          .then(
-            (res) => {
-              this.#pending = undefined;
-              resolve(multiple ? res.slice(1) : res[1]);
-            },
-            (e) => {
-              // 语法错误、查询错误、网络错误
-              this.#pending = undefined;
-              const conn = this.#conn;
-              if (!conn) {
-                reject(e);
-                return;
-              }
-              const onFinally = () => {
-                this.#release(conn, e);
-                reject(e);
-              };
-              if (this.#errorRollback) {
-                return conn.rollback().then(onFinally, onFinally);
-              } else onFinally();
-            },
-          );
-      });
-    }) as FirstQuery;
+    this.#begin = "BEGIN" + (this.mode ? " TRANSACTION ISOLATION LEVEL " + this.mode : "");
+    this.#connect = connect;
   }
-  #pending?: Promise<unknown>;
+  #connect: () => Promise<DbPoolConnection>;
   #conn?: DbPoolConnection;
   async commit(): Promise<void> {
-    if (this.#pending) throw new ParallelQueryError();
     if (this.#conn) {
-      const promise = this.#conn.query("COMMIT");
+      const promise = this.#conn.execute("COMMIT");
       this.#release(this.#conn);
-      await promise;
+      return promise;
+    } else {
+      this.#release(undefined);
     }
   }
   async rollback(): Promise<void> {
-    if (this.#pending) throw new ParallelQueryError();
     if (this.#conn) {
-      const promise = this.#conn.query("ROLLBACK");
+      const promise = this.#conn.execute("ROLLBACK");
       this.#release(this.#conn);
-      await promise;
+      return promise;
+    } else {
+      this.#release(undefined);
     }
   }
 
   savePoint(savePoint: string): Promise<void> {
-    return this.query("SAVEPOINT" + savePoint).then(() => {});
+    return this.execute("SAVEPOINT " + savePoint);
   }
   rollbackTo(savePoint: string): Promise<void> {
-    return this.query("ROLLBACK TO " + savePoint).then(() => {});
+    return this.execute("ROLLBACK TO " + savePoint);
   }
 
-  /** 拿到连接后执行这个 */
-  #queryAfter(sql: SqlLike): Promise<SingleQueryResult>;
-  #queryAfter(sql: SqlLike | SqlLike[], multiple: true): Promise<SingleQueryResult[]>;
-  #queryAfter(sql: SqlLike | SqlLike[], multiple?: boolean): Promise<SingleQueryResult[] | SingleQueryResult> {
-    const conn = this.#conn!;
-    const onFinish = <T>(res: T) => {
-      this.#query = this.#queryAfter;
-      this.#pending = undefined;
-      return res;
-    };
-    const onError = (e: any) => {
-      this.#pending = undefined;
-      if (this.#errorRollback) {
-        const onOk = () => {
-          this.#release(conn, e);
+  #pending?: Promise<unknown>;
+  #getConnQuery<T>(
+    call: (conn: DbPoolConnection) => Promise<T>,
+    callIfFirst = call,
+    queryError?: () => void,
+  ): Promise<T> {
+    if (this.#pending) {
+      return Promise.reject(new ParallelQueryError());
+    }
+    if (this.#error) {
+      return Promise.reject(this.#error);
+    }
+
+    let promise: Promise<T>;
+    if (!this.#conn) {
+      promise = this.#connect().then(
+        (conn) => {
+          if (this.released) {
+            conn.release();
+            throw this.#error;
+          }
+          this.#conn = conn;
+          let promise = callIfFirst(conn);
+          if (queryError) {
+            promise = promise.catch((e) => {
+              queryError();
+              throw e;
+            });
+          }
+          return promise;
+        },
+        (e) => {
+          this.#release(undefined);
           throw e;
-        };
-        return conn.rollback().then(onOk, onOk);
+        },
+      );
+    } else {
+      promise = call(this.#conn);
+
+      if (queryError) {
+        promise = promise.catch((e) => {
+          queryError();
+          throw e;
+        });
+      }
+    }
+    this.#pending = promise;
+
+    return promise.finally(() => {
+      this.#pending = undefined;
+    });
+  }
+  #query<T>(
+    call: (conn: DbPoolConnection) => Promise<T>,
+    callIfFirst: (conn: DbPoolConnection) => Promise<T>,
+  ): Promise<T> {
+    const onError = () => {
+      if (this.#errorRollback) {
+        this.rollback();
       } else {
-        this.#release(conn, e);
-        throw e;
+        this.#release(this.#conn);
       }
     };
-    if (multiple) return conn.multipleQuery(sql).then(onFinish, onError);
-    else return conn.query(sql as SqlLike).then(onFinish, onError);
+    return this.#getConnQuery(call, callIfFirst, onError);
   }
-  #query: FirstQuery;
-  override query<T extends object = any>(sql: SqlStatementDataset<T>): Promise<QueryRowsResult<T>>;
-  override query<T extends object = any>(sql: SqlLike): Promise<QueryRowsResult<T>>;
-  override query(sql: SqlLike): Promise<SingleQueryResult> {
-    if (this.#pending) return Promise.reject(new ParallelQueryError());
-    return this.#query(sql);
+
+  override query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
+  override query<T extends object = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
+  override query<T extends object = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
+  override query(sql: QueryInput | MultipleQueryInput): Promise<any> {
+    return this.#query(
+      (conn): Promise<any> => {
+        return conn.query(sql as any);
+      },
+      async (conn) => {
+        if (typeof sql === "function") sql = sql();
+        const isArray = sql instanceof Array;
+        const result = await conn.query(isArray ? [this.#begin, ...(sql as any[])] : [this.#begin, sql]);
+        if (isArray) return result.slice(1);
+        else return result[1];
+      },
+    );
   }
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlStatementDataset<T>): Promise<T>;
-  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
-  override multipleQuery(sql: SqlLike | SqlLike[]): Promise<MultipleQueryResult> {
-    if (this.#pending) return Promise.reject(new ParallelQueryError());
-    return this.#query(sql, true);
+
+  override async execute(sql: QueryInput | MultipleQueryInput): Promise<void> {
+    return this.#query(
+      (conn): Promise<any> => {
+        return conn.execute(sql);
+      },
+      (conn) => {
+        if (typeof sql === "function") sql = sql();
+        return conn.execute(sql instanceof Array ? [this.#begin, ...sql] : [this.#begin, sql]);
+      },
+    );
   }
+  /** @deprecated 不建议使用 */
+  override multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T> {
+    return this.#query(
+      (conn): Promise<any> => {
+        return conn.multipleQuery(sql);
+      },
+      (conn) => {
+        return conn.multipleQuery(sql instanceof Array ? [this.#begin, ...sql] : [this.#begin, sql]);
+      },
+    );
+  }
+
   #error: any;
-  #release(conn: DbPoolConnection, error: any = new ConnectionNotAvailableError("Connection already release")) {
+  #release(
+    conn: DbPoolConnection | undefined,
+    error: any = new ConnectionNotAvailableError("Connection already release"),
+  ) {
     this.#error = error;
-    this.#query = (): Promise<never> => Promise.reject(this.#error);
     this.#conn = undefined;
-    conn.release();
+    conn?.release();
   }
   get released(): boolean {
     return !!this.#error;
@@ -140,8 +179,4 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   [Symbol.asyncDispose](): Promise<void> {
     return this.rollback();
   }
-}
-interface FirstQuery {
-  (sql: SqlLike): Promise<SingleQueryResult>;
-  (sql: SqlLike | SqlLike[], multiple: true): Promise<SingleQueryResult[]>;
 }

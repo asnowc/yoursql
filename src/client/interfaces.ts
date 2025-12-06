@@ -52,12 +52,11 @@ export interface DbTransaction extends DbQuery, AsyncDisposable {
   /** 提交，并释放连接 */
   commit(): Promise<void>;
 }
-
 /**
+ * 数据库连接池
  * @public
- * 池链接查询
  */
-export interface DbQueryPool extends DbQuery {
+export interface DbPool {
   connect(): Promise<DbPoolConnection>;
   idleCount: number;
   totalCount: number;

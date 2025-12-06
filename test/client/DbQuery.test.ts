@@ -3,6 +3,7 @@ import { DbQuery } from "@asla/yoursql/client";
 
 class MockDbQuery extends DbQuery {
   query = vi.fn();
+  execute = vi.fn();
   multipleQuery = vi.fn();
 }
 
@@ -43,34 +44,5 @@ describe("DbQuery", () => {
     const result = await dbQuery.queryCount("UPDATE users SET name = 'test'");
     expect(dbQuery.query).toHaveBeenCalledWith("UPDATE users SET name = 'test'");
     expect(result).toBe(5);
-  });
-
-  test("should call multipleQuery with correct SQL and return rows in multipleQueryRows", async () => {
-    const mockResults = [
-      { rowCount: 1, rows: [{ id: 1, name: "test1" }] },
-      { rowCount: 1, rows: [{ id: 2, name: "test2" }] },
-    ];
-    dbQuery.multipleQuery.mockResolvedValue(mockResults);
-
-    const result = await dbQuery.multipleQueryRows("SELECT * FROM users; SELECT * FROM orders");
-    expect(dbQuery.multipleQuery).toHaveBeenCalledWith("SELECT * FROM users; SELECT * FROM orders");
-    expect(result).toEqual([[{ id: 1, name: "test1" }], [{ id: 2, name: "test2" }]]);
-  });
-
-  test("should call query with correct SQL and return a map in queryMap", async () => {
-    const mockRows = [
-      { id: 1, name: "test1" },
-      { id: 2, name: "test2" },
-    ];
-    dbQuery.query.mockResolvedValue({ rowCount: 2, rows: mockRows });
-
-    const result = await dbQuery.queryMap("SELECT * FROM users", "id");
-    expect(dbQuery.query).toHaveBeenCalledWith("SELECT * FROM users");
-    expect(result).toEqual(
-      new Map([
-        [1, { id: 1, name: "test1" }],
-        [2, { id: 2, name: "test2" }],
-      ])
-    );
   });
 });
