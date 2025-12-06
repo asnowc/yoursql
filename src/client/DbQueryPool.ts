@@ -3,8 +3,7 @@ import { DbPoolConnection } from "./DbPoolConnection.ts";
 import { DbQuery } from "./DbQuery.ts";
 import { DbPool, DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
 import { QueryRowsResult } from "./DbQueryBase.ts";
-import { SqlStatementDataset } from "./_type.ts";
-import { InferQueryResult } from "@asla/yoursql";
+import { SqlStatementDataset, InferQueryResult } from "./_type.ts";
 
 /** @public */
 export interface ExecutableSQL<T = unknown> {
