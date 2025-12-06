@@ -42,8 +42,12 @@ export abstract class DbQueryPool extends DbQuery implements DbPool {
 
   createQueryableSQL<T extends SqlStatementDataset<any>, Res>(
     statement: T,
-    transform: (queryable: DbQueryPool, statement: T) => Res,
-  ): QueryableDataSQL<InferQueryResult<T>, Res>;
+    transform: (queryable: DbQueryPool, statement: T) => Promise<Res>,
+  ): QueryableDataSQL<InferQueryResult<T>, Awaited<Res>>;
+  createQueryableSQL<Raw, Res>(
+    statement: SqlLike,
+    transform: (queryable: DbQueryPool, statement: SqlLike) => Promise<Res>,
+  ): QueryableDataSQL<Raw, Res>;
   createQueryableSQL<Raw>(
     statement: SqlLike,
     transform?: (queryable: DbQueryPool, statement: SqlLike) => Promise<any>,

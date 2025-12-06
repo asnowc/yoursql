@@ -467,7 +467,9 @@ abstract class DbQueryPool extends DbQuery implements DbPool {
     // (undocumented)
     createQueryableSQL<Raw>(statement: SqlLike): QueryableDataSQL<Raw, void>;
     // (undocumented)
-    createQueryableSQL<T extends SqlStatementDataset<any>, Res>(statement: T, transform: (queryable: DbQueryPool, statement: T) => Res): QueryableDataSQL<InferQueryResult<T>, Res>;
+    createQueryableSQL<T extends SqlStatementDataset<any>, Res>(statement: T, transform: (queryable: DbQueryPool, statement: T) => Promise<Res>): QueryableDataSQL<InferQueryResult<T>, Awaited<Res>>;
+    // (undocumented)
+    createQueryableSQL<Raw, Res>(statement: SqlLike, transform: (queryable: DbQueryPool, statement: SqlLike) => Promise<Res>): QueryableDataSQL<Raw, Res>;
     // (undocumented)
     abstract cursor<T extends {}>(sql: SqlStatementDataset<T>): Promise<DbCursor<T>>;
     // (undocumented)
