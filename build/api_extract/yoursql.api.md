@@ -168,8 +168,10 @@ declare namespace client {
         ParallelQueryError,
         ConnectionNotAvailableError,
         DbConnection,
+        DbPoolConnection,
         TransactionMode,
         DbTransaction,
+        DbPoolTransaction,
         DbPool,
         SqlLike,
         sqlLikeToString,
@@ -184,9 +186,9 @@ declare namespace client {
         DbQuery,
         DbCursorOption,
         DbCursor,
-        DbPoolConnection,
+        createDbPoolConnection,
+        createDbPoolTransaction,
         DbPoolTransactionOption,
-        DbPoolTransaction,
         ExecutableSQL,
         QueryableDataSQL,
         DbQueryPool
@@ -304,6 +306,12 @@ declare namespace core {
     }
 }
 
+// @public (undocumented)
+function createDbPoolConnection(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void, onDispose?: (conn: DbQueryBase) => void): DbPoolConnection;
+
+// @public (undocumented)
+function createDbPoolTransaction(connect: () => Promise<DbPoolConnection>, option?: TransactionMode | DbPoolTransactionOption): DbPoolTransaction;
+
 // @public
 class CustomDbType<T> {
     constructor(is: (this: CustomDbType<T>, value: any) => boolean, name: string);
@@ -360,10 +368,7 @@ interface DbPool {
 }
 
 // @public
-class DbPoolConnection extends DbQuery {
-    // (undocumented)
-    [Symbol.dispose](): void;
-    constructor(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void, onDispose?: (conn: DbQueryBase) => void);
+interface DbPoolConnection extends DbQuery, Disposable {
     // (undocumented)
     begin(mode?: TransactionMode): Promise<void>;
     // (undocumented)
@@ -371,15 +376,6 @@ class DbPoolConnection extends DbQuery {
     // (undocumented)
     dispose(): void;
     // (undocumented)
-    execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
-    // @deprecated (undocumented)
-    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
-    // (undocumented)
-    query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
-    // (undocumented)
-    query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
-    // (undocumented)
-    query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
     release(): void;
     // (undocumented)
     get released(): boolean;
@@ -388,32 +384,11 @@ class DbPoolConnection extends DbQuery {
 }
 
 // @public
-class DbPoolTransaction extends DbQuery implements DbTransaction {
-    // (undocumented)
-    [Symbol.asyncDispose](): Promise<void>;
-    constructor(connect: () => Promise<DbPoolConnection>, option?: TransactionMode | DbPoolTransactionOption);
-    // (undocumented)
-    commit(): Promise<void>;
-    // (undocumented)
-    execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
+interface DbPoolTransaction extends DbTransaction {
     // (undocumented)
     readonly mode?: TransactionMode;
-    // @deprecated (undocumented)
-    multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
-    // (undocumented)
-    query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
-    // (undocumented)
-    query<T extends object = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
-    // (undocumented)
-    query<T extends object = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
     // (undocumented)
     get released(): boolean;
-    // (undocumented)
-    rollback(): Promise<void>;
-    // (undocumented)
-    rollbackTo(savePoint: string): Promise<void>;
-    // (undocumented)
-    savePoint(savePoint: string): Promise<void>;
 }
 
 // @public (undocumented)
@@ -426,7 +401,7 @@ type DbPoolTransactionOption = {
 abstract class DbQuery {
     // (undocumented)
     abstract execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
-    // @deprecated (undocumented)
+    // @deprecated
     abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
     // @deprecated
     multipleQueryRows<T extends any[] = any[]>(sql: SqlLike | SqlLike[]): Promise<T[]>;

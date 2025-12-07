@@ -1,7 +1,6 @@
 import { DbCursor, DbCursorOption } from "./DbCursor.ts";
-import { DbPoolConnection } from "./DbPoolConnection.ts";
 import { DbQuery } from "./DbQuery.ts";
-import { DbPool, DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
+import { DbPool, DbPoolConnection, DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
 import { QueryRowsResult } from "./DbQueryBase.ts";
 import { SqlStatementDataset, InferQueryResult } from "./_type.ts";
 

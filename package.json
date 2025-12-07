@@ -1,6 +1,6 @@
 {
   "name": "@asla/yoursql",
-  "version": "0.11.4",
+  "version": "0.12.0",
   "description": "",
   "type": "module",
   "types": "./dist/mod.d.ts",

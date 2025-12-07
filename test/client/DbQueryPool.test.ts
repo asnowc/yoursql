@@ -1,5 +1,11 @@
 import { describe, test, expect, vi, expectTypeOf } from "vitest";
-import { DbPoolConnection, DbQueryBase, DbQueryPool, ExecutableSQL, QueryableDataSQL } from "@asla/yoursql/client";
+import {
+  createDbPoolConnection,
+  DbQueryBase,
+  DbQueryPool,
+  ExecutableSQL,
+  QueryableDataSQL,
+} from "@asla/yoursql/client";
 import { SqlTextStatementDataset } from "@asla/yoursql";
 class MockQueryBase implements DbQueryBase {
   query = vi.fn(async (sql: any): Promise<any> => {});
@@ -9,7 +15,7 @@ class MockQueryBase implements DbQueryBase {
 class MockDbQueryPool extends DbQueryPool {
   idleCount = 0;
   totalCount = 0;
-  connect = vi.fn(async () => new DbPoolConnection(new MockQueryBase(), () => {}));
+  connect = vi.fn(async () => createDbPoolConnection(new MockQueryBase(), () => {}));
   begin = vi.fn();
   cursor = vi.fn(async (): Promise<any> => {});
   query = vi.fn(async (): Promise<any> => ({ rowCount: 0, rows: [] }));

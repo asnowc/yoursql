@@ -1,5 +1,4 @@
 import { DbQuery } from "./DbQuery.ts";
-import { DbPoolConnection } from "./DbPoolConnection.ts";
 import { DbCursor, DbCursorOption } from "./DbCursor.ts";
 import { SqlStatementDataset, SqlTemplate } from "./_type.ts";
 
@@ -9,6 +8,19 @@ import { SqlStatementDataset, SqlTemplate } from "./_type.ts";
  */
 export interface DbConnection extends DbQuery, AsyncDisposable {
   close(): Promise<void>;
+}
+
+/**
+ * 数据库池连接
+ * @public
+ */
+export interface DbPoolConnection extends DbQuery, Disposable {
+  release(): void;
+  dispose(): void;
+  begin(mode?: TransactionMode): Promise<void>;
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+  get released(): boolean;
 }
 
 /** @public */
@@ -52,6 +64,15 @@ export interface DbTransaction extends DbQuery, AsyncDisposable {
   /** 提交，并释放连接 */
   commit(): Promise<void>;
 }
+/**
+ * @public
+ * 池连接事务
+ */
+export interface DbPoolTransaction extends DbTransaction {
+  readonly mode?: TransactionMode;
+  get released(): boolean;
+}
+
 /**
  * 数据库连接池
  * @public

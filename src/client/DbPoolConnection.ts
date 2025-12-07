@@ -1,15 +1,9 @@
 import { DbQuery, MultipleQueryInput, QueryDataInput, QueryInput } from "./DbQuery.ts";
 import { type QueryRowsResult, type DbQueryBase, MultipleQueryResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError } from "./errors.ts";
-import type { SqlLike, TransactionMode } from "./interfaces.ts";
+import type { DbPoolConnection, SqlLike, TransactionMode } from "./interfaces.ts";
 
-/**
-
-/**
- * 池连接
- * @public
- */
-export class DbPoolConnection extends DbQuery {
+class DbPoolConnectionImpl extends DbQuery implements DbPoolConnection {
   constructor(
     conn: DbQueryBase,
     onRelease: (conn: DbQueryBase) => void,
@@ -24,7 +18,7 @@ export class DbPoolConnection extends DbQuery {
   #onDispose: (conn: DbQueryBase) => void;
   //implement
   async begin(mode?: TransactionMode): Promise<void> {
-    await this.query("BEGIN" + (mode ? " TRANSACTION ISOLATION LEVEL " + mode : ""));
+    await this.execute("BEGIN" + (mode ? " TRANSACTION ISOLATION LEVEL " + mode : ""));
   }
   #conn?: DbQueryBase;
 
@@ -49,11 +43,11 @@ export class DbPoolConnection extends DbQuery {
 
   //implement
   async rollback() {
-    await this.query("ROLLBACK");
+    await this.execute("ROLLBACK");
   }
   //implement
   async commit() {
-    await this.query("COMMIT");
+    await this.execute("COMMIT");
   }
   get released(): boolean {
     return !this.#conn;
@@ -77,4 +71,12 @@ export class DbPoolConnection extends DbQuery {
   [Symbol.dispose](): void {
     return this.release();
   }
+}
+/** @public */
+export function createDbPoolConnection(
+  conn: DbQueryBase,
+  onRelease: (conn: DbQueryBase) => void,
+  onDispose: (conn: DbQueryBase) => void = onRelease,
+): DbPoolConnection {
+  return new DbPoolConnectionImpl(conn, onRelease, onDispose);
 }

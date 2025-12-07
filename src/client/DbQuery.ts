@@ -18,7 +18,10 @@ export abstract class DbQuery {
   abstract query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
   abstract query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
   abstract query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
-  /** @deprecated 不建议使用。改用 query() */
+  /**
+   * 执行多语句的方法
+   * @deprecated 不建议使用。改用 query()
+   */
   abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
 
   /** 单语句查询受影响的行 */

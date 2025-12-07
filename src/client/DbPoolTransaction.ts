@@ -1,19 +1,15 @@
 import { DbQuery, MultipleQueryInput, QueryDataInput, QueryInput } from "./DbQuery.ts";
-import type { MultipleQueryResult, QueryRowsResult, SingleQueryResult } from "./DbQueryBase.ts";
+import type { MultipleQueryResult, QueryRowsResult } from "./DbQueryBase.ts";
 import { ConnectionNotAvailableError, ParallelQueryError } from "./errors.ts";
-import type { DbPoolConnection } from "./DbPoolConnection.ts";
-import type { DbTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
+import type { DbPoolConnection, DbPoolTransaction, SqlLike, TransactionMode } from "./interfaces.ts";
 
 /** @public */
 export type DbPoolTransactionOption = {
   errorRollback?: boolean;
   mode?: TransactionMode;
 };
-/**
- * @public
- * 池连接事务
- */
-export class DbPoolTransaction extends DbQuery implements DbTransaction {
+
+class DbPoolTransactionImpl extends DbQuery implements DbPoolTransaction {
   #errorRollback?: boolean;
   readonly mode?: TransactionMode;
   readonly #begin: string;
@@ -181,4 +177,12 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   [Symbol.asyncDispose](): Promise<void> {
     return this.rollback();
   }
+}
+
+/** @public */
+export function createDbPoolTransaction(
+  connect: () => Promise<DbPoolConnection>,
+  option?: TransactionMode | DbPoolTransactionOption,
+): DbPoolTransaction {
+  return new DbPoolTransactionImpl(connect, option);
 }

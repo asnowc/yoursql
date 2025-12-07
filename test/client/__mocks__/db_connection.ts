@@ -8,6 +8,7 @@ import {
   MultipleQueryResult,
   QueryRowsResult,
   SingleQueryResult,
+  createDbPoolConnection,
 } from "@asla/yoursql/client";
 import { Mock, vi } from "vitest";
 function wait(ms: number) {
@@ -46,17 +47,12 @@ export class MockDbConnection extends DbQuery implements DbConnection {
   });
   multipleQuery = vi.fn();
 }
-export class MockDbPoolConnection extends DbPoolConnection {
-  constructor() {
-    const onRelease = vi.fn(() => {});
-    const onDispose = vi.fn(() => {});
-    const mockConn = new MockDbConnection();
-    super(mockConn, onRelease, onDispose);
-    this.onRelease = onRelease;
-    this.onDispose = onDispose;
-    this.mockConn = mockConn;
-  }
-  mockConn: MockDbConnection;
-  onRelease: Mock<() => void>;
-  onDispose: Mock<() => void>;
+
+export function createMoDbPoolConnection() {
+  const onRelease = vi.fn(() => {});
+  const onDispose = vi.fn(() => {});
+  const mockConn = new MockDbConnection();
+  const poolConn = createDbPoolConnection(mockConn, onRelease, onDispose);
+
+  return { poolConn, onRelease, onDispose, mockConn };
 }
