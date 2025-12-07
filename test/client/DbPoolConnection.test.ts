@@ -91,4 +91,35 @@ describe("DbPoolConnection", () => {
     expect(poolConnection.released).toBe(true);
     expect(mockOnRelease).toHaveBeenCalled();
   });
+
+  test("dispose calls onDispose callback", () => {
+    const mockOnDispose = vi.fn();
+    const poolConnection = new DbPoolConnection(mockConnection, mockOnRelease, mockOnDispose);
+    poolConnection.dispose();
+
+    expect(poolConnection.released).toBe(true);
+    expect(mockOnDispose).toHaveBeenCalled();
+    expect(mockOnRelease).not.toHaveBeenCalled();
+  });
+
+  test("dispose 和 release 只能调用其一", () => {
+    const mockOnDispose = vi.fn();
+    const mockOnRelease = vi.fn();
+    const c1 = new DbPoolConnection(mockConnection, mockOnRelease, mockOnDispose);
+    c1.dispose();
+    c1.release();
+
+    expect(c1.released).toBe(true);
+    expect(mockOnDispose).toHaveBeenCalled();
+    expect(mockOnRelease).not.toHaveBeenCalled();
+
+    mockOnDispose.mockClear();
+    mockOnRelease.mockClear();
+    const c2 = new DbPoolConnection(mockConnection, mockOnRelease, mockOnDispose);
+    c2.release();
+    c2.dispose();
+    expect(c2.released).toBe(true);
+    expect(mockOnRelease).toHaveBeenCalled();
+    expect(mockOnDispose).not.toHaveBeenCalled();
+  });
 });

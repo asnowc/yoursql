@@ -1,4 +1,4 @@
-import { ConnectionNotAvailableError, DbPoolTransaction, ParallelQueryError } from "@asla/yoursql/client";
+import { ConnectionNotAvailableError, DbPoolTransaction, ParallelQueryError, SqlLike } from "@asla/yoursql/client";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { MockDbPoolConnection } from "./__mocks__/db_connection.ts";
@@ -223,4 +223,16 @@ describe("query() 事务中查询多条语句", function () {
     await transaction.query(["SELECT count(*) FROM test", "SELECT count(*) FROM test2"]);
     expect(conn.mockConn.query.mock.calls[1][0]).toEqual(["SELECT count(*) FROM test", "SELECT count(*) FROM test2"]);
   });
+});
+
+test("rollback() 抛出异常时，连接会被断开", async function () {
+  const conn = new MockDbPoolConnection();
+  conn.mockConn.execute.mockImplementationOnce(async (sql: SqlLike | SqlLike[]) => {
+    if (sql === "ROLLBACK") throw new Error("rollback error");
+  });
+  const connect = vi.fn(async () => conn);
+  const transaction = new DbPoolTransaction(connect, { errorRollback: true });
+  await transaction.query("SELECT 1");
+  await expect(transaction.query("error sql")).rejects.toThrowError();
+  expect(conn.onDispose).toBeCalledTimes(1);
 });

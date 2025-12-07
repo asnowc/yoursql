@@ -26,9 +26,6 @@ importers:
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
-      typescritp:
-        specifier: ^1.0.0
-        version: 1.0.0
       vitest:
         specifier: ^2.1.1
         version: 2.1.1
@@ -620,9 +617,6 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  typescritp@1.0.0:
-    resolution: {integrity: sha512-88hSOM0JRNE+lY8LQvwebA6WCf54+FoDUQuNCuoBvHxu+tj76LteTUymKzwuS6VVAuBLfI5xcZyv88sj4yxDaw==}
-
   universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
     engines: {node: '>= 4.0.0'}
@@ -1185,8 +1179,6 @@ snapshots:
   typescript@5.4.2: {}
 
   typescript@5.6.2: {}
-
-  typescritp@1.0.0: {}
 
   universalify@0.1.2: {}
 

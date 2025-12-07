@@ -43,21 +43,20 @@ export class MockDbConnection extends DbQuery implements DbConnection {
     const text = sql.toString();
     await wait(10);
     if (text.endsWith("error sql")) throw new Error("error sql");
-    return [
-      { rowCount: 0, rows: [] },
-      { rowCount: 0, rows: [] },
-    ] satisfies MultipleQueryResult;
   });
   multipleQuery = vi.fn();
 }
 export class MockDbPoolConnection extends DbPoolConnection {
   constructor() {
     const onRelease = vi.fn(() => {});
+    const onDispose = vi.fn(() => {});
     const mockConn = new MockDbConnection();
-    super(mockConn, onRelease);
+    super(mockConn, onRelease, onDispose);
     this.onRelease = onRelease;
+    this.onDispose = onDispose;
     this.mockConn = mockConn;
   }
   mockConn: MockDbConnection;
   onRelease: Mock<() => void>;
+  onDispose: Mock<() => void>;
 }

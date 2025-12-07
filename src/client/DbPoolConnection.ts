@@ -10,12 +10,18 @@ import type { SqlLike, TransactionMode } from "./interfaces.ts";
  * @public
  */
 export class DbPoolConnection extends DbQuery {
-  constructor(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void) {
+  constructor(
+    conn: DbQueryBase,
+    onRelease: (conn: DbQueryBase) => void,
+    onDispose: (conn: DbQueryBase) => void = onRelease,
+  ) {
     super();
     this.#conn = conn;
     this.#onRelease = onRelease;
+    this.#onDispose = onDispose;
   }
   #onRelease: (conn: DbQueryBase) => void;
+  #onDispose: (conn: DbQueryBase) => void;
   //implement
   async begin(mode?: TransactionMode): Promise<void> {
     await this.query("BEGIN" + (mode ? " TRANSACTION ISOLATION LEVEL " + mode : ""));
@@ -58,6 +64,13 @@ export class DbPoolConnection extends DbQuery {
     if (conn) {
       this.#conn = undefined;
       this.#onRelease(conn);
+    }
+  }
+  dispose() {
+    const conn = this.#conn;
+    if (conn) {
+      this.#conn = undefined;
+      this.#onDispose(conn);
     }
   }
   //implement

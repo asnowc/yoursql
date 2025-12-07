@@ -33,21 +33,25 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   #conn?: DbPoolConnection;
   async commit(): Promise<void> {
     if (this.#conn) {
-      const promise = this.#conn.execute("COMMIT");
-      this.#release(this.#conn);
+      const conn = this.#conn;
+      const promise = conn.execute("COMMIT").then(
+        () => conn.release(),
+        (e) => conn.dispose(),
+      );
       return promise;
-    } else {
-      this.#release(undefined);
     }
+    this.#release(undefined);
   }
   async rollback(): Promise<void> {
     if (this.#conn) {
-      const promise = this.#conn.execute("ROLLBACK");
-      this.#release(this.#conn);
+      const conn = this.#conn;
+      const promise = conn.execute("ROLLBACK").then(
+        () => conn.release(),
+        (e) => conn.dispose(),
+      );
       return promise;
-    } else {
-      this.#release(undefined);
     }
+    this.#release(undefined);
   }
 
   savePoint(savePoint: string): Promise<void> {
@@ -61,7 +65,7 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
   #getConnQuery<T>(
     call: (conn: DbPoolConnection) => Promise<T>,
     callIfFirst = call,
-    queryError?: () => void,
+    queryErrorCatch?: (e: any) => never | Promise<never>,
   ): Promise<T> {
     if (this.#pending) {
       return Promise.reject(new ParallelQueryError());
@@ -80,11 +84,8 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
           }
           this.#conn = conn;
           let promise = callIfFirst(conn);
-          if (queryError) {
-            promise = promise.catch((e) => {
-              queryError();
-              throw e;
-            });
+          if (queryErrorCatch) {
+            promise = promise.catch(queryErrorCatch);
           }
           return promise;
         },
@@ -96,11 +97,8 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
     } else {
       promise = call(this.#conn);
 
-      if (queryError) {
-        promise = promise.catch((e) => {
-          queryError();
-          throw e;
-        });
+      if (queryErrorCatch) {
+        promise = promise.catch(queryErrorCatch);
       }
     }
     this.#pending = promise;
@@ -113,11 +111,15 @@ export class DbPoolTransaction extends DbQuery implements DbTransaction {
     call: (conn: DbPoolConnection) => Promise<T>,
     callIfFirst: (conn: DbPoolConnection) => Promise<T>,
   ): Promise<T> {
-    const onError = () => {
+    const onError = (e: any) => {
       if (this.#errorRollback) {
-        this.rollback();
+        const passError = () => {
+          throw e;
+        };
+        return this.rollback().then(passError, passError);
       } else {
         this.#release(this.#conn);
+        throw e;
       }
     };
     return this.#getConnQuery(call, callIfFirst, onError);

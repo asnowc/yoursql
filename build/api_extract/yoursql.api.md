@@ -363,11 +363,13 @@ interface DbPool {
 class DbPoolConnection extends DbQuery {
     // (undocumented)
     [Symbol.dispose](): void;
-    constructor(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void);
+    constructor(conn: DbQueryBase, onRelease: (conn: DbQueryBase) => void, onDispose?: (conn: DbQueryBase) => void);
     // (undocumented)
     begin(mode?: TransactionMode): Promise<void>;
     // (undocumented)
     commit(): Promise<void>;
+    // (undocumented)
+    dispose(): void;
     // (undocumented)
     execute(sql: QueryInput | MultipleQueryInput): Promise<void>;
     // @deprecated (undocumented)
