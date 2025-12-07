@@ -1,16 +1,14 @@
 import {
   DbQuery,
   DbConnection,
-  DbPoolConnection,
   SqlLike,
   QueryInput,
   MultipleQueryInput,
-  MultipleQueryResult,
   QueryRowsResult,
   SingleQueryResult,
   createDbPoolConnection,
 } from "@asla/yoursql/client";
-import { Mock, vi } from "vitest";
+import { vi } from "vitest";
 function wait(ms: number) {
   //@ts-ignore
   return new Promise((resolve, reject) => setTimeout(resolve, ms));

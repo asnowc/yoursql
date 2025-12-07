@@ -336,7 +336,7 @@ interface DbConnection extends DbQuery, AsyncDisposable {
 }
 
 // @public (undocumented)
-abstract class DbCursor<T> {
+abstract class DbCursor<T> implements AsyncDisposable, AsyncIterable<T> {
     // (undocumented)
     [Symbol.asyncDispose](): Promise<void>;
     // (undocumented)

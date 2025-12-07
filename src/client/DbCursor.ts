@@ -4,7 +4,7 @@ export interface DbCursorOption {
 }
 
 /** @public */
-export abstract class DbCursor<T> {
+export abstract class DbCursor<T> implements AsyncDisposable, AsyncIterable<T> {
   /** 读取游标，如果读取结束，返回空数组 */
   abstract read(maxSize?: number): Promise<T[]>;
   /** 提前关闭游标，如果多次调用，会被忽略 */
