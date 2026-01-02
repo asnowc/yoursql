@@ -248,7 +248,7 @@ export class SqlValuesDataset {
   #rows: string[];
   #firstValues: string[];
   #text?: string;
-  get text() {
+  get text(): string {
     if (!this.#text) {
       this.#text = this.#genText();
     }
@@ -286,4 +286,3 @@ export class SqlValuesDataset {
     return `(VALUES\n${this.text})\nAS ${name}(${this.columns.join(",")})`;
   }
 }
-;

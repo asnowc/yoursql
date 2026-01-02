@@ -20,9 +20,9 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           run_install: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - name: Build
         run: pnpm run ci:build
@@ -64,9 +64,9 @@ jobs:
           name: npm-package
       - name: Unpack
         run: tar -zxvf npm-package.tgz
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
       - name: Publish
         run: npm publish
