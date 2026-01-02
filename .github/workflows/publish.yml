@@ -28,7 +28,7 @@ jobs:
         run: pnpm run ci:build
       - name: Check Api
         run: pnpm run ci:check-api
-      
+
       - name: jsr-dry-run
         run: npx jsr publish --dry-run
       - name: npm-dry-run
@@ -71,8 +71,6 @@ jobs:
       - name: Publish
         run: npm publish
         working-directory: ./package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-jsr:
     runs-on: ubuntu-latest
