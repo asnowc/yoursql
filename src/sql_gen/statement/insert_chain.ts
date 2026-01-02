@@ -10,6 +10,14 @@ export interface InsertIntoSqlGenerator {
 /** @public */
 export interface ChainAfterConflict {
   doNotThing(): ChainInsertReturning;
+  /**
+   * @example
+   * ```ts
+   *  doUpdate("SET level= 89,name= 11") // " DO UPDATE SET level= 89,name= 11"
+   *  doUpdate(["level= 89", "name= 11"]) // " DO UPDATE SET\nlevel= 89,name= 11"
+   *  doUpdate({level: "89", name: "11"}) // " DO UPDATE SET\nlevel= 89,name= 11"
+   * ```
+   */
   doUpdate(set: Constructable<string | readonly string[] | Record<string, string>>): ChainInsertReturning;
   toString(): string;
 }
