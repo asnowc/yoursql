@@ -1,5 +1,11 @@
-import { getObjectListKeys } from "../_statement.ts";
 import { TemplateSqlStatement } from "./ValueSqlTemplate.ts";
+import {
+  AssertError,
+  getColumnInfo,
+  getObjectValueInfo,
+  internalObjectToValues,
+  ObjectToValueOption,
+} from "./_to_values.ts";
 import { AssertJsType, ColumnToValueConfig, ObjectToValueKeys } from "./type.ts";
 export { TemplateSqlStatement as ValueSqlTemplate } from "./ValueSqlTemplate.ts";
 
@@ -131,10 +137,10 @@ export class SqlValuesCreator {
    * @example 返回的文本示例： " (...),(...) "
    * @param columns - 选择的键。如果指定了 columns, 值为 undefined 的属性将自动填充为 null; 如果未指定 columns，将选择 objectList 所有不是 undefined 项的键的并集
    */
-  createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesTextData;
-  createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
-  createImplicitValues(objectList: object[] | object, columns?: ObjectToValueKeys<any>): SqlValuesTextData {
-    let res: SqlExplicitValuesStatement;
+  createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesDataset;
+  createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesDataset;
+  createImplicitValues(objectList: object[] | object, columns?: ObjectToValueKeys<any>): SqlValuesDataset {
+    let res: SqlValuesDataset;
     if (objectList instanceof Array) {
       res = this._objectListToValues(objectList, columns, { undefinedDefault: "DEFAULT" });
     } else {
@@ -144,16 +150,16 @@ export class SqlValuesCreator {
         { undefinedDefault: "DEFAULT" },
       );
     }
-    return { columns: [...res.columns], text: res.text };
+    return res;
   }
   /**
    * 将对象列表转为 SQL 的 VALUES。如果 objectList 中有某个对象的属性值为 undefined，则会被转换为 "NULL"
    * @example 返回的文本示例： " (...),(...) "
    * @param columns - 选择的键。
    */
-  createExplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
-  createExplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
-  createExplicitValues(objectList: object[] | object, columns?: ObjectToValueKeys<any>): SqlExplicitValuesStatement {
+  createExplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesDataset;
+  createExplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesDataset;
+  createExplicitValues(objectList: object[] | object, columns?: ObjectToValueKeys<any>): SqlValuesDataset {
     if (objectList instanceof Array) {
       return this._objectListToValues(objectList, columns, { undefinedDefault: "NULL" });
     } else {
@@ -168,113 +174,53 @@ export class SqlValuesCreator {
     objectList: readonly Record<string, any>[],
     columns?: ObjectToValueKeys<any>,
     option?: ObjectToValueOption,
-  ): SqlExplicitValuesStatement;
+  ): SqlValuesDataset;
   private _objectListToValues(
     objectList: readonly Record<string, any>[],
     columns?: ObjectToValueKeys<Record<string, any>>,
     option: ObjectToValueOption = {},
-  ): SqlExplicitValuesStatement {
+  ): SqlValuesDataset {
     if (objectList.length <= 0) throw new Error("objectList 不能是空数组");
-    let keys: string[];
-    let asserts: (ColumnToValueConfig | undefined)[];
-    if (!columns) {
-      keys = Array.from(getObjectListKeys(objectList));
-      asserts = [];
-    } else if (columns instanceof Array) {
-      keys = [...(columns as readonly string[])];
-      asserts = [];
-    } else {
-      keys = Object.keys(columns);
-      asserts = initColumnAssert(keys, columns);
-    }
+    const { keys, asserts } = getColumnInfo(objectList, columns);
+
     const undefinedDefault = option.undefinedDefault || "DEFAULT";
-    let str = "(" + this._internalObjectToValues(objectList[0], keys, asserts, undefinedDefault) + ")";
-    let i = 1;
+    let firstRow = internalObjectToValues(objectList[0], keys, asserts, undefinedDefault, this);
     let j: number;
     let value: any;
-    let rows: string[];
+    const rows: string[] = new Array(objectList.length - 1);
     let assert: ColumnToValueConfig | undefined;
+    let i = 1;
     try {
       for (; i < objectList.length; i++) {
         const object = objectList[i];
-        rows = [];
+        const columns = [];
         j = 0;
         for (; j < keys.length; j++) {
           value = object[keys[j]];
           assert = asserts[j];
-          rows[j] =
+          columns[j] =
             value === undefined ? assert?.sqlDefault || undefinedDefault : this.toSqlStr(value, assert?.assertJsType);
         }
-        str += ",\n(" + rows.join(",") + ")";
+        rows[i - 1] = "(" + columns.join(",") + ")";
       }
     } catch (error) {
       let message = error instanceof Error ? error.message : String(error);
       throw new Error("第 " + i + " 项，字段 '" + (keys[j!] as string) + "' 异常，" + message);
     }
 
-    return new SqlExplicitValuesStatement(keys, str);
+    return new SqlValuesDataset(keys, firstRow.types, firstRow.values, rows);
   }
   private _objectToValue(
     object: Record<string, any>,
     keys_types: readonly string[] | Record<string, string | undefined> | undefined,
     option: ObjectToValueOption = {},
-  ): SqlExplicitValuesStatement {
-    const { keys, type } = this._getObjectValueInfo(object, keys_types);
+  ): SqlValuesDataset {
+    const { keys, type } = getObjectValueInfo(object, keys_types);
     const undefinedDefault = option.undefinedDefault || "DEFAULT";
-    const text = this._internalObjectToValues(object, keys, type, undefinedDefault);
-    return new SqlExplicitValuesStatement(keys, `(${text})`);
+    const res = internalObjectToValues(object, keys, type, undefinedDefault, this);
+    return new SqlValuesDataset(keys, res.types, res.values, []);
   }
 
-  private _getObjectValueInfo(
-    object: Record<string | number, any>,
-    keys_types: readonly string[] | Record<string, string | undefined> | undefined,
-  ) {
-    let type: (ColumnToValueConfig | undefined)[];
-    let keys: string[];
-
-    if (keys_types instanceof Array) {
-      keys = [...keys_types];
-      type = [];
-    } else if (keys_types) {
-      keys = Object.keys(keys_types);
-      type = initColumnAssert(keys, keys_types);
-    } else {
-      keys = Object.keys(object).filter((k) => object[k] !== undefined);
-      type = [];
-    }
-    return { keys, type };
-  }
-  private _internalObjectToValues(
-    object: Record<string, any>,
-    keys: readonly string[],
-    type: (ColumnToValueConfig | undefined)[],
-    undefinedDefault: string,
-  ) {
-    const values: string[] = [];
-    let i = 0;
-    let key: string;
-    let value: any;
-    let assertType: ColumnToValueConfig | undefined;
-    try {
-      for (; i < keys.length; i++) {
-        key = keys[i];
-        value = object[key];
-        assertType = type[i];
-        if (assertType) {
-          values[i] =
-            value === undefined
-              ? assertType.sqlDefault || undefinedDefault
-              : this.toSqlStr(value, assertType.assertJsType);
-          if (assertType.sqlType) values[i] += "::" + assertType.sqlType;
-        } else values[i] = value === undefined ? undefinedDefault : this.toSqlStr(value);
-      }
-    } catch (error) {
-      let message = error instanceof Error ? error.message : String(error);
-      throw new Error("字段 '" + key! + "' 异常，" + message);
-    }
-    if (values.length === 0) throw new Error("object 不能为空");
-    return values.join(",");
-  }
   /**
    * 将数组列表转为 SQL 的一个 value
    * @example
@@ -287,45 +233,57 @@ export class SqlValuesCreator {
     return values.map((v) => this.toSqlStr(v)).join(",");
   }
 }
-type ObjectToValueOption = {
-  undefinedDefault?: string;
-};
-class AssertError extends TypeError {
-  constructor(assertType: string, actual: string) {
-    super(`Assert ${assertType} type, Actual ${actual} type`);
-  }
-}
-function initColumnAssert(
-  keys: readonly string[],
-  keys_types: Record<string, string | undefined | ColumnToValueConfig>,
-) {
-  let key: string;
-  let value: any;
-  let type = new Array(keys.length);
-  for (let i = 0; i < keys.length; i++) {
-    key = keys[i];
-    value = keys_types[key];
-    if (typeof value === "string") {
-      type[i] = { sqlType: value };
-    } else {
-      type[i] = value;
-    }
-  }
-  return type;
-}
-/** @public */
-export type SqlValuesTextData = {
-  columns: string[];
-  text: string;
-};
 
 /** @public */
-export class SqlExplicitValuesStatement {
+export class SqlValuesDataset {
   constructor(
     public columns: readonly string[],
-    public readonly text: string,
-  ) {}
+    readonly columnsSqlType: readonly string[],
+    firstValues: string[],
+    nextRows: string[],
+  ) {
+    this.#firstValues = firstValues;
+    this.#rows = nextRows;
+  }
+  #rows: string[];
+  #firstValues: string[];
+  #text?: string;
+  get text() {
+    if (!this.#text) {
+      this.#text = this.#genText();
+    }
+    return this.#text;
+  }
+  #genText(): string {
+    const { columnsSqlType } = this;
+    const firstValues = this.#firstValues;
+    let firstRow: string[] = new Array(firstValues.length);
+    for (let i = 0; i < firstValues.length; i++) {
+      firstRow[i] = firstValues[i];
+      if (columnsSqlType[i]) firstRow[i] += "::" + columnsSqlType[i];
+    }
+    const base = "(" + firstRow.join(",") + ")";
+    if (this.#rows.length === 0) {
+      return base;
+    }
+    return "(" + firstRow.join(",") + "),\n" + this.#rows.join(",\n");
+  }
+  /**
+   * @example
+   * ```ts
+   *  const t = v.createImplicitValues(
+   *    [
+   *      { id: 1, name: "name1" },
+   *      { id: 2, name: "name2" },
+   *    ],
+   *    { id: "INT", name: "VARCHAR" },
+   *  );
+   *  // 返回 (VALUES (1::INT,'name1'::VARCHAR),(2,'name2')) AS t1(id,name)
+   *  t.toSelect("t1(id,name)")
+   * ```
+   */
   toSelect(name: string): string {
     return `(VALUES\n${this.text})\nAS ${name}(${this.columns.join(",")})`;
   }
 }
+;

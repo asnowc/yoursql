@@ -238,8 +238,7 @@ declare namespace core {
         SqlValueEncoder,
         SqlValueFn,
         SqlValuesCreator,
-        SqlValuesTextData,
-        SqlExplicitValuesStatement,
+        SqlValuesDataset,
         AssertJsType,
         ColumnToValueConfig,
         ObjectToValueKeys,
@@ -629,17 +628,6 @@ interface SingleQueryResult {
 }
 
 // @public (undocumented)
-class SqlExplicitValuesStatement {
-    constructor(columns: readonly string[], text: string);
-    // (undocumented)
-    columns: readonly string[];
-    // (undocumented)
-    readonly text: string;
-    // (undocumented)
-    toSelect(name: string): string;
-}
-
-// @public (undocumented)
 type SqlLike = {
     genSql(): string;
 } | SqlTemplate | string;
@@ -704,12 +692,12 @@ class SqlValuesCreator {
     constructor(map?: JsObjectMapSql);
     // (undocumented)
     static create(map?: JsObjectMapSql): SqlValueFn;
-    createExplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
+    createExplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesDataset;
     // (undocumented)
-    createExplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlExplicitValuesStatement;
-    createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesTextData;
+    createExplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesDataset;
+    createImplicitValues<T extends object>(objectList: T, columns?: ObjectToValueKeys<T>): SqlValuesDataset;
     // (undocumented)
-    createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesTextData;
+    createImplicitValues<T extends object>(objectList: T[], columns?: ObjectToValueKeys<T>): SqlValuesDataset;
     // (undocumented)
     protected defaultObject(value: object): string;
     // @alpha (undocumented)
@@ -724,10 +712,17 @@ class SqlValuesCreator {
 }
 
 // @public (undocumented)
-type SqlValuesTextData = {
-    columns: string[];
-    text: string;
-};
+class SqlValuesDataset {
+    constructor(columns: readonly string[], columnsSqlType: readonly string[], firstValues: string[], nextRows: string[]);
+    // (undocumented)
+    columns: readonly string[];
+    // (undocumented)
+    readonly columnsSqlType: readonly string[];
+    // (undocumented)
+    get text(): string;
+    // (undocumented)
+    toSelect(name: string): string;
+}
 
 // @public (undocumented)
 type TableDefined = {
