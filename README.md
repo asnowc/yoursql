@@ -70,42 +70,31 @@ import { v } from "@asla/yoursql";
 v.toValues([1, "abc", null, undefined, { key: "value" }]); // `1,'abc',NULL,DEFAULT,'{"key":"value"}'`
 ```
 
-#### v.objectToValue()
+#### v.createExplicitValues() 和 v.createImplicitValues()
 
-转换对象为 values 的单个值
-
-```ts
-import { v } from "@asla/yoursql";
-const obj = { a: "a1", b: "b1", c: undefined, d: "d1" };
-v.objectToValue(obj); // "'a1','b1',DEFAULT,'d1'"
-v.objectToValue(obj, ["b", "a"]); // "'b1','a1'"
-v.objectToValue(obj, [{ a: "TEXT", b: {} }]); // 'a1'::TEXT,'b1'"
-```
-
-#### v.objectListToValues()
-
-转换对象数组为 values
+转换单个对象或对象数组为 VALUES
 
 ```ts
 import { v } from "@asla/yoursql";
 
-const values = [{ a: 1, b: 2 }, { c: 3 }];
+const values = [{ a: 1, b: undefined }, { c: 3 }];
 
 // 这将自动选择数组中所有键的并集
-v.objectListToValues(values); // "(1,2,null),(null,null,3)"
+v.createExplicitValues(values).text; // "(1,NULL,NULL),(NULL,NULL,3)"
+v.createImplicitValues(values).text; // "(1,DEFAULT,NULL),(NULL,NULL,3)"
 
 // 或者你可以指定选择键并指定顺序
-const valueStr = v.objectListToValues(values, ["c", "b"]); // "(null,2),(3,3)"
+const valueStr = v.createExplicitValues(values, ["c", "b"]).text; // "(NULL,2),(3,NULL)"
 
 const sql = `INSERT INTO user(name, role) VALUES ${valueStr}`;
 ```
 
-#### v.createValues()
+可以指定 SQL类型和 JS 类型断言
 
 ```ts
 const objectList = [{ age: 1, name: "hhh" }, { age: 2, name: "row2" }, { age: 3, name: "row3" }, {}];
 
-v.createValues("customName", objectList, {
+v.createExplicitValues("customName", objectList, {
   age: { sqlType: "INT", sqlDefault: "MAXIMUM(1,2)" },
   name: "TEXT",
 });
@@ -162,12 +151,24 @@ import {
 
 ```ts
 class YourQuery extends DbQuery {
-  query<T = any>(sql: StringLike): Promise<QueryRowsResult<T>> {
+  execute(sql: QueryInput | MultipleQueryInput): Promise<void> {
+    // implement
+  }
+
+  query<T extends MultipleQueryResult = MultipleQueryResult>(sql: MultipleQueryInput): Promise<T>;
+  query<T = any>(sql: QueryDataInput<T>): Promise<QueryRowsResult<T>>;
+  query<T = any>(sql: QueryInput): Promise<QueryRowsResult<T>>;
+  query<T = any>(sql: QueryInput | MultipleQueryInput): Promise<QueryRowsResult<T>> {
     // implement
   }
   multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: StringLike): Promise<T> {
     // implement
   }
+  /**
+   * 执行多语句的方法
+   * @deprecated 不建议使用。改用 query()
+   */
+  abstract multipleQuery<T extends MultipleQueryResult = MultipleQueryResult>(sql: SqlLike | SqlLike[]): Promise<T>;
 }
 const db: DbQuery = new YourQuery();
 ```
@@ -183,10 +184,10 @@ const count: number = await db.queryCount(sqlText);
 const rows: Map<string, Row> = await db.queryMap<Row>(sqlText, "name");
 ```
 
-#### DbQueryPool 接口
+#### DbQueryPool 抽象类
 
 ```ts
-class YourPool extends DbQuery implements DbQuery {
+class YourPool extends DbQueryPool {
   // implement
 }
 const pool: DbQueryPool = new YourPool();
@@ -203,7 +204,7 @@ try {
 }
 ```
 
-或者，使用 `using` 语法更优雅
+或者，使用 `using` 语法更优雅 (推荐)
 
 ```ts
 using conn = await pool.connect();
@@ -224,7 +225,7 @@ try {
 }
 ```
 
-或者，使用 `using` 语法更优雅
+或者，使用 `using` 语法更优雅 (推荐)
 
 ```ts
 await using conn = pool.begin();
@@ -250,7 +251,7 @@ while (rows.length) {
 }
 ```
 
-或者使用 `for await of` 更优雅
+或者使用 `for await of` 更优雅 (推荐)
 
 ```ts
 const cursor = await pool.cursor(sqlText);
@@ -258,63 +259,4 @@ for await (const element of cursor) {
   console.log(element);
   if (conditions) break; //提前关闭游标
 }
-```
-
-### 扩展查询链
-
-```ts
-import { v, SqlStatement, SqlStatementDataset, SqlValuesCreator } from "@asla/yoursql";
-import type { DbCursor, QueryResult, QueryRowsResult } from "@asla/yoursql/client";
-
-declare const pool: DbQueryPool = new YourPool(); // 你需要实现一个 DbQueryPool
-
-export interface QueryableSql {
-  query(): Promise<QueryResult>;
-  queryCount(): Promise<number>;
-}
-export interface QueryableDataSql<T> extends QueryableSql {
-  queryRows(): Promise<T[]>;
-  queryMap<K>(key: string): Promise<Map<K, T>>;
-  cursor(): Promise<DbCursor<T>>;
-}
-declare module "@asla/yoursql" {
-  interface SqlStatement extends QueryableSql {}
-  interface SqlStatementDataset<T> extends QueryableDataSql<T> {}
-}
-const base: QueryableSql = {
-  queryCount(): Promise<number> {
-    return dbPool.queryCount(this.toString());
-  },
-  query(): Promise<QueryRowsResult<any>> {
-    return dbPool.query<any>(this);
-  },
-};
-const obj: QueryableDataSql<any> = {
-  ...base,
-  cursor(): Promise<DbCursor<any>> {
-    return dbPool.cursor(this.toString());
-  },
-  queryMap<K>(key: string): Promise<Map<K, any>> {
-    return dbPool.queryMap(this.toString(), key);
-  },
-  queryRows(): Promise<any[]> {
-    return dbPool.queryRows(this.toString());
-  },
-};
-
-Object.assign(SqlStatement.prototype, base);
-Object.assign(SqlStatementDataset.prototype, obj);
-```
-
-现在，以及扩展了 SqlStatement 和 SqlStatementDataset 类的原型链，你可以从 select 等语句直接调用查询方法了
-
-```ts
-import { Selection, v } from "@asla/yoursql";
-
-const searchName = "Bob";
-const rows = await Selection.from("user", "u")
-  .innerJoin("role", "r", "u.id=r.user_id")
-  .select({ uid: "u.id", rid: "r.id", example: "u.id||r.id" })
-  .where(`u.name LIKE %${v(searchName)}%`)
-  .queryRows();
 ```

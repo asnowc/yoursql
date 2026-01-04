@@ -1,3 +1,4 @@
+import { SqlValuesDataset, ExplicitSqlValues } from "./SqlValuesDataset.ts";
 import { TemplateSqlStatement } from "./ValueSqlTemplate.ts";
 import {
   AssertError,
@@ -7,7 +8,9 @@ import {
   ObjectToValueOption,
 } from "./_to_values.ts";
 import { AssertJsType, ColumnToValueConfig, ObjectToValueKeys } from "./type.ts";
-export { TemplateSqlStatement as ValueSqlTemplate } from "./ValueSqlTemplate.ts";
+
+export { TemplateSqlStatement } from "./ValueSqlTemplate.ts";
+export type { SqlValuesDataset } from "./SqlValuesDataset.ts";
 
 /** @public js 对象到编码函数的映射*/
 export type JsObjectMapSql = Map<new (...args: any[]) => any, SqlValueEncoder>;
@@ -208,7 +211,7 @@ export class SqlValuesCreator {
       throw new Error("第 " + i + " 项，字段 '" + (keys[j!] as string) + "' 异常，" + message);
     }
 
-    return new SqlValuesDataset(keys, firstRow.types, firstRow.values, rows);
+    return new ExplicitSqlValues(keys, firstRow.types, firstRow.values, rows);
   }
   private _objectToValue(
     object: Record<string, any>,
@@ -218,7 +221,7 @@ export class SqlValuesCreator {
     const { keys, type } = getObjectValueInfo(object, keys_types);
     const undefinedDefault = option.undefinedDefault || "DEFAULT";
     const res = internalObjectToValues(object, keys, type, undefinedDefault, this);
-    return new SqlValuesDataset(keys, res.types, res.values, []);
+    return new ExplicitSqlValues(keys, res.types, res.values, []);
   }
 
   /**
@@ -231,58 +234,5 @@ export class SqlValuesCreator {
   toValues(values: readonly any[]): string {
     if (values.length === 0) throw new Error("values 不能为空");
     return values.map((v) => this.toSqlStr(v)).join(",");
-  }
-}
-
-/** @public */
-export class SqlValuesDataset {
-  constructor(
-    public columns: readonly string[],
-    readonly columnsSqlType: readonly string[],
-    firstValues: string[],
-    nextRows: string[],
-  ) {
-    this.#firstValues = firstValues;
-    this.#rows = nextRows;
-  }
-  #rows: string[];
-  #firstValues: string[];
-  #text?: string;
-  get text(): string {
-    if (!this.#text) {
-      this.#text = this.#genText();
-    }
-    return this.#text;
-  }
-  #genText(): string {
-    const { columnsSqlType } = this;
-    const firstValues = this.#firstValues;
-    let firstRow: string[] = new Array(firstValues.length);
-    for (let i = 0; i < firstValues.length; i++) {
-      firstRow[i] = firstValues[i];
-      if (columnsSqlType[i]) firstRow[i] += "::" + columnsSqlType[i];
-    }
-    const base = "(" + firstRow.join(",") + ")";
-    if (this.#rows.length === 0) {
-      return base;
-    }
-    return "(" + firstRow.join(",") + "),\n" + this.#rows.join(",\n");
-  }
-  /**
-   * @example
-   * ```ts
-   *  const t = v.createImplicitValues(
-   *    [
-   *      { id: 1, name: "name1" },
-   *      { id: 2, name: "name2" },
-   *    ],
-   *    { id: "INT", name: "VARCHAR" },
-   *  );
-   *  // 返回 (VALUES (1::INT,'name1'::VARCHAR),(2,'name2')) AS t1(id,name)
-   *  t.toSelect("t1(id,name)")
-   * ```
-   */
-  toSelect(name: string): string {
-    return `(VALUES\n${this.text})\nAS ${name}(${this.columns.join(",")})`;
   }
 }

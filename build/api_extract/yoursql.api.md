@@ -233,12 +233,12 @@ declare namespace core {
     export {
         v,
         pgSqlTransformer,
-        TemplateSqlStatement as ValueSqlTemplate,
+        TemplateSqlStatement,
+        SqlValuesDataset,
         JsObjectMapSql,
         SqlValueEncoder,
         SqlValueFn,
         SqlValuesCreator,
-        SqlValuesDataset,
         AssertJsType,
         ColumnToValueConfig,
         ObjectToValueKeys,
@@ -712,14 +712,11 @@ class SqlValuesCreator {
 }
 
 // @public (undocumented)
-class SqlValuesDataset {
-    constructor(columns: readonly string[], columnsSqlType: readonly string[], firstValues: string[], nextRows: string[]);
+interface SqlValuesDataset {
     // (undocumented)
-    columns: readonly string[];
+    readonly columns: readonly string[];
     // (undocumented)
-    readonly columnsSqlType: readonly string[];
-    // (undocumented)
-    get text(): string;
+    readonly text: string;
     // (undocumented)
     toSelect(name: string): string;
 }
