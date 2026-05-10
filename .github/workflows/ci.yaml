@@ -4,14 +4,17 @@ on:
     branches:
       - "*"
       - "**"
+  pull_request:
+    branches:
+      - "main"
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           run_install: true
       - uses: actions/setup-node@v6
@@ -25,6 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: jsr-dry-run
         run: npx jsr publish --dry-run

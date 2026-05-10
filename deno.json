@@ -8,12 +8,10 @@
     "publishDry": "deno publish --dry-run --allow-dirty"
   },
   "imports": {
-    "@asla/yoursql/client": "./src/client/mod.ts",
     "@asla/yoursql": "./src/sql_gen/mod.ts"
   },
   "exports": {
-    ".": "./src/sql_gen/mod.ts",
-    "./client": "./src/client/mod.ts"
+    ".": "./src/sql_gen/mod.ts"
   },
   "publish": {
     "include": ["README.md", "LICENSE", "src/**/*.ts"]

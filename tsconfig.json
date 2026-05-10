@@ -1,22 +1,4 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ESNext",
-    "lib": ["ESNext"],
-    "strict": true,
-    "allowImportingTsExtensions": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "allowJs": true,
-    "isolatedModules": true,
-    "noImplicitOverride": true,
-    "baseUrl": ".",
-    "paths": {
-      "@asla/yoursql": ["./src/sql_gen/mod.ts"],
-      "@asla/yoursql/client": ["./src/client/mod.ts"]
-    }
-  },
-
-  "exclude": ["node_modules", "./benchmark", "./scripts", "./dist"]
+  "include": [],
+  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.node.json" }]
 }
