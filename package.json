@@ -1,54 +1,51 @@
 {
   "name": "@asla/yoursql",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "",
-  "type": "module",
-  "types": "./dist/mod.d.ts",
-  "packageManager": "pnpm@10.4.0",
-  "scripts": {
-    "ci:test": "vitest run",
-    "ci:build": "pnpm rollup -c build/rollup.config.js",
-    "build": "pnpm rollup -c  build/rollup.config.js && pnpm run ci:check-api -l",
-    "test": "vitest",
-    "type:check": "tsc",
-    "publish-check": "deno publish --dry-run --allow-dirty",
-    "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
-  },
-  "devDependencies": {
-    "@microsoft/api-extractor": "^7.47.9",
-    "@rollup/plugin-typescript": "^12.1.0",
-    "prettier": "^3.5.3",
-    "rollup": "^4.22.4",
-    "tslib": "^2.7.0",
-    "typescript": "^5.6.2",
-    "vitest": "^2.1.1"
+  "keywords": [
+    "sql"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Eavid",
+    "url": "https://github.com/eavidy"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/asnowc/yoursql"
   },
-  "exports": {
-    ".": "./dist/sql_gen/mod.js",
-    "./client": "./dist/client/mod.js"
-  },
   "files": [
     "dist/**/*.js",
     "dist/**/*d.ts"
   ],
+  "type": "module",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": "./dist/sql_gen/mod.js"
+  },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org",
-    "provenance": true
+    "provenance": true,
+    "registry": "https://registry.npmjs.org"
   },
-  "keywords": [
-    "sql"
-  ],
-  "author": {
-    "name": "Eavid",
-    "url": "https://github.com/eavidy"
+  "scripts": {
+    "ci:test": "vitest run",
+    "ci:build": "tsc -p tsconfig.lib.json",
+    "build": "tsc -p tsconfig.lib.json",
+    "test": "vitest",
+    "type:check": "tsc -p tsconfig.lib.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "publish-check": "deno publish --dry-run --allow-dirty"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "oxfmt": "^0.48.0",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11",
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT"
+  "packageManager": "pnpm@11.0.9"
 }

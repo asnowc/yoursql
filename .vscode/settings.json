@@ -1,3 +1,4 @@
 {
-  "deno.enablePaths": ["./benchmark", "./examples"]
+  "vitest.runtime": "node",
+  "editor.defaultFormatter": "oxc.oxc-vscode"
 }

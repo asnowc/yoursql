@@ -1,8 +1,7 @@
 import { defineConfig } from "vitest/config";
-//@ts-ignore
-import path from "node:path";
-//@ts-ignore
+import path from "node:path"; 
 const root = import.meta.dirname;
+
 export default defineConfig({
   esbuild: { target: "es2020" },
   test: {

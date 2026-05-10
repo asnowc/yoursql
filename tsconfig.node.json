@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@asla/yoursql": ["./src/sql_gen/mod.ts"]
+    }
+  },
+  "include": ["vitest.config.ts", "test"]
+}
